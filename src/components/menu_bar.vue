@@ -1,5 +1,5 @@
 <template>
-    <v-toolbar color=" " class=" bg-transparent" title="Baiboho">
+    <v-toolbar color=" " class=" bg-transparent" title="Encoour crédits">
       <v-btn stacked>
         <v-badge
           color="error"
