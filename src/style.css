@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Pour Chrome, Edge et Safari */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #4caf50; /* Couleur de ton thème (green-accent-3) */
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* Scrollbar horizontale si besoin */
+::-webkit-scrollbar-horizontal {
+  height: 8px;
+}
