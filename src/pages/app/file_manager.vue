@@ -112,8 +112,8 @@ const handleFileUpload = (event) => {
   const files = event.target.files;
   const elt_ = document.getElementById('file_name');
 
-  if (files.length > 5) {
-    alert("Vous ne pouvez sélectionner que jusqu'à 5 fichiers.");
+  if (files.length < 18 || files.length > 21) {
+    alert("Vous ne pouvez sélectionner que de 18 à 21  fichiers.");
     event.target.value = ""; // reset
     file_name.value = "Importer un fichier";
     file_names.value = [];
@@ -178,7 +178,7 @@ const load_database = async (refresh, files, folder) => {
 
   var index_table=0;
   try {
-    const response = await fetch('http://localhost:5000/api/create_multiple_table', {
+    const response = await fetch('http://192.168.1.212:8000/api/create_multiple_table', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -275,12 +275,12 @@ const check_file = () => {
 const uploadFile = async (folder_name) => {
   const formData = new FormData();
   files_data.value.forEach((file) => {
-    formData.append('file', file);
+    formData.append('files', file);
   });
   formData.append('app', app_type.value);
   formData.append('folder_name', folder_name);
   try {
-    const response = await fetch('http://localhost:5000/api/upload_multiple_files', {
+    const response = await fetch('http://192.168.1.212:8000/api/upload_multiple_files', {
       method: 'POST',
       body: formData,
     });
@@ -439,14 +439,13 @@ const show_popup=()=>{
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background: #222; /* Fond sombre */
+  height: 100vh; 
 }
 
 /* Boîte d'upload */
 .upload-box {
   width: 500px;
-  background: #1e1e1e;
+  background: #00000000;
   border: 2px dashed #666;
   display: flex;
   flex-direction: column;
