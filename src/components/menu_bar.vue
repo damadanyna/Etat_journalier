@@ -1,5 +1,5 @@
 <template>
-    <v-toolbar color=" " class=" bg-transparent" title="Encoour crédits">
+    <v-toolbar color=" " class=" bg-transparent" title="Encours des crédits">
       <v-btn stacked>
         <v-badge
           color="error"

@@ -3,81 +3,74 @@ from fastapi.responses import StreamingResponse
 import json
 from typing import List
 import os
-import shutil
+from datetime import datetime
+import re 
+import random
+import string
+import openpyxl
+import csv 
+import sys  
+import shutil 
+import pandas as pd
+from db.db  import DB
 from werkzeug.utils import secure_filename
+import asyncio
+import aiofiles
+import io
+
+
+
 
 class Credits:
-    def __init__(self, db=None):
+
+    def __init__(self):
         
-        self.db = db  # au cas où tu veux utiliser la BDD
+        self.db = DB()  # au cas où tu veux utiliser la BDD
         self.upload_folder = 'load_file' 
         if not os.path.exists(self.upload_folder):
-            os.makedirs(self.upload_folder)
-        print("Credit initialisé") 
+            os.makedirs(self.upload_folder) 
 
     def get_data(self):
         return {"message": "Données Credit"}
-
-    def create_multiple_table(self):
-        async def endpoint(request: Request):
-            data = await request.json()
-
-            if 'files' not in data or 'app' not in data or 'folder' not in data:
-                return StreamingResponse(
-                    content=iter([json.dumps({"error": "Paramètres manquants : files, app et folder requis"})]),
-                    media_type="application/json"
-                )
-
-            filenames: List[str] = data['files']
-            app_name: str = data['app']
-            folder: str = data['folder']
-
-            if not isinstance(filenames, list) or not filenames:
-                return StreamingResponse(
-                    content=iter([json.dumps({"error": "files doit être une liste non vide"})]),
-                    media_type="application/json"
-                )
-
-            def generate_all():
-                for filename in filenames:
-                    yield json.dumps({
-                        "status": "start",
-                        "message": f"[INFO] Début du traitement du fichier : {filename}",
-                        "filename": filename
-                    }) + "\n"
-
-                    try:
-                        generator = self.load_file_csv_in_database(filename, app_name, folder)
-                        if generator is None:
-                            yield json.dumps({
-                                "status": "critical_error",
-                                "message": f"[ERREUR] Aucun message retourné pour {filename} (retour = None)"
-                            }) + "\n"
-                            continue
-
-                        for message in generator:
-                            yield message + "\n"
-
-                    except Exception as e:
-                        yield json.dumps({
-                            "status": "critical_error",
-                            "message": f"[ERREUR] Problème lors du traitement de {filename} : {str(e)}"
-                        }) + "\n"
-
-                    yield json.dumps({
-                        "status": "end",
-                        "message": f"[INFO] Fin du traitement du fichier : {filename}"
-                    }) + "\n"
-
-            return StreamingResponse(generate_all(), media_type="application/json")
-        return endpoint
     
-    def load_file_csv_in_database(self, filename: str, app_name: str, folder: str):
+    def nettoyer_nom_fichier(self,filename):
+            # Enlever l'extension
+            nom_sans_ext = os.path.splitext(filename)[0] 
+            # Remplacer les ponctuations par '_'
+            nom_remplace = re.sub(f"[{re.escape(string.punctuation)}]", "_", nom_sans_ext)
+            # Enlever les chiffres
+            nom_sans_chiffres = re.sub(r"\d+", "", nom_remplace)
+            # Tout en minuscules
+            nom_final = nom_sans_chiffres.lower()
+            # Nettoyage double underscore éventuel
+            nom_final = re.sub(r"_+", "_", nom_final).strip("_")
+            return nom_final
+        
+    def merge_duplicate_columns(self, headers, data):
+        from collections import defaultdict
+        column_indices = defaultdict(list)
+
+        for idx, col in enumerate(headers):
+            column_indices[col].append(idx)
+
+        unique_headers = list(column_indices.keys())
+        merged_data = []
+        for row in data[1:]:
+            merged_row = []
+            for col in unique_headers:
+                indices = column_indices[col]
+                merged_values = [str(row[i]).strip() for i in indices if i < len(row) and row[i] not in [None, '']]
+                merged_row.append(','.join(merged_values))
+            merged_data.append(merged_row)
+
+        return unique_headers, merged_data
+    
+    def load_file_csv_in_database(self, filename: str,  folder: str):
         """
         Charge un fichier CSV depuis './load_file/{filename}' avec séparateur '^' 
         et insère les données dans la base avec progression en temps réel.
-        """
-        def progress_generator():
+        """ 
+        def progress_generator():  
             table_name = self.nettoyer_nom_fichier(filename)
             try:
                 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -90,12 +83,9 @@ class Credits:
 
                 files_in_dir = os.listdir(folder_path)
                 yield json.dumps({"status": "info", "message": f"[INFO] Fichiers disponibles dans le répertoire : {files_in_dir}"})
+ 
+                found_file = next((file for file in files_in_dir if file == filename), None)
 
-                found_file = None
-                for file in files_in_dir:
-                    if file == filename or file.startswith(filename.split('.')[0]):
-                        found_file = file
-                        break
 
                 if not found_file:
                     yield json.dumps({"status": "error", "message": f"[ERREUR] Fichier {filename} introuvable dans {folder_path}",
@@ -214,15 +204,12 @@ class Credits:
                     yield json.dumps({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}...",
                                     "task": "Suppression de la table existante"})
                     cursor.execute(f'DROP TABLE IF EXISTS `{table_name}`;')
-
                     yield json.dumps({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
                     headers, data_rows = self.merge_duplicate_columns(headers, data[1:])
-
                     columns = ', '.join([f'`{col}` TEXT' for col in headers])
                     create_query = f'CREATE TABLE IF NOT EXISTS `{table_name}` ({columns});'
                     cursor.execute(create_query)
                     yield json.dumps({"status": "info", "message": f"[INFO] Table `{table_name}` créée avec succès"})
-
                     total_rows = len(data_rows)
                     yield json.dumps({
                         "status": "start_insert",
@@ -230,7 +217,6 @@ class Credits:
                         "total_rows": total_rows,
                         "message": f"[INFO] Début de l'insertion de {total_rows} lignes..."
                     })
-
                     for i, row in enumerate(data_rows, 1):
                         try:
                             while len(row) < len(headers):
@@ -260,7 +246,6 @@ class Credits:
                             })
                             conn.rollback()
                             return
-
                     yield json.dumps({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
                     conn.commit()
                     yield json.dumps({
@@ -269,7 +254,6 @@ class Credits:
                         "table_name": table_name,
                         "message": f"[SUCCESS] {total_rows} lignes insérées avec succès dans la table `{table_name}`"
                     })
-
                 except Exception as e:
                     yield json.dumps({
                         "status": "error",
@@ -293,34 +277,31 @@ class Credits:
                             "status": "error",
                             "message": f"[ERREUR] Problème lors de la fermeture de la connexion : {str(close_error)}"
                         })
-
             except Exception as global_error:
                 yield json.dumps({
                     "status": "critical_error",
                     "message": f"[ERREUR CRITIQUE] Exception non gérée dans la fonction principale : {str(global_error)}"
                 })
                 return
-
             yield json.dumps({"fait": "true", "message": "insertion fait"})
-
         return progress_generator()
 
-    def upload_multiple_files(self, files, app_name, folder_name=None):
+    def upload_multiple_files(self, files, folder_name=None):
         total = len(files)
         for i, file in enumerate(files, 1):
             try:
-                # Itérer sur le générateur et yield chaque dictionnaire produit
-                for progress in self.upload_file_manual_in_detail(file, app_name, folder_name, i, total):
+                for progress in self.upload_file_manual_in_detail(file, folder_name, i, total):
                     yield progress
             except Exception as e:
                 yield {
                     "status": "error",
-                    "file": file.filename if hasattr(file, "filename") else str(file),
+                    "file": getattr(file, "filename", str(file)),
                     "current": i,
                     "total": total,
                     "percentage": round((i / total) * 100, 2),
-                    "message": f"[ERREUR] Échec du téléchargement de {file} : {str(e)}"
+                    "message": f"[ERREUR] Échec du téléchargement de {getattr(file, 'filename', str(file))} : {str(e)}"
                 }
+
 
     def show_files(self, app=None):
         """
@@ -328,8 +309,7 @@ class Credits:
         compatible avec Vuetify <v-treeview>, sans inclure le dossier racine.
         """
 
-        base_folder = os.path.join(self.upload_folder, app) if app else self.upload_folder
-
+        base_folder = self.upload_folder
         if not os.path.exists(base_folder):
             return []
 
@@ -377,106 +357,80 @@ class Credits:
             return ext in ALLOWED_EXTENSIONS
         return False
     
-    def upload_file_manual_in_detail(self, file, app_name, folder_name=None, current=None, total=None):
-        if not file or not self.allowed_file(file.filename):
+    
+        
+    def upload_file_manual_in_detail(self, file, folder_name=None, current=None, total=None):
+        filename = getattr(file, 'filename', None)
+        if not file or not filename or not self.allowed_file(filename):
             yield {"status": "error", "file": str(file), "message": "Format invalide"}
             return
 
-        filename = secure_filename(file.filename)
-        
-        # Construire le chemin de destination
-        if folder_name:
-            folder = os.path.join(app_name, folder_name) if app_name else folder_name
-        else:
-            folder = app_name
-        folder_path = os.path.join(self.upload_folder, folder) if folder else self.upload_folder
+        filename = secure_filename(filename)
+        folder_path = os.path.join(self.upload_folder, folder_name) if folder_name else self.upload_folder
         os.makedirs(folder_path, exist_ok=True)
 
         final_filepath = os.path.join(folder_path, filename)
         backup_filepath = None
-        
+
         try:
-            # Créer un backup si le fichier existe déjà
+            yield {"status": "info", "file": filename, "message": "Lecture du fichier en cours..."}
+
+            # Lecture du contenu - méthode synchrone (suppose que file.read() est synchrone)
+            if hasattr(file, 'read'):
+                file_content = file.read()
+            elif hasattr(file, 'file') and hasattr(file.file, 'read'):
+                file_content = file.file.read()
+            else:
+                raise IOError(f"Type de fichier non supporté: {type(file)}")
+
+            if not isinstance(file_content, bytes):
+                file_content = file_content.encode('utf-8') if isinstance(file_content, str) else bytes(file_content)
+
+            total_size = len(file_content)
+            yield {
+                "status": "info",
+                "file": filename,
+                "message": f"Fichier lu: {total_size / (1024 * 1024):.2f} MB. Écriture en cours..."
+            }
+
             if os.path.exists(final_filepath):
                 backup_filepath = final_filepath + '.backup'
                 shutil.copy2(final_filepath, backup_filepath)
-            
+
             chunk_size = 1024 * 1024  # 1 MB
-            total_size = 0
+            written_size = 0
 
-            # Récupérer la taille attendue du fichier
-            total_expected_size = 0
-            try:
-                file.stream.seek(0, 2)
-                total_expected_size = file.stream.tell()
-                file.stream.seek(0)
-            except Exception as e:
-                yield {
-                    "status": "warning", 
-                    "file": filename,
-                    "message": f"Impossible de déterminer la taille du fichier: {str(e)}"
-                }
-
-            # Écriture directe dans le fichier final
             with open(final_filepath, 'wb') as f:
-                while True:
-                    try:
-                        chunk = file.stream.read(chunk_size)
-                        if not chunk:
-                            break
-                        
-                        bytes_written = f.write(chunk)
-                        if bytes_written != len(chunk):
-                            raise IOError(f"Erreur d'écriture: {bytes_written} octets écrits au lieu de {len(chunk)}")
-                        
-                        # Forcer l'écriture sur disque périodiquement
-                        f.flush()
-                        
-                        total_size += len(chunk)
+                content_buffer = io.BytesIO(file_content)
+                while chunk := content_buffer.read(chunk_size):
+                    f.write(chunk)
+                    f.flush()
+                    written_size += len(chunk)
 
-                        yield {
-                            "status": "progress",
-                            "file": filename,
-                            "current": current,
-                            "total": total,
-                            "received_mb": round(total_size / (1024 * 1024), 2),
-                            "total_mb": round(total_expected_size / (1024 * 1024), 2) if total_expected_size else None,
-                            "percentage_file": round((total_size / total_expected_size) * 100, 2) if total_expected_size else None,
-                            "message": f"[Serveur] Reçu {total_size / (1024 * 1024):.2f} MB..."
-                        }
-                        
-                    except Exception as e:
-                        # Restaurer le backup en cas d'erreur
-                        if backup_filepath and os.path.exists(backup_filepath):
-                            shutil.move(backup_filepath, final_filepath)
-                            backup_filepath = None
-                        
-                        yield {
-                            "status": "error",
-                            "file": filename,
-                            "message": f"Erreur durant le transfert: {str(e)}"
-                        }
-                        return
+                    yield {
+                        "status": "progress",
+                        "file": filename,
+                        "current": current,
+                        "total": total,
+                        "received_mb": round(written_size / (1024 * 1024), 2),
+                        "total_mb": round(total_size / (1024 * 1024), 2),
+                        "percentage_file": round((written_size / total_size) * 100, 2),
+                        "message": f"[Serveur] Écrit {written_size / (1024 * 1024):.2f} / {total_size / (1024 * 1024):.2f} MB"
+                    }
 
-                # Synchronisation finale
                 f.flush()
                 os.fsync(f.fileno())
 
-            # Vérification de l'intégrité
-            if total_expected_size > 0 and total_size != total_expected_size:
-                # Restaurer le backup
+            if written_size != total_size:
                 if backup_filepath and os.path.exists(backup_filepath):
                     shutil.move(backup_filepath, final_filepath)
-                    backup_filepath = None
-                
                 yield {
                     "status": "error",
                     "file": filename,
-                    "message": f"Transfert incomplet: {total_size} octets reçus au lieu de {total_expected_size}"
+                    "message": f"Erreur d'écriture: {written_size} / {total_size} octets"
                 }
                 return
 
-            # Succès - supprimer le backup
             if backup_filepath and os.path.exists(backup_filepath):
                 os.remove(backup_filepath)
 
@@ -488,21 +442,23 @@ class Credits:
             }
 
         except Exception as e:
-            # Restaurer le backup en cas d'erreur générale
             if backup_filepath and os.path.exists(backup_filepath):
                 try:
                     shutil.move(backup_filepath, final_filepath)
-                except:
-                    pass
-            
+                except Exception as restore_error:
+                    yield {
+                        "status": "warning",
+                        "file": filename,
+                        "message": f"Erreur et impossible de restaurer le backup: {str(restore_error)}"
+                    }
+
             yield {
                 "status": "error",
                 "file": filename,
                 "message": f"Erreur lors de l'upload: {str(e)}"
             }
-        
+
         finally:
-            # Nettoyer le backup s'il reste
             if backup_filepath and os.path.exists(backup_filepath):
                 try:
                     os.remove(backup_filepath)

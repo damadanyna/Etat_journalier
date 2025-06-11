@@ -112,7 +112,7 @@ const handleFileUpload = (event) => {
   const files = event.target.files;
   const elt_ = document.getElementById('file_name');
 
-  if (files.length < 18 || files.length > 21) {
+  if (files.length < 5 || files.length > 21) {
     alert("Vous ne pouvez sélectionner que de 18 à 21  fichiers.");
     event.target.value = ""; // reset
     file_name.value = "Importer un fichier";
@@ -125,7 +125,7 @@ const handleFileUpload = (event) => {
 
   const file = files[0];
   if (file) {
-    console.log('Fichier sélectionné :', file.name);
+    // console.log('Fichier sélectionné :', file.name);
     files_data.value = Array.from(files); // tous les fichiers
     file_names.value = Array.from(files).map(f => f.name); // noms des fichiers
     file_name.value = `${files.length} fichier(s) sélectionné(s)`;
@@ -144,9 +144,10 @@ const chargerDossier = (file,activatorProps) => {
   if (refresh) {
     refresh.classList.add('animIt')
   }
-  console.log(file.children);
+  // console.log(file.children);
   usePopupStore().cdi_list_stream=file.children
   load_database(refresh,file.children,file.title)
+
   setTimeout(() => {
     usePopupStore().togglePopupCDI();
   }, 300);
@@ -185,27 +186,31 @@ const load_database = async (refresh, files, folder) => {
       },
       body: JSON.stringify({
         files: files.map(f => f.title),
-        app: app_type.value,
+        app: null,
         folder: folder
       })
     });
 
     if (!response.body) {
       throw new Error("Pas de flux en réponse !");
-    }
+    } 
+    
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
     usePopupStore().precentage=0
     let partial = "";
     while (true) {
+      
       const { done, value } = await reader.read();
       if (done) break;
 
       partial += decoder.decode(value, { stream: true });
 
       // Découper les lignes (JSON par ligne)
-      let lines = partial.split("\n");
+      let lines = partial.split("\n");  
+      // console.log(lines);
+      
       partial = lines.pop();
       for (const line of lines) {
         if (line.trim()) {
@@ -242,9 +247,6 @@ const load_database = async (refresh, files, folder) => {
                 }
                 if(msg.percentage){
                     usePopupStore().precentage=parseFloat(msg.percentage)
-                }
-                if(msg.filename){
-                  usePopupStore().cdi_list_file_stream[index_table].file_name=msg.filename
                 }
             }
 
@@ -305,7 +307,7 @@ const uploadFile = async (folder_name) => {
         if (line.trim()) {
           try {
             const msg = JSON.parse(line);
-            console.log('Progress:', msg);
+            // console.log('Progress:', msg);
 
             // Mettre à jour ton store ou UI ici avec msg
             if (msg.percentage) {
@@ -328,7 +330,7 @@ const uploadFile = async (folder_name) => {
     if (buffer.trim()) {
       try {
         const msg = JSON.parse(buffer);
-        console.log('Final message:', msg);
+        // console.log('Final message:', msg);
       } catch(e) {
         console.warn('Erreur JSON fin de flux:', e);
       }
@@ -359,7 +361,7 @@ const showFiles = async () => {
         app:app_type.value
       }
     });
-    console.log(response.data.files);
+    // console.log(response.data.files);
     list_file.value = normalizeTree(response.data.files);// Affichage des fichiers reçus
   } catch (error) {
     console.error("Erreur lors de la récupération des fichiers:", error); // Gestion des erreurs

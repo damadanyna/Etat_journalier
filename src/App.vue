@@ -1,4 +1,5 @@
 <template>
+  <popup_view v-if="usePopupStore().showPopupCDI"></popup_view>
   <VApp class="h-screen" >
       <LayoutDefault>
       <router-view />
@@ -19,9 +20,10 @@
 </template>
 
 <script setup>
-
+import { usePopupStore} from './stores'
 import LayoutDefault from '@/layouts/default.vue'
 import { useSnackbar } from '@/composables/useSnackbar' 
+import popup_view from './components/loading/file_porgress_bar_vues.vue';
 import { useTheme } from 'vuetify' 
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'

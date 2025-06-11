@@ -6,7 +6,8 @@ from typing import Optional
 from fastapi.responses import JSONResponse
 import json
 import time
-import asyncio
+import asyncio 
+import io
 
 router = APIRouter()
 credits = Credits()
@@ -18,24 +19,58 @@ def get_credits():
     return credits.get_data() 
 
 @router.post("/upload_multiple_files")
-async def upload_multiple_files(files: List[UploadFile] = File(...),app: str = Form(...),folder_name: str = Form(...)):
+async def upload_multiple_files(
+    files: List[UploadFile] = File(...),
+    app: str = Form(...),
+    folder_name: str = Form(...)
+):
+    class NamedBytesIO(io.BytesIO):
+        def __init__(self, content, filename):
+            super().__init__(content)
+            self.filename = filename
+
+    # Étape 1 : lire tous les fichiers en mémoire
+    in_memory_files = []
+
+    for file in files:
+        try:
+            content = await file.read()
+            memory_file = NamedBytesIO(content, file.filename)
+            in_memory_files.append(memory_file)
+        except Exception as e:
+            def error_response():
+                yield json.dumps({
+                    "status": "error",
+                    "file": getattr(file, 'filename', 'inconnu'),
+                    "message": f"Erreur de lecture du fichier : {str(e)}"
+                }) + '\n'
+            return StreamingResponse(error_response(), media_type="application/json")
+
+    # Étape 2 : générateur de progression
     def generate():
-        # 🧪 Premier message immédiat
         yield json.dumps({
             "status": "info",
             "percentage": 0,
             "message": "Début du téléchargement..."
         }) + '\n'
 
-        # 🧪 Petit délai simulé pour observer le streaming
-        time.sleep(1)
+        total = len(in_memory_files)
 
-        # 🧪 Appel à la vraie fonction de traitement
-        results = credits.upload_multiple_files(files, app, folder_name)
-        for result in results:
-            yield json.dumps(result) + '\n'
+        for i, memory_file in enumerate(in_memory_files, start=1):
+            try:
+                for progress in credits.upload_file_manual_in_detail(
+                    memory_file, folder_name, i, total
+                ):
+                    yield json.dumps(progress) + '\n'
+            except Exception as e:
+                yield json.dumps({
+                    "status": "error",
+                    "file": memory_file.filename,
+                    "current": i,
+                    "total": total,
+                    "message": f"[ERREUR] Échec du traitement : {str(e)}"
+                }) + '\n'
 
-        # 🧪 Dernier message
         yield json.dumps({
             "status": "info",
             "percentage": 100,
@@ -50,16 +85,18 @@ async def create_multiple_table(request: Request):
     Endpoint pour créer plusieurs tables à partir de fichiers CSV dans un sous-dossier
     spécifique à une application. La réponse est streamée.
     """
+    
+    print("Endpoint appelé")
+    
     data = await request.json()
 
-    if 'files' not in data or 'app' not in data or 'folder' not in data:
+    if 'files' not in data or 'folder' not in data:
         return StreamingResponse(
-            content=iter([json.dumps({"error": "Paramètres manquants : files, app et folder requis"})]),
+            content=iter([json.dumps({"error": "Paramètres manquants : files et folder requis"})]),
             media_type="application/json"
         )
 
-    filenames: List[str] = data['files']
-    app_name: str = data['app']
+    filenames: List[str] = data['files'] 
     folder: str = data['folder']
 
     if not isinstance(filenames, list) or not filenames:
@@ -77,8 +114,10 @@ async def create_multiple_table(request: Request):
             }) + "\n"
 
             try:
+                print("File name",filename)
+                print("Folder",folder)
                 # Appel à ta méthode (instance de classe contenant `load_file_csv_in_database`)
-                generator = credits.load_file_csv_in_database(filename, app_name, folder)
+                generator = credits.load_file_csv_in_database(filename, folder)
                 if generator is None:
                     yield json.dumps({
                         "status": "critical_error",
