@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form, Request,HTTPException,Query
+from fastapi import APIRouter, UploadFile, File,FastAPI, Form, Request,HTTPException,Query
 from controller.Credits import Credits
 from fastapi.responses import StreamingResponse
 from typing import List
@@ -7,8 +7,8 @@ from fastapi.responses import JSONResponse
 import json
 import time
 import asyncio 
-import io
-
+import io  
+ 
 router = APIRouter()
 credits = Credits()
 
@@ -145,6 +145,54 @@ async def create_multiple_table(request: Request):
 async def show_files(app: Optional[str] = Query(None)):
     files = credits.show_files(app=app)
     return JSONResponse(content={"files": files})
+
+@router.get("/run_encours")
+async def run_encours():
+    gens = [
+        {
+            "Methode": lambda: credits.run_initialisation_sql(),  # ❗ Appel différé via lambda
+            "title": "Initialisation",
+            "status": "pending"
+        }
+    ]
+
+    async def event_generator():
+        yield "data: " + json.dumps({"title": "Initialisation", "status": "starting"}) + "\n\n"
+        await asyncio.sleep(0.1)
+
+        for gen in gens:
+            method_gen = gen["Methode"]()  # ❗ On appelle ici la lambda pour obtenir le générateur
+            title = gen["title"]
+            status_global = gen["status"]
+
+            for step_status in method_gen:
+                data = {
+                    "title": title,
+                    "status_global": status_global,
+                    "step": step_status
+                }
+                yield "data: " + json.dumps(data) + "\n\n"
+                await asyncio.sleep(0.1)
+
+        yield "data: " + json.dumps({"title": "Initialisation", "status": "done"}) + "\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.get("/run_encours")
+async def run_encours():
+    # Supposons que credits a 6 méthodes génératrices différentes
+    gens = [
+        credits.run_initialisation_sql()
+    ]
+
+    async def event_generator():
+        for gen in gens:
+            for step_status in gen:
+                yield json.dumps(step_status) + "\n"
+
+    return StreamingResponse(event_generator(), media_type="application/json")
+
 
 
 api_router = router

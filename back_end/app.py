@@ -5,18 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-origins = [
-    "http://192.168.1.212:5173",  # URL de ton frontend
-    # Tu peux aussi ajouter d'autres origines ou "*" pour tout autoriser (pas recommandé en prod)
-]
 
+# Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # liste des URLs autorisées
+    allow_origins=['*'],
     allow_credentials=True,
-    allow_methods=["*"],        # méthodes HTTP autorisées (GET, POST, etc.)
-    allow_headers=["*"],        # headers autorisés
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+ 
 # Initialiser la classe Credits
 credits = Credits()
 

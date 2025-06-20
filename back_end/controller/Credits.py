@@ -464,3 +464,380 @@ class Credits:
                     os.remove(backup_filepath)
                 except:
                     pass
+    
+                  
+    def run_initialisation_sql(self):
+        try:
+            conn = self.db.connect()
+            cursor = conn.cursor()
+            create_table_query ="""
+                CREATE TABLE IF NOT EXISTS init_status (
+                    name VARCHAR(255) PRIMARY KEY,  
+                    status VARCHAR(20) NOT NULL,   
+                    message TEXT,                  
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                );"""
+            cursor.execute(create_table_query)
+            
+            steps = [ 
+                        {
+                            "name": "Modifier colonnes - aa_arrangement_mcbc_live_full",
+                            "sql": """
+                            ALTER TABLE aa_arrangement_mcbc_live_full 
+                            MODIFY COLUMN product_line VARCHAR(100),
+                            MODIFY COLUMN arr_status VARCHAR(100),
+                            MODIFY COLUMN id VARCHAR(100),
+                            MODIFY COLUMN customer VARCHAR(100),
+                            MODIFY COLUMN linked_appl_id VARCHAR(100);
+                            """
+                        },
+                        {
+                            "name": "Modifier colonne - account_mcbc_live_full",
+                            "sql": "ALTER TABLE account_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
+                        },
+                        {
+                            "name": "Modifier colonne - customer_mcbc_live_full",
+                            "sql": "ALTER TABLE customer_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
+                        },
+                        {
+                            "name": "Modifier colonne - industry_mcbc_live_full",
+                            "sql": "ALTER TABLE industry_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
+                        },
+                        {
+                            "name": "Modifier colonne - collateral_right_mcbc_live_full",
+                            "sql": "ALTER TABLE collateral_right_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
+                        },
+                        {
+                            "name": "Modifier colonne - collateral_mcbc_live_full",
+                            "sql": "ALTER TABLE collateral_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
+                        },
+                        {
+                            "name": "Modifier colonnes - aa_arr_term_mcbc_live_full",
+                            "sql": """
+                            ALTER TABLE aa_arr_term_mcbc_live_full 
+                            MODIFY COLUMN id_comp_1 VARCHAR(100),
+                            MODIFY COLUMN activity VARCHAR(100);
+                            """
+                        },
+                        {
+                            "name": "Modifier colonnes - em_lo_application_mcbc_live_full",
+                            "sql": """
+                            ALTER TABLE em_lo_application_mcbc_live_full 
+                            MODIFY COLUMN arrangement_id VARCHAR(100),
+                            MODIFY COLUMN co_coll_id VARCHAR(100);
+                            """
+                        },
+                        {
+                            "name": "Modifier colonne - aa_account_details_mcbc_live_full",
+                            "sql": "ALTER TABLE aa_account_details_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
+                        },
+                        {
+                            "name": "Modifier colonnes - aa_bill_details_mcbc_live_full",
+                            "sql": """
+                            ALTER TABLE aa_bill_details_mcbc_live_full 
+                            MODIFY COLUMN arrangement_id VARCHAR(100),
+                            MODIFY COLUMN bill_date VARCHAR(100),
+                            MODIFY COLUMN payment_date VARCHAR(100),
+                            MODIFY COLUMN settle_status VARCHAR(100);
+                            """
+                        },
+                        {
+                            "name": "Modifier colonnes - eb_cont_bal_mcbc_live_full",
+                            "sql": """
+                            ALTER TABLE eb_cont_bal_mcbc_live_full 
+                            MODIFY COLUMN id VARCHAR(100),
+                            MODIFY COLUMN last_ac_bal_upd VARCHAR(100);
+                            """
+                        },
+                        # Bloc "Créer index principaux - aa_arrangement_mcbc_live_full"
+                        {
+                            "name": "Créer index idx_product_line sur aa_arrangement_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_product_line ON aa_arrangement_mcbc_live_full(product_line);"
+                        },
+                        {
+                            "name": "Créer index idx_arr_status sur aa_arrangement_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_arr_status ON aa_arrangement_mcbc_live_full(arr_status);"
+                        },
+                        {
+                            "name": "Créer index idx_arrangement_id sur aa_arrangement_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_arrangement_id ON aa_arrangement_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_customer sur aa_arrangement_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_customer ON aa_arrangement_mcbc_live_full(customer);"
+                        },
+                        {
+                            "name": "Créer index idx_linked_appl_id sur aa_arrangement_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_linked_appl_id ON aa_arrangement_mcbc_live_full(linked_appl_id);"
+                        },
+
+                        # Bloc "Créer index - sous-requêtes"
+                        {
+                            "name": "Créer index idx_account_id sur account_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_account_id ON account_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_customer_id sur customer_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_customer_id ON customer_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_industry_id sur industry_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_industry_id ON industry_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_collateral_id sur collateral_right_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_collateral_id ON collateral_right_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_collateral__id sur collateral_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_collateral__id ON collateral_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_collateral__type sur collateral_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_collateral__type ON collateral_mcbc_live_full(collateral_type);"
+                        },
+                        {
+                            "name": "Créer index idx_em_lo_arr_co sur em_lo_application_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_em_lo_arr_co ON em_lo_application_mcbc_live_full(arrangement_id, co_coll_id);"
+                        },
+
+                        # Bloc "Créer index - autres tables"
+                        {
+                            "name": "Créer index idx_id_comp_1 sur AA_ARR_TERM_MCBC_LIVE_FULL",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_id_comp_1 ON AA_ARR_TERM_MCBC_LIVE_FULL(id_comp_1);"
+                        },
+                        {
+                            "name": "Créer index idx_activity sur AA_ARR_TERM_MCBC_LIVE_FULL",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_activity ON AA_ARR_TERM_MCBC_LIVE_FULL(activity);"
+                        },
+                        {
+                            "name": "Créer index idx_account_details_id sur aa_account_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_account_details_id ON aa_account_details_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_arrangement_id sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_arrangement_id ON aa_bill_details_mcbc_live_full(arrangement_id);"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_bill_date sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_bill_date ON aa_bill_details_mcbc_live_full(bill_date);"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_payment_date sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_payment_date ON aa_bill_details_mcbc_live_full(payment_date);"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_settle_status sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_settle_status ON aa_bill_details_mcbc_live_full(settle_status);"
+                        },
+                        {
+                            "name": "Créer index idx_eb_cont_bal_id sur eb_cont_bal_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_eb_cont_bal_id ON eb_cont_bal_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer index idx_last_ac_bal_upd sur eb_cont_bal_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_last_ac_bal_upd ON eb_cont_bal_mcbc_live_full(last_ac_bal_upd);"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_property sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_property ON aa_bill_details_mcbc_live_full(property(100));"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_bill_status sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_bill_status ON aa_bill_details_mcbc_live_full(bill_status(20));"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_os_prop_amount sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_os_prop_amount ON aa_bill_details_mcbc_live_full(os_prop_amount);"
+                        },
+                        {
+                            "name": "Créer index idx_arrangement_linked_co_code sur aa_arrangement_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_arrangement_linked_co_code ON aa_arrangement_mcbc_live_full(linked_appl_id, co_code(20));"
+                        },
+                        {
+                            "name": "Créer index idx_eb_cont_bal_type_sysdate sur eb_cont_bal_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_eb_cont_bal_type_sysdate ON eb_cont_bal_mcbc_live_full(id, type_sysdate(30));"
+                        },
+                        {
+                            "name": "Créer index idx_eb_cont_bal_open_balance sur eb_cont_bal_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_eb_cont_bal_open_balance ON eb_cont_bal_mcbc_live_full(id, open_balance(100));"
+                        },
+                        {
+                            "name": "Créer index idx_account_opening_date sur account_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_account_opening_date ON account_mcbc_live_full(id, opening_date(100));"
+                        },
+                        {
+                            "name": "Créer index idx_bill_payment_arr_id sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_payment_arr_id ON aa_bill_details_mcbc_live_full(arrangement_id, payment_date(100));"
+                        },
+                        {
+                            "name": "Créer index idx_bill_details_combined sur aa_bill_details_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_bill_details_combined ON aa_bill_details_mcbc_live_full(bill_date, os_prop_amount(100), bill_status(20), property(100));"
+                        },
+                        {
+                            "name": "Créer index idx_customer_short_name_name sur customer_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_customer_short_name_name ON customer_mcbc_live_full(short_name(50), name_1(50), id);"
+                        },
+                        {
+                            "name": "Créer index idx_arrangement_customer sur aa_arrangement_mcbc_live_full",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_arrangement_customer ON aa_arrangement_mcbc_live_full(customer);"
+                        },
+                        {
+                            "name": "Drop table temporaire - temp_arrangement_customers",
+                            "sql": """
+                            DROP TABLE IF EXISTS temp_arrangement_customers; 
+                            """
+                        },
+                        {
+                            "name": "Créer table temporaire - temp_arrangement_customers",
+                            "sql": """ 
+                            CREATE TABLE temp_arrangement_customers AS
+                            SELECT 
+                                id AS arrangement_id, 
+                                CASE 
+                                    WHEN LOCATE('|', customer) > 0 
+                                    THEN SUBSTRING_INDEX(customer, '|', 1) 
+                                    ELSE customer 
+                                END AS customer_id
+                            FROM aa_arrangement_mcbc_live_full;
+                            """
+                        },
+                        {
+                            "name": "Drop table temporaire - temp_clients",
+                            "sql": """
+                            DROP TABLE IF EXISTS temp_clients; 
+                            """
+                        },
+                        {
+                            "name": "Créer table temporaire - temp_clients",
+                            "sql": """ 
+                            CREATE TABLE temp_clients AS 
+                            SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet ,phone_1
+                            FROM customer_mcbc_live_full;
+                            """
+                        },
+                        {
+                            "name": "Drop table temporaire - temp_accounts",
+                            "sql": """
+                            DROP TABLE IF EXISTS temp_accounts; 
+                            """
+                        },
+                        {
+                            "name": "Créer table temporaire - temp_accounts",
+                            "sql": """ 
+                            CREATE TABLE temp_accounts AS 
+                            SELECT id, opening_date
+                            FROM account_mcbc_live_full
+                            WHERE opening_date IS NOT NULL;
+                            """
+                        },
+                        {
+                            "name": "Drop table temporaire - temp_balances",
+                            "sql": """
+                            DROP TABLE IF EXISTS temp_balances; 
+                            """
+                        },
+                        {
+                            "name": "Créer table temporaire - temp_balances",
+                            "sql": """ 
+                            CREATE TABLE temp_balances AS 
+                            SELECT id, type_sysdate, open_balance
+                            FROM eb_cont_bal_mcbc_live_full;
+                            """
+                        },
+                        {
+                            "name": "Drop table temporaire - temp_echeances",
+                            "sql": """
+                            DROP TABLE IF EXISTS temp_echeances; 
+                            """
+                        },
+                        {
+                            "name": "Créer table temporaire - temp_echeances",
+                            "sql": """ 
+                            CREATE TABLE temp_echeances AS 
+                            SELECT arrangement_id, COUNT(*) as echeance
+                            FROM aa_bill_details_mcbc_live_full
+                            WHERE  (property NOT LIKE '%DISBURSEMENTFEE%' 
+                                    OR property NOT LIKE '%NEWARRANGEMENTFEE%')
+                            AND bill_date <= '{current_date}'
+                            AND os_prop_amount >= 0
+                            AND bill_status like '%SETTLED%'
+                            GROUP BY arrangement_id;
+                            """
+                        },
+                         {
+                            "name": "Créer index idx_arrangement_id sur temp_arrangement_customers",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_arrangement_id ON temp_arrangement_customers (arrangement_id);"
+                        },
+                        {
+                            "name": "Créer index idx_customer_id sur temp_arrangement_customers",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_customer_id ON temp_arrangement_customers (customer_id);"
+                        },
+                        {
+                            "name": "Créer index idx_client_id sur temp_clients",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_client_id ON temp_clients (id);"
+                        },
+                        {
+                            "name": "Créer index idx_account_id sur temp_accounts",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_account_id ON temp_accounts (id);"
+                        },
+                        {
+                            "name": "Créer index idx_opening_date sur temp_accounts",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_opening_date ON temp_accounts (opening_date);"
+                        },
+                        {
+                            "name": "Créer index idx_balance_id sur temp_balances",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_balance_id ON temp_balances (id);"
+                        },
+                        {
+                            "name": "Créer index idx_type_sysdate sur temp_balances",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_type_sysdate ON temp_balances (type_sysdate);"
+                        },
+                        {
+                            "name": "Créer index idx_echeance_arrangement_id sur temp_echeances",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_echeance_arrangement_id ON temp_echeances (arrangement_id);"
+                        }
+                    ]
+
+                # Exemple d’utilisation :
+                # sql = steps[23]["sql"].format(current_date="20250611")
+
+            current_date = "20250531"
+            cursor.execute("DELETE FROM init_status")
+            requets_len=len(steps)
+            
+            yield {"status": "success", "data_step": steps}
+            for i, step in enumerate(steps, 0):
+                name = step["name"]
+                yield {"name": name, "status": "processing","total":requets_len,"current":i}
+
+                cursor.execute("SELECT status FROM init_status WHERE name = %s", (name,))
+                existing = cursor.fetchone()
+
+                if existing and existing[0] == "done":
+                    yield {"name": name, "status": "skipped"}
+                    continue
+                try:
+                    sql = step["sql"]
+                    if "{current_date}" in sql:
+                        sql = sql.format(current_date=current_date)
+                    cursor.execute(sql)
+                    cursor.execute(
+                        "REPLACE INTO init_status (name, status, message) VALUES (%s, %s, %s)",
+                        (name, "done", "OK")
+                    )
+                    yield {"name": name, "status": "done","total":requets_len,"current":i}
+                except Exception as e:
+                    cursor.execute(
+                        "REPLACE INTO init_status (name, status, message) VALUES (%s, %s, %s)",
+                        (name, "error", str(e))
+                    )
+                    yield {"name": name, "status": "error", "message": str(e)}
+            conn.commit()
+            yield {"name": name, "status": "done","message":"Toutes les étapes sont terminées"}
+            return
+            # return status_report
+        except Exception as e:
+            yield { "status": "error","message":str(e)}
+            return
+    
