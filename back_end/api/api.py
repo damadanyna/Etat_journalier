@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File,FastAPI, Form, Request,HTTPException,Query
 from controller.Credits import Credits
+from controller.Credit_outstanding_report import Credit_outstanding_report
 from fastapi.responses import StreamingResponse
 from typing import List
 from typing import Optional
@@ -11,6 +12,7 @@ import io
  
 router = APIRouter()
 credits = Credits()
+out_standing = Credit_outstanding_report()
 
 
 
@@ -154,17 +156,21 @@ async def show_files(app: Optional[str] = Query(None)):
 def run_encours():
     gens = [
         {
-            # "Methode": credits.run_initialisation_sql,
-            "Methode": credits.run_init,
+            "Methode": credits.run_initialisation_sql,
+            # "Methode": credits.run_init,
             "title": "Initialisation",
             "status": "pending"
         },
+        # {
+        #     "Methode": out_standing.get_all_outstanding,
+        #     "title": "États des encours",
+        #     "status": "pending"
+        # },
         {
-            "Methode": credits.run_etat_encours,
-            "title": "États des encours",
+            "Methode": credits.run_etat_remboursement,
+            "title": "État des run_etat_remboursement",
             "status": "pending"
-        },
-        {
+        }, {
             "Methode": credits.run_remboursement,
             "title": "État des remboursements",
             "status": "pending"

@@ -843,11 +843,14 @@ class Credits:
         time.sleep(3)  # Simulation
         yield {"index": 1, "status": "done", "message": "Encours terminés."}
 
-    def run_etat_encours(self):
-        # yield {"index": 1, "status": "running", "message": "Traitement des encours..."}
-        # time.sleep(3)  # Simulation
-        # yield {"index": 1, "status": "done", "message": "Encours terminés."}
+# Mercredi: 11:00 à 12:00
 
+  
+
+    def run_etat_remboursement(self):
+        yield {"index": 1, "status": "running", "message": "Traitement des etat_remboursements..."}
+        time.sleep(3)
+        yield {"index": 1, "status": "done", "message": "etat_remboursements terminés."}
 
     def run_remboursement(self):
         yield {"index": 2, "status": "running", "message": "Traitement des remboursements..."}

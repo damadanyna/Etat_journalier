@@ -148,7 +148,7 @@ const runStep = (index) => {
       try {
         const data = JSON.parse(event.data)
  
-          console.log(data); 
+          // console.log(data); 
 
           processing_data(data)
           if(data.status_parent){
@@ -179,7 +179,8 @@ const runStep = (index) => {
 
 
 
-  const processing_data=  (data)=>{ 
+  const processing_data=  (data)=>{  
+      
       if (data.status_global==='pending') {
           if (data.step.data_step) { 
             table_list_processing_init.value=data.step.data_step; 
@@ -208,6 +209,8 @@ const runStep = (index) => {
       table_list_processing_init.value[index].status = status
       table_list_processing_init.value[index].current = current 
     }
+    
+    
     
     template.value['percentage']=Math.round(((current+1) * 100 / template.value['len_total']) * 100) / 100   
 }
