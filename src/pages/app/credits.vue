@@ -181,6 +181,7 @@ const runStep = (index) => {
 
   const processing_data=  (data)=>{  
       
+      console.log(data); 
       if (data.status_global==='pending') {
           if (data.step.data_step) { 
             table_list_processing_init.value=data.step.data_step; 
