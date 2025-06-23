@@ -110,53 +110,57 @@ const runStep_ = async (index) => {
 }
 
 const runAllSteps = async () => {
-  const methode = [initialisation, runStep_, runStep_, runStep_, runStep_, runStep_] // pour chaque étape
+  runStep()
+  // const methode = [runStep, runStep_, runStep_, runStep_, runStep_, runStep_] // pour chaque étape
 
-  isRunning.value = true
+  // isRunning.value = true
 
-  for (let i = 0; i < steps.value.length; i++) {
+  // for (let i = 0; i < steps.value.length; i++) {
 
-    if (typeof methode[i] === 'function') {
-      try {
-        await methode[i](i) // attend que chaque runStep termine
-      } catch (err) {
-        console.error(`Erreur dans l'étape ${i + 1}`, err)
-        break // stop si erreur
-      }
-    } else {
-      steps.value[i].status = 'skipped'
-    }
+  //   if (typeof methode[i] === 'function') {
+  //     try {
+  //       await methode[i](i) // attend que chaque runStep termine
+  //     } catch (err) {
+  //       console.error(`Erreur dans l'étape ${i + 1}`, err)
+  //       break // stop si erreur
+  //     }
+  //   } else {
+  //     steps.value[i].status = 'skipped'
+  //   }
     
-    currentStep.value = i + 1
-  }
+  //   currentStep.value = i + 1
+  // }
 
-  isRunning.value = false
+  // isRunning.value = false
 }
 
 
 
 
 
-const initialisation = (index) => {
+const runStep = (index) => {
   return new Promise((resolve, reject) => {
-    steps.value[index].status = 'running'
-
+    // steps.value[index].status = 'running'
+    var index=null
     const evtSource = new EventSource('http://192.168.1.212:8000/api/run_encours')
 
     evtSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
-        processing_data(data)
+ 
+          console.log(data); 
 
-        if (data.status === 'done') {
-          steps.value[index].status = 'done'
-          evtSource.close()
-          resolve() // Résout la promesse
-        } else if (data.status === 'error') {
-          steps.value[index].status = 'error'
-          evtSource.close()
-          reject(new Error("Erreur du backend"))
-        }
+          processing_data(data)
+          if(data.status_parent){
+            index=data.step 
+            steps.value[index].status = data.status_parent 
+          }
+          if(data.status_final==='done'){
+            steps.value[index].status = 'done'
+            evtSource.close()
+            resolve() // Résout la promesse
+          }
+  
       } catch (e) {
         steps.value[index].status = 'error'
         evtSource.close()

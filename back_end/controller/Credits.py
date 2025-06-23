@@ -4,6 +4,7 @@ import json
 from typing import List
 import os
 from datetime import datetime
+import time
 import re 
 import random
 import string
@@ -13,8 +14,7 @@ import sys
 import shutil 
 import pandas as pd
 from db.db  import DB
-from werkzeug.utils import secure_filename
-import asyncio
+from werkzeug.utils import secure_filename 
 import aiofiles
 import io
 
@@ -302,7 +302,6 @@ class Credits:
                     "message": f"[ERREUR] Échec du téléchargement de {getattr(file, 'filename', str(file))} : {str(e)}"
                 }
 
-
     def show_files(self, app=None):
         """
         Renvoie une structure arborescente des sous-dossiers de `upload_folder/app`
@@ -356,9 +355,7 @@ class Credits:
             print("Extension détectée:", ext)
             return ext in ALLOWED_EXTENSIONS
         return False
-    
-    
-        
+       
     def upload_file_manual_in_detail(self, file, folder_name=None, current=None, total=None):
         filename = getattr(file, 'filename', None)
         if not file or not filename or not self.allowed_file(filename):
@@ -840,4 +837,39 @@ class Credits:
         except Exception as e:
             yield { "status": "error","message":str(e)}
             return
+    
+    def run_init(self):
+        yield {"index": 1, "status": "running", "message": "Traitement des encours..."}
+        time.sleep(3)  # Simulation
+        yield {"index": 1, "status": "done", "message": "Encours terminés."}
+
+    def run_etat_encours(self):
+        # yield {"index": 1, "status": "running", "message": "Traitement des encours..."}
+        # time.sleep(3)  # Simulation
+        # yield {"index": 1, "status": "done", "message": "Encours terminés."}
+
+
+    def run_remboursement(self):
+        yield {"index": 2, "status": "running", "message": "Traitement des remboursements..."}
+        time.sleep(3)
+        yield {"index": 2, "status": "done", "message": "Remboursements terminés."}
+
+
+    def run_previsionnel(self):
+        yield {"index": 3, "status": "running", "message": "Génération de l'état prévisionnel..."}
+        time.sleep(3)
+        yield {"index": 3, "status": "done", "message": "Prévisionnel terminé."}
+
+
+    def run_limit_avm(self):
+        yield {"index": 4, "status": "running", "message": "Analyse des limites AVM..."}
+        time.sleep(3)
+        yield {"index": 4, "status": "done", "message": "Limite AVM traitée."}
+
+
+    def run_limit_caution(self):
+        yield {"index": 5, "status": "running", "message": "Analyse des limites de caution..."}
+        time.sleep(3)
+        yield {"index": 5, "status": "done", "message": "Limite caution traitée."}
+
     

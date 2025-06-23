@@ -146,24 +146,57 @@ async def show_files(app: Optional[str] = Query(None)):
     files = credits.show_files(app=app)
     return JSONResponse(content={"files": files})
 
+
+
+
+
 @router.get("/run_encours")
-async def run_encours():
+def run_encours():
     gens = [
         {
-            "Methode": lambda: credits.run_initialisation_sql(),  # ❗ Appel différé via lambda
+            # "Methode": credits.run_initialisation_sql,
+            "Methode": credits.run_init,
             "title": "Initialisation",
+            "status": "pending"
+        },
+        {
+            "Methode": credits.run_etat_encours,
+            "title": "États des encours",
+            "status": "pending"
+        },
+        {
+            "Methode": credits.run_remboursement,
+            "title": "État des remboursements",
+            "status": "pending"
+        },
+        {
+            "Methode": credits.run_previsionnel,
+            "title": "État prévisionnel de remboursement",
+            "status": "pending"
+        },
+        {
+            "Methode": credits.run_limit_avm,
+            "title": "Limit AVM",
+            "status": "pending"
+        },
+        {
+            "Methode": credits.run_limit_caution,
+            "title": "Limit Caution",
             "status": "pending"
         }
     ]
 
-    async def event_generator():
+    def event_generator():
         yield "data: " + json.dumps({"title": "Initialisation", "status": "starting"}) + "\n\n"
-        await asyncio.sleep(0.1)
+        time.sleep(0.1)
 
-        for gen in gens:
-            method_gen = gen["Methode"]()  # ❗ On appelle ici la lambda pour obtenir le générateur
+        for i, gen in enumerate(gens):
             title = gen["title"]
-            status_global = gen["status"]
+            status_global = 'running'
+
+            yield f"data: {json.dumps({'title_parent': title, 'status_parent': status_global, 'step': i})}\n\n"
+
+            method_gen = gen["Methode"]()
 
             for step_status in method_gen:
                 data = {
@@ -172,26 +205,13 @@ async def run_encours():
                     "step": step_status
                 }
                 yield "data: " + json.dumps(data) + "\n\n"
-                await asyncio.sleep(0.1)
-
-        yield "data: " + json.dumps({"title": "Initialisation", "status": "done"}) + "\n\n"
+                time.sleep(0.1)
+            
+            yield f"data: {json.dumps({'title_parent': title, 'status_parent': 'done', 'step': i})}\n\n"
+        yield "data: " + json.dumps({"title": "Initialisation", "status_final": "done"}) + "\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-
-@router.get("/run_encours")
-async def run_encours():
-    # Supposons que credits a 6 méthodes génératrices différentes
-    gens = [
-        credits.run_initialisation_sql()
-    ]
-
-    async def event_generator():
-        for gen in gens:
-            for step_status in gen:
-                yield json.dumps(step_status) + "\n"
-
-    return StreamingResponse(event_generator(), media_type="application/json")
 
 
 
