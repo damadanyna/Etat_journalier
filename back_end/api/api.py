@@ -12,7 +12,7 @@ import io
  
 router = APIRouter()
 credits = Credits()
-out_standing = Credit_outstanding_report()
+credit_outstanding_report = Credit_outstanding_report()
 
 
 
@@ -156,21 +156,22 @@ async def show_files(app: Optional[str] = Query(None)):
 def run_encours():
     gens = [
         {
-            "Methode": credits.run_initialisation_sql,
-            # "Methode": credits.run_init,
+            # "Methode": credits.run_initialisation_sql,
+            "Methode": credits.run_init,
             "title": "Initialisation",
             "status": "pending"
         },
-        # {
-        #     "Methode": out_standing.get_all_outstanding,
-        #     "title": "États des encours",
-        #     "status": "pending"
-        # },
         {
-            "Methode": credits.run_etat_remboursement,
-            "title": "État des run_etat_remboursement",
+            "Methode": credit_outstanding_report.get_all_outstanding,
+            "title": "États des encours",
             "status": "pending"
-        }, {
+        },
+        # {
+        #     "Methode": credits.run_etat_remboursement,
+        #     "title": "État des run_etat_remboursement",
+        #     "status": "pending"
+        # }, 
+        {
             "Methode": credits.run_remboursement,
             "title": "État des remboursements",
             "status": "pending"
@@ -198,7 +199,7 @@ def run_encours():
 
         for i, gen in enumerate(gens):
             title = gen["title"]
-            status_global = 'running'
+            status_global = gen['status']
 
             yield f"data: {json.dumps({'title_parent': title, 'status_parent': status_global, 'step': i})}\n\n"
 

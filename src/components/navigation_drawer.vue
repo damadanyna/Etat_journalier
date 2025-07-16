@@ -33,8 +33,7 @@
         </v-navigation-drawer> 
   </template>
 
-<script setup>
-import { list } from 'postcss';
+<script setup> 
 import { ref } from 'vue';
 const drawer = ref(true);
 const rail = ref(true);

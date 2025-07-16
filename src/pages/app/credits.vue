@@ -42,7 +42,7 @@
             <div class="flex flex-col items-center justify-center" > 
               <span  class=" text-4xl font-bold" v-if="template.percentage!=0">{{ template.percentage }}</span>
             <span v-else class=" animate-ping"> Chargement ...</span>
-            <span title="Temps de chargement" class="  text-stone-100 font-bold">{{ formattedTime }}</span>
+            <!-- <span title="Temps de chargement" class="  text-stone-100 font-bold">{{ formattedTime }}</span> -->
             </div>
           </v-progress-circular>  
         </div>
@@ -143,13 +143,12 @@ const runStep = (index) => {
     // steps.value[index].status = 'running'
     var index=null
     const evtSource = new EventSource('http://192.168.1.212:8000/api/run_encours')
-
     evtSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
  
-          // console.log(data); 
-
+          // console.log(data);  
+          
           processing_data(data)
           if(data.status_parent){
             index=data.step 
@@ -180,9 +179,10 @@ const runStep = (index) => {
 
 
   const processing_data=  (data)=>{  
-      
-      console.log(data); 
+       
       if (data.status_global==='pending') {
+          console.log(data);
+          
           if (data.step.data_step) { 
             table_list_processing_init.value=data.step.data_step; 
             const  Target = table_list_processing_init.value.map(table_list_processing_init => ({
@@ -190,7 +190,9 @@ const runStep = (index) => {
               status: null,
               current: null
             }));
-            table_list_processing_init.value=Target
+            console.log('Target: ',Target);
+            
+            // table_list_processing_init.value=Target
           }
           if (data.step.current) {    
             updateStatusIfNameMatches(data.step.name,data.step.status,data.step.current)  
@@ -203,13 +205,18 @@ const runStep = (index) => {
     template.value['percentage']=Math.round((current * 100 / template.value['len_total']) * 100) / 100   
     
     const index = table_list_processing_init.value.findIndex(item => item.name === value)
+
+    // console.log("Taille: ", table_list_processing_init.value.length);
     
-    table_list_processing_init.value[0].status = 'done'
+
+    // console.log(table_list_processing_init.value);
+    
+/*     table_list_processing_init.value[0].status = 'done'
     table_list_processing_init.value[0].current = current 
     if (index !== -1) {
       table_list_processing_init.value[index].status = status
       table_list_processing_init.value[index].current = current 
-    }
+    } */
     
     
     

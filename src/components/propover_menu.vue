@@ -6,7 +6,7 @@
         </div>
       </v-main>
       <v-navigation-drawer v-model="drawer" temporary location="right"  elevation="5" >
-        <v-vcard class=" px-2"  >
+        <v-card class=" px-2"  >
             <span>Theme</span>
             <div class="flex px-5 w-full justify-between">
                 <v-icon icon="mdi mdi-weather-sunny" size="24" 
@@ -14,7 +14,7 @@
                 <v-icon icon="mdi mdi-weather-night" size="24"
                 @click="setDarkTheme"></v-icon>
             </div>
-        </v-vcard>
+        </v-card>
   
         <v-divider></v-divider>
   

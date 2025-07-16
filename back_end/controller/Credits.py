@@ -840,7 +840,7 @@ class Credits:
     
     def run_init(self):
         yield {"index": 1, "status": "running", "message": "Traitement des encours..."}
-        time.sleep(3)  # Simulation
+        time.sleep(1)  # Simulation
         yield {"index": 1, "status": "done", "message": "Encours terminés."}
 
 # Mercredi: 11:00 à 12:00
@@ -849,30 +849,30 @@ class Credits:
 
     def run_etat_remboursement(self):
         yield {"index": 1, "status": "running", "message": "Traitement des etat_remboursements..."}
-        time.sleep(3)
+        time.sleep(1)
         yield {"index": 1, "status": "done", "message": "etat_remboursements terminés."}
 
     def run_remboursement(self):
         yield {"index": 2, "status": "running", "message": "Traitement des remboursements..."}
-        time.sleep(3)
+        time.sleep(1)
         yield {"index": 2, "status": "done", "message": "Remboursements terminés."}
 
 
     def run_previsionnel(self):
         yield {"index": 3, "status": "running", "message": "Génération de l'état prévisionnel..."}
-        time.sleep(3)
+        time.sleep(1)
         yield {"index": 3, "status": "done", "message": "Prévisionnel terminé."}
 
 
     def run_limit_avm(self):
         yield {"index": 4, "status": "running", "message": "Analyse des limites AVM..."}
-        time.sleep(3)
+        time.sleep(1)
         yield {"index": 4, "status": "done", "message": "Limite AVM traitée."}
 
 
     def run_limit_caution(self):
         yield {"index": 5, "status": "running", "message": "Analyse des limites de caution..."}
-        time.sleep(3)
+        time.sleep(1)
         yield {"index": 5, "status": "done", "message": "Limite caution traitée."}
 
     

@@ -1,18 +1,10 @@
-import pymysql
+# db.py
+from sqlalchemy import create_engine
 
 class DB:
     def __init__(self):
-        self.host = 'localhost'
-        self.user = 'root'
-        self.password = ''
-        self.database = 'dfe_test'
+        self.db_url = 'mysql+pymysql://root:@localhost/dfe_test'
+        self.engine = create_engine(self.db_url, pool_size=5, max_overflow=10)
 
     def connect(self):
-        return pymysql.connect(
-            host=self.host,
-            user=self.user,
-            password=self.password,
-            database=self.database,
-            charset='utf8mb4',
-            cursorclass=pymysql.cursors.Cursor
-        )
+        return self.engine.connect()
