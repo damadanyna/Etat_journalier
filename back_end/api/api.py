@@ -9,6 +9,10 @@ import json
 import time
 import asyncio 
 import io  
+   
+ 
+ 
+ 
  
 router = APIRouter()
 credits = Credits()
@@ -26,61 +30,74 @@ async def upload_multiple_files(
     app: str = Form(...),
     folder_name: str = Form(...)
 ):
+    import io, json
+    from fastapi.responses import StreamingResponse
+
     class NamedBytesIO(io.BytesIO):
         def __init__(self, content, filename):
             super().__init__(content)
             self.filename = filename
 
-    # Étape 1 : lire tous les fichiers en mémoire
+    # 🔥 Étape 1 : lire tous les fichiers **immédiatement**
     in_memory_files = []
-
     for file in files:
         try:
-            content = await file.read()
+            content = await file.read()  # doit être fait ici
             memory_file = NamedBytesIO(content, file.filename)
             in_memory_files.append(memory_file)
         except Exception as e:
-            def error_response():
-                yield json.dumps({
+            return StreamingResponse(
+                iter([json.dumps({
                     "status": "error",
                     "file": getattr(file, 'filename', 'inconnu'),
                     "message": f"Erreur de lecture du fichier : {str(e)}"
-                }) + '\n'
-            return StreamingResponse(error_response(), media_type="application/json")
+                }) + '\n']),
+                media_type="application/json"
+            )
 
-    # Étape 2 : générateur de progression
-    def generate():
+    # ✅ Étape 2 : générateur avec les fichiers déjà chargés en mémoire
+    def main_process():
+        total_files = len(in_memory_files)
+
         yield json.dumps({
             "status": "info",
-            "percentage": 0,
-            "message": "Début du téléchargement..."
+            "message": f"{total_files} fichiers chargés pour l'application '{app}', dossier '{folder_name}'.",
+            "total_files": total_files
         }) + '\n'
-
-        total = len(in_memory_files)
 
         for i, memory_file in enumerate(in_memory_files, start=1):
+            filename = memory_file.filename
             try:
+                yield json.dumps({
+                    "status": "info",
+                    "file": filename,
+                    "current": i,
+                    "total_files": total_files,
+                    "message": f"Traitement du fichier {i}/{total_files} : {filename}..."
+                }) + '\n'
+
                 for progress in credits.upload_file_manual_in_detail(
-                    memory_file, folder_name, i, total
+                    memory_file, folder_name, i, total_files
                 ):
+                    print(f"[Progression] {filename}: {progress.get('percentage', '?')}% - {progress.get('message', '')}")
                     yield json.dumps(progress) + '\n'
+
             except Exception as e:
+                print(f"[Erreur] {filename} : {e}")
                 yield json.dumps({
                     "status": "error",
-                    "file": memory_file.filename,
-                    "current": i,
-                    "total": total,
-                    "message": f"[ERREUR] Échec du traitement : {str(e)}"
+                    "file": filename,
+                    "message": f"Erreur pendant le traitement : {str(e)}"
                 }) + '\n'
 
         yield json.dumps({
-            "status": "info",
-            "percentage": 100,
-            "message": "Téléchargement terminé."
+            "status": "success",
+            "message": "Tous les fichiers ont été importés avec succès.",
+            "percentage": 100
         }) + '\n'
 
-    return StreamingResponse(generate(), media_type="application/json")
- 
+    return StreamingResponse(main_process(), media_type="application/json")
+
 @router.post("/create_multiple_table")
 async def create_multiple_table(request: Request):
     """

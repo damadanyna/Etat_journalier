@@ -3,7 +3,7 @@
     <popup_view v-if="usePopupStore().show_notification.status" style=" z-index: 10000;"></popup_view>
     <v-card class="upload-box" outlined>
       <v-icon size="48" class="upload-icon">mdi-cloud-upload</v-icon>
-      <p class="upload-text">Glissez le fihcer ici</p>
+      <p class="upload-text">Importer les Fichiers ici</p>
       <p class="upload-subtext">ou choisissez localement</p>
       <div style="display: flex; flex-direction: row; align-items: center;">
         <v-btn variant="outlined" class="upload-btn" @click="triggerFileInput" id="file_name">  {{ file_name }}</v-btn>
@@ -12,7 +12,7 @@
           <v-icon @click="open_dialoge_date" size="16" title="Charger le fichier" style="background: green; padding: 12px; margin-left: 10px; border-radius: 25px;"> mdi-check</v-icon>
         </div>
       </div>
-      <ul v-if="file_names.length > 0" style="margin-top: 10px; list-style: none; padding-left: 0;">
+      <ul v-if="file_names.length > 0" style="margin-top: 10px; list-style: none; padding-left: 0; max-height: 40vh; overflow-y: auto;">
         <li v-for="(name, index) in file_names" :key="index" style="display: flex; align-items: center;">
           <v-icon size="14" style="margin-right: 5px;">mdi-file</v-icon> {{ name }}
         </li>
@@ -60,11 +60,14 @@
             :max="today"
             @change="check_data_state" variant="outlined"/></div>
         <v-card-actions>
-          <v-btn @click="check_file"   :disabled="!is_full" :color="is_full ? 'red' : 'gray'"  variant="flat" class="ml-2">Enregister?</v-btn>
+          <v-btn @click="check_file"   :disabled="!is_full" :color="is_full ? 'red' : 'gray'"  variant="flat" class="ml-2">Importer?</v-btn>
           <v-btn text @click="isDialogActive = false">Fermer</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <import_progress v-if="show_progress_import">
+    </import_progress>
   </div>
 </template>
 
@@ -73,6 +76,7 @@ import { ref } from 'vue'
 import api from '@/api/axios'
 import { usePopupStore } from '../../stores'
 import Cookies from 'js-cookie'
+import import_progress from '../../components/loading/import_progress.vue'
 
 import { VTreeview } from 'vuetify/labs/VTreeview'
 const file_names = ref([]);  // noms des fichiers
@@ -82,6 +86,7 @@ const files_data = ref(null)
 const is_exist_file = ref(false);
 const today = new Date().toISOString().split('T')[0]
 const isDialogActive = ref(false)
+const show_progress_import = ref(false)
 // Fonction pour ouvrir la boîte de dialogue de sélection de fichiers
 const triggerFileInput = () => {
   fileInput.value.click()
@@ -268,6 +273,7 @@ const load_database = async (refresh, files, folder) => {
 
 const check_file = () => {
   if (date_dossier.value) {
+    show_progress_import.value=true
     uploadFile(date_dossier.value)
     isDialogActive.value = false
   }
@@ -308,18 +314,30 @@ const uploadFile = async (folder_name) => {
           try {
             const msg = JSON.parse(line);
             // console.log('Progress:', msg);
+            if (msg.total_files) {
+              // console.log(msg.total_files);
+              
+            }
+            if (msg.status=="info" && msg.file) { 
+              usePopupStore().loadFile="Chargement de "+msg.file
+            }
+            // if (msg.status==='success') {
+           
+            // }
 
-            // Mettre à jour ton store ou UI ici avec msg
-            if (msg.percentage) {
-              usePopupStore().precentage = msg.percentage;
-            }
-            if (msg.message) {
-              usePopupStore().show_notification.message = msg.message;
-            }
+            // // Mettre à jour ton store ou UI ici avec msg
+            // if (msg.percentage) {
+            //   usePopupStore().precentage = msg.percentage;
+            //   console.log(usePopupStore().precentage);
+              
+            // }
+            // if (msg.message) {
+            //   usePopupStore().show_notification.message = msg.message;
+            // }
             // etc...
           } catch (e) {
             console.warn('Erreur JSON:', e);
-          }
+          } 
         }
       }
 
@@ -341,6 +359,11 @@ const uploadFile = async (folder_name) => {
     file_names.value = [];
     file_name.value = "Importer un fichier";
     is_exist_file.value = false;
+    usePopupStore().loadFile='Fait'
+    setTimeout(() => {
+                show_progress_import.value=false
+                usePopupStore().loadFile="Préparation ..."
+              }, 2000);
 
     usePopupStore().show_notification.status = true;
     usePopupStore().show_notification.message = 'Fichier importé';

@@ -8,7 +8,7 @@ export const usePopupStore = defineStore('popup', () => {
   const cdi_list_stream= ref([])
   const cdi_list_file_stream= ref([])
   const precentage=ref(0)
-  const loadFile=ref(null);
+  const loadFile=ref("Préparation ...");
   const list_a_traiter=ref([])
   const show_notification=ref({status:false,message:"null",ico:"null"})
   const user_access=ref([{
