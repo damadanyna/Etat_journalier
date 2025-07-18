@@ -173,13 +173,14 @@ async def show_files(app: Optional[str] = Query(None)):
 def run_encours():
     gens = [
         {
-            # "Methode": credits.run_initialisation_sql,
-            "Methode": credits.run_init,
+            "Methode": credits.run_initialisation_sql,
+            # "Methode": credits.run_init,
             "title": "Initialisation",
             "status": "pending"
         },
         {
-            "Methode": credit_outstanding_report.get_all_outstanding,
+            # "Methode": credit_outstanding_report.get_all_outstanding,
+            "Methode": credits.run_init,
             "title": "États des encours",
             "status": "pending"
         },

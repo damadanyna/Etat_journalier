@@ -9,6 +9,7 @@ import re
 import random
 import string
 import openpyxl
+import pymysql.cursors
 import csv 
 import sys  
 import shutil 
@@ -79,27 +80,32 @@ class Credits:
                 if not os.path.exists(folder_path):
                     yield json.dumps({"status": "error", "message": f"[ERREUR] Le répertoire {folder_path} n'existe pas",
                                     "task": f"Le répertoire {folder_path} n'existe pas"})
+                    # print({"status": "error", "message": f"[ERREUR] Le répertoire {folder_path} n'existe pas"})
                     return
 
                 files_in_dir = os.listdir(folder_path)
                 yield json.dumps({"status": "info", "message": f"[INFO] Fichiers disponibles dans le répertoire : {files_in_dir}"})
- 
+                # print({"status": "info", "message": f"[INFO] Fichiers disponibles dans le répertoire : {files_in_dir}"})
                 found_file = next((file for file in files_in_dir if file == filename), None)
 
 
                 if not found_file:
                     yield json.dumps({"status": "error", "message": f"[ERREUR] Fichier {filename} introuvable dans {folder_path}",
                                     "task": f"Fichier {filename} introuvable dans"})
+                    # print({"status": "error", "message": f"[ERREUR] Fichier {filename} introuvable dans {folder_path}"})
                     return
 
                 filepath = os.path.join(folder_path, found_file)
                 yield json.dumps({"status": "info", "message": f"[INFO] Fichier trouvé : {found_file}"})
+                # print({"status": "info", "message": f"[INFO] Fichier rencontré : {found_file}"})
                 yield json.dumps({"status": "info", "message": f"[INFO] Chemin complet du fichier : {filepath}"})
+                # print({"status": "info", "message": f"[INFO] Chemin complet du fichier : {filepath}"})
 
                 try:
                     data = []
                     yield json.dumps({"status": "info", "message": "[INFO] Début de la lecture du fichier CSV...",
                                     "task": "Début de la lecture du fichier CSV."})
+                    # print({"status": "info", "message": "[INFO] Début de la lecture du fichier CSV..."})
 
                     with open(filepath, 'r', encoding='utf-8', newline='') as csvfile:
                         csv_reader = csv.reader(csvfile, delimiter='^')
@@ -127,10 +133,12 @@ class Credits:
                                         "task": "Lecture encours",
                                         "row_count": row_count
                                     })
+                                    # print({"status": "reading", "task": "Lecture encours", "row_count": row_count})
                                     yield json.dumps({
                                         "status": "info",
                                         "message": f"[INFO] Lecture en cours. Ligne : {row_count}"
                                     })
+                                    # print({"status": "info", "message": f"[INFO] Lecture en cours. Ligne : {row_count}"})
                             data.append(cleaned_row)
 
                     if data:
@@ -138,12 +146,15 @@ class Credits:
                             "status": "info",
                             "message": f"[INFO] Lecture réussie. Nombre de lignes : {len(data)}"
                         })
+                        # print({"status": "info", "message": f"[INFO] Lecture réussie. Nombre de lignes : {len(data)}"})
                         yield json.dumps({
                             "status": "info",
                             "message": f"[INFO] Entêtes détectées : {data[0] if data else 'Aucune'}"
                         })
+                        # print({"status": "info", "message": f"[INFO] Entités détectées : {data[0] if data else 'Aucune'}"})
                     else:
                         yield json.dumps({"status": "error", "message": "[ERREUR] Le fichier a été lu mais ne contient pas de données"})
+                        # print({"status": "error", "message": "[ERREUR] Le fichier a été lu mais ne contient pas de données"})
                         return
 
                 except Exception as read_error:
@@ -151,19 +162,24 @@ class Credits:
                         "status": "error",
                         "message": f"[ERREUR] Lecture du fichier CSV échouée : {str(read_error)}"
                     })
+                    # print({"status": "error", "message": f"[ERREUR] Lecture du fichier CSV échouée : {str(read_error)}"})
                     return
 
                 try:
                     yield json.dumps({"status": "info", "message": "[INFO] Tentative de connexion à la base de données"})
+                    # print({"status": "info", "message": "[INFO] Tentative de connexion à la base de données"})
                     conn = self.db.connect()
                     yield json.dumps({"status": "info", "message": "[INFO] Connexion à la base de données établie"})
-                    cursor = conn.cursor()
+                    # print({"status": "info", "message": "[INFO] Connexion à la base de données établie"})
+                    cursor = conn.connection.cursor()
                     yield json.dumps({"status": "info", "message": "[INFO] Curseur créé avec succès"})
+                    # print({"status": "info", "message": "[INFO] Curseur création avec succès"})
                 except Exception as db_error:
                     yield json.dumps({
                         "status": "error",
                         "message": f"[ERREUR] Échec de connexion à la base de données : {str(db_error)}"
                     })
+                    # print({"status": "error", "message": f"[ERREUR] Échec de connexion à la base de données : {str(db_error)}"})
                     return
 
                 try:
@@ -172,6 +188,7 @@ class Credits:
                         "status": "debug",
                         "message": f"[DEBUG] En-têtes avant traitement : {headers}"
                     })
+                    # print({"status": "debug", "message": f"[DEBUG] En-têtes avant traitement : {headers}"})
 
                     for i, header in enumerate(headers):
                         if not header or header.strip() == '':
@@ -180,6 +197,7 @@ class Credits:
                                 "status": "warning",
                                 "message": f"[WARNING] En-tête vide détecté à la position {i}, remplacé par 'colonne_{i+1}'"
                             })
+                            # print({"status": "warning", "message": f"[WARNING] En-tête vide détecté à la position {i}, remplacé par 'colonne_{i+1}'"})
 
                     seen_headers = {}
                     for i, header in enumerate(headers):
@@ -193,6 +211,7 @@ class Credits:
                                 "status": "warning",
                                 "message": f"[WARNING] En-tête dupliqué '{original_header}' renommé en '{headers[i]}'"
                             })
+                            # print({"status": "warning", "message": f"[WARNING] En-tête dupliqué '{original_header}' renommé en '{headers[i]}'"})
                         seen_headers[headers[i]] = i
 
                     yield json.dumps({
@@ -200,16 +219,20 @@ class Credits:
                         "message": f"[DEBUG] En-têtes après nettoyage : {headers}",
                         "task": "En-têtes après nettoyage"
                     })
+                    # print({"status": "debug", "message": f"[DEBUG] En-têtes aprés nettoyage : {headers}"})
 
                     yield json.dumps({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}...",
                                     "task": "Suppression de la table existante"})
+                    # print({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}..."})
                     cursor.execute(f'DROP TABLE IF EXISTS `{table_name}`;')
                     yield json.dumps({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
+                    # print({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
                     headers, data_rows = self.merge_duplicate_columns(headers, data[1:])
                     columns = ', '.join([f'`{col}` TEXT' for col in headers])
                     create_query = f'CREATE TABLE IF NOT EXISTS `{table_name}` ({columns});'
                     cursor.execute(create_query)
                     yield json.dumps({"status": "info", "message": f"[INFO] Table `{table_name}` créée avec succès"})
+                    # print({"status": "info", "message": f"[INFO] Table `{table_name}` création avec succès"})
                     total_rows = len(data_rows)
                     yield json.dumps({
                         "status": "start_insert",
@@ -217,6 +240,7 @@ class Credits:
                         "total_rows": total_rows,
                         "message": f"[INFO] Début de l'insertion de {total_rows} lignes..."
                     })
+                    # print({"status": "start_insert", "task": "Debut de l'insertion", "total_rows": total_rows,})
                     for i, row in enumerate(data_rows, 1):
                         try:
                             while len(row) < len(headers):
@@ -225,6 +249,9 @@ class Credits:
                                 row = row[:len(headers)]
                             placeholders = ', '.join(['%s'] * len(headers))
                             insert_query = f'INSERT INTO `{table_name}` VALUES ({placeholders})'
+                            # print("Insert into:", table_name)
+                            # print("Longueur réelle de la ligne:", len(row))  # pour éviter d'afficher les 95 colonnes à chaque fois
+                            # print("Nombre de colonnes:", len(headers))
                             if i % 100 == 0 or i == 1:
                                 yield json.dumps({
                                     "status": "inserting",
@@ -244,9 +271,11 @@ class Credits:
                                 "message": f"[ERREUR] Échec à l'insertion de la ligne {i} : {str(insert_error)}",
                                 "row_content": str(row[:5])
                             })
+                            print({"status": "error", "message": f"[ERREUR] Échec à l'insertion de la ligne {i} : {str(insert_error)}"})
                             conn.rollback()
-                            return
+                            return 
                     yield json.dumps({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
+                    # print({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
                     conn.commit()
                     yield json.dumps({
                         "status": "success",
@@ -254,36 +283,44 @@ class Credits:
                         "table_name": table_name,
                         "message": f"[SUCCESS] {total_rows} lignes insérées avec succès dans la table `{table_name}`"
                     })
+                    # print({"status": "success", "total_inserted": total_rows, "table_name": table_name,})
                 except Exception as e:
                     yield json.dumps({
                         "status": "error",
                         "message": f"[ERREUR] Exception non gérée : {str(e)}"
                     })
+                    # print({"status": "error", "message": f"[ERREUR] Exception non gérée : {str(e)}"})
                     try:
                         conn.rollback()
                         yield json.dumps({"status": "info", "message": "[INFO] Rollback effectué"})
+                        # print({"status": "info", "message": "[INFO] Rollback effectué"})
                     except Exception as rollback_error:
                         yield json.dumps({
                             "status": "error",
                             "message": f"[ERREUR] Échec du rollback : {str(rollback_error)}"
                         })
+                        # print({"status": "error", "message": f"[ERREUR] Échec du rollback : {str(rollback_error)}"})
                 finally:
                     try:
                         if 'conn' in locals() and conn:
                             conn.close()
                             yield json.dumps({"status": "info", "message": "[INFO] Connexion à la base de données fermée"})
+                            # print({"status": "info", "message": "[INFO] Connexion à la base de données fermée"})
                     except Exception as close_error:
                         yield json.dumps({
                             "status": "error",
                             "message": f"[ERREUR] Problème lors de la fermeture de la connexion : {str(close_error)}"
                         })
+                        # print({"status": "error", "message": f"[ERREUR] Problème lors de la fermeture de la connexion : {str(close_error)}"})
             except Exception as global_error:
                 yield json.dumps({
                     "status": "critical_error",
                     "message": f"[ERREUR CRITIQUE] Exception non gérée dans la fonction principale : {str(global_error)}"
                 })
+                # print({"status": "critical_error", "message": f"[ERREUR CRITIQUE] Exception non gérée dans la fonction principale : {str(global_error)}"})
                 return
             yield json.dumps({"fait": "true", "message": "insertion fait"})
+            # print({"fait", "insertion fait"})
         return progress_generator()
 
     def upload_multiple_files(self, files, folder_name=None):
@@ -352,7 +389,7 @@ class Credits:
         ALLOWED_EXTENSIONS = {'csv', 'xlsx'}
         if '.' in filename:
             ext = filename.rsplit('.', 1)[1].lower()
-            print("Extension détectée:", ext)
+            # print("Extension détectée:", ext)
             return ext in ALLOWED_EXTENSIONS
         return False
        
@@ -466,7 +503,8 @@ class Credits:
     def run_initialisation_sql(self):
         try:
             conn = self.db.connect()
-            cursor = conn.cursor()
+            # cursor = conn.cursor()
+            cursor = conn.connection.cursor()
             create_table_query ="""
                 CREATE TABLE IF NOT EXISTS init_status (
                     name VARCHAR(255) PRIMARY KEY,  
@@ -495,11 +533,7 @@ class Credits:
                         {
                             "name": "Modifier colonne - customer_mcbc_live_full",
                             "sql": "ALTER TABLE customer_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
-                        },
-                        {
-                            "name": "Modifier colonne - industry_mcbc_live_full",
-                            "sql": "ALTER TABLE industry_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
-                        },
+                        }, 
                         {
                             "name": "Modifier colonne - collateral_right_mcbc_live_full",
                             "sql": "ALTER TABLE collateral_right_mcbc_live_full MODIFY COLUMN id VARCHAR(100);"
@@ -576,11 +610,7 @@ class Credits:
                         {
                             "name": "Créer index idx_customer_id sur customer_mcbc_live_full",
                             "sql": "CREATE INDEX IF NOT EXISTS idx_customer_id ON customer_mcbc_live_full(id);"
-                        },
-                        {
-                            "name": "Créer index idx_industry_id sur industry_mcbc_live_full",
-                            "sql": "CREATE INDEX IF NOT EXISTS idx_industry_id ON industry_mcbc_live_full(id);"
-                        },
+                        }, 
                         {
                             "name": "Créer index idx_collateral_id sur collateral_right_mcbc_live_full",
                             "sql": "CREATE INDEX IF NOT EXISTS idx_collateral_id ON collateral_right_mcbc_live_full(id);"
@@ -708,9 +738,9 @@ class Credits:
                         {
                             "name": "Créer table temporaire - temp_clients",
                             "sql": """ 
-                            CREATE TABLE temp_clients AS 
-                            SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet ,phone_1
-                            FROM customer_mcbc_live_full;
+                              CREATE TABLE temp_clients AS 
+                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,phone_1,sms_1,industry
+                                FROM customer_mcbc_live_full
                             """
                         },
                         {
@@ -793,26 +823,468 @@ class Credits:
                         {
                             "name": "Créer index idx_echeance_arrangement_id sur temp_echeances",
                             "sql": "CREATE INDEX IF NOT EXISTS idx_echeance_arrangement_id ON temp_echeances (arrangement_id);"
-                        }
+                        },
+                        {
+                            "name": "Supression de la fonction calculate_all_capitals ",
+                            "sql": "DROP FUNCTION IF EXISTS calculate_all_capitals"
+                        },
+                        {
+                            "name": "Creation de la fonction calculate_all_capitals ",
+                            "sql": """  
+                            CREATE FUNCTION calculate_all_capitals(
+                                type_sysdate TEXT,
+                                open_balance TEXT,
+                                credit_mvmt TEXT,
+                                debit_mvmt TEXT
+                            )
+                            RETURNS TEXT
+                            DETERMINISTIC
+                            BEGIN
+                                DECLARE token TEXT;
+                                DECLARE remaining_type TEXT;
+                                DECLARE remaining_open TEXT;
+                                DECLARE remaining_credit TEXT;
+                                DECLARE remaining_debit TEXT;
+                                
+                                DECLARE position INT DEFAULT 0;
+                                DECLARE sep_pos INT;
+                                
+                                DECLARE open_val DECIMAL(20,2);
+                                DECLARE credit_val DECIMAL(20,2);
+                                DECLARE debit_val DECIMAL(20,2);
+                                
+                                DECLARE capital_non_appele DECIMAL(20,2) DEFAULT 0;
+                                DECLARE capital_appele DECIMAL(20,2) DEFAULT 0;
+                                DECLARE capital_total DECIMAL(20,2) DEFAULT 0;
+                                 
+                                SET remaining_type = type_sysdate;
+                                SET remaining_open = open_balance;
+                                SET remaining_credit = credit_mvmt;
+                                SET remaining_debit = debit_mvmt;
+                                 
+                                WHILE LENGTH(remaining_type) > 0 DO 
+                                    SET sep_pos = LOCATE('|', remaining_type);
+                                    IF sep_pos = 0 THEN
+                                        SET token = remaining_type;
+                                        SET remaining_type = '';
+                                    ELSE
+                                        SET token = LEFT(remaining_type, sep_pos - 1);
+                                        SET remaining_type = SUBSTRING(remaining_type, sep_pos + 1);
+                                    END IF;
+                                     
+                                    SET sep_pos = LOCATE('|', remaining_open);
+                                    IF sep_pos = 0 THEN
+                                        SET open_val = IF(remaining_open = '' OR remaining_open IS NULL, 0, CAST(remaining_open AS DECIMAL(20,2)));
+                                        SET remaining_open = '';
+                                    ELSE
+                                        SET open_val = IF(LEFT(remaining_open, sep_pos - 1) = '' OR LEFT(remaining_open, sep_pos - 1) IS NULL, 0, CAST(LEFT(remaining_open, sep_pos - 1) AS DECIMAL(20,2)));
+                                        SET remaining_open = SUBSTRING(remaining_open, sep_pos + 1);
+                                    END IF;
+                                    
+                                    SET sep_pos = LOCATE('|', remaining_credit);
+                                    IF sep_pos = 0 THEN
+                                        SET credit_val = IF(remaining_credit = '' OR remaining_credit IS NULL, 0, CAST(remaining_credit AS DECIMAL(20,2)));
+                                        SET remaining_credit = '';
+                                    ELSE
+                                        SET credit_val = IF(LEFT(remaining_credit, sep_pos - 1) = '' OR LEFT(remaining_credit, sep_pos - 1) IS NULL, 0, CAST(LEFT(remaining_credit, sep_pos - 1) AS DECIMAL(20,2)));
+                                        SET remaining_credit = SUBSTRING(remaining_credit, sep_pos + 1);
+                                    END IF;
+                                    
+                                    SET sep_pos = LOCATE('|', remaining_debit);
+                                    IF sep_pos = 0 THEN
+                                        SET debit_val = IF(remaining_debit = '' OR remaining_debit IS NULL, 0, CAST(remaining_debit AS DECIMAL(20,2)));
+                                        SET remaining_debit = '';
+                                    ELSE
+                                        SET debit_val = IF(LEFT(remaining_debit, sep_pos - 1) = '' OR LEFT(remaining_debit, sep_pos - 1) IS NULL, 0, CAST(LEFT(remaining_debit, sep_pos - 1) AS DECIMAL(20,2)));
+                                        SET remaining_debit = SUBSTRING(remaining_debit, sep_pos + 1);
+                                    END IF;
+                                     
+                                    IF (
+                                        token IN ('CURACCOUNT', 'DUEACCOUNT') OR
+                                        token LIKE 'CURACCOUNT%' OR
+                                        token LIKE 'DUEACCOUNT%'
+                                    ) AND ( 
+                                        CAST(SUBSTRING(token, LOCATE('-', token) + 1) AS UNSIGNED) <= '{current_date}'
+                                    ) THEN
+                                    SET capital_non_appele = capital_non_appele + open_val + credit_val + debit_val;
+
+                                    ELSEIF (
+                                        token IN ('PA1ACCOUNT', 'PA2ACCOUNT', 'PA3ACCOUNT', 'PA4ACCOUNT') OR
+                                        token LIKE 'PA1ACCOUNT%' OR
+                                        token LIKE 'PA2ACCOUNT%' OR
+                                        token LIKE 'PA3ACCOUNT%' OR
+                                        token LIKE 'PA4ACCOUNT%'
+                                    ) AND ( 
+                                        CAST(SUBSTRING(token, LOCATE('-', token) + 1) AS UNSIGNED) <= '{current_date}'
+                                    ) THEN
+                                        SET capital_appele = capital_appele + open_val + credit_val + debit_val;
+
+                                    END IF;
+
+                            
+                                    SET position = position + 1;
+                                END WHILE; 
+                                SET capital_total = capital_non_appele + capital_appele; 
+                                RETURN CONCAT(capital_non_appele, '|', capital_appele, '|', capital_total);
+                            END; """
+                        },
+                        {
+                            "name": "Creation index idx_arrangement_product_status ",
+                            "sql": "CREATE INDEX IF NOT EXISTS idx_arrangement_product_status ON aa_arrangement_mcbc_live_full(product_line, arr_status)"
+                        },
+                        {
+                            "name": "Creation index idx_arrangement_linked_appl ",
+                            "sql": " CREATE INDEX IF NOT EXISTS idx_arrangement_linked_appl ON aa_arrangement_mcbc_live_full(linked_appl_id)"
+                        },
+                        {
+                            "name": "Creation index eb_cont_bal_mcbc_live_full ",
+                            "sql": " CREATE INDEX IF NOT EXISTS idx_eb_cont_id ON eb_cont_bal_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Suppresion de la fonction calculate_total_interet_echus ",
+                            "sql": "DROP FUNCTION IF EXISTS calculate_total_interet_echus;"
+                        },
+                        {
+                            "name": "Creation de la fonction calculate_total_interet_echus ",
+                            "sql": f""" 
+                             
+                                CREATE FUNCTION calculate_total_interet_echus(
+                                    entries TEXT,
+                                    open_balance TEXT,
+                                    separator_ VARCHAR(10)
+                                )
+                                RETURNS DECIMAL(15,2)
+                                DETERMINISTIC
+                                BEGIN
+                                    DECLARE indices_total_interet_echus TEXT DEFAULT '';
+                                    DECLARE montant_pert_total DECIMAL(15,2) DEFAULT 0;
+                                    DECLARE current_index INT;
+                                    DECLARE open_balance_value TEXT;
+                                    DECLARE current_open_balance DECIMAL(15,2);
+                                    DECLARE result DECIMAL(15,2);
+                                     
+                                    DECLARE remaining_entries TEXT;
+                                    DECLARE current_entry TEXT;
+                                    DECLARE entry_index INT DEFAULT 0;
+                                    DECLARE sep_pos INT;
+                                     
+                                    DECLARE remaining_indices TEXT;
+                                    DECLARE index_str TEXT;
+                                     
+                                    DECLARE temp_balance TEXT;
+                                    DECLARE temp_index INT DEFAULT 0;
+                                     
+                                    IF entries IS NULL OR entries = '' THEN
+                                        RETURN 0;
+                                    END IF;
+                                     
+                                    SET remaining_entries = entries;
+                                    SET entry_index = 0;
+                                     
+                                    WHILE LENGTH(remaining_entries) > 0 DO 
+                                        SET sep_pos = LOCATE(separator_, remaining_entries);
+                                        IF sep_pos = 0 THEN
+                                            SET current_entry = remaining_entries;
+                                            SET remaining_entries = '';
+                                        ELSE
+                                            SET current_entry = LEFT(remaining_entries, sep_pos - 1);
+                                            SET remaining_entries = SUBSTRING(remaining_entries, sep_pos + LENGTH(separator_));
+                                        END IF;
+                                         
+                                        IF (current_entry LIKE '%PA1PRINCIPALINT%' OR 
+                                            current_entry LIKE '%PA2PRINCIPALINT%' OR 
+                                            current_entry LIKE '%PA3PRINCIPALINT%' OR 
+                                            current_entry LIKE '%PA4PRINCIPALINT%') AND 
+                                        current_entry NOT LIKE '%SP%' THEN
+                                             
+                                            IF indices_total_interet_echus = '' THEN
+                                                SET indices_total_interet_echus = CAST(entry_index AS CHAR);
+                                            ELSE
+                                                SET indices_total_interet_echus = CONCAT(indices_total_interet_echus, ',', CAST(entry_index AS CHAR));
+                                            END IF;
+                                        END IF;
+                                        
+                                        SET entry_index = entry_index + 1;
+                                    END WHILE;
+                                     
+                                    IF indices_total_interet_echus = '' THEN 
+                                        RETURN 0;
+                                    ELSE 
+                                        SET montant_pert_total = 0;
+                                        SET remaining_indices = indices_total_interet_echus; 
+                                        WHILE LENGTH(remaining_indices) > 0 DO 
+                                            SET sep_pos = LOCATE(',', remaining_indices);
+                                            IF sep_pos = 0 THEN
+                                                SET index_str = remaining_indices;
+                                                SET remaining_indices = '';
+                                            ELSE
+                                                SET index_str = LEFT(remaining_indices, sep_pos - 1);
+                                                SET remaining_indices = SUBSTRING(remaining_indices, sep_pos + 1);
+                                            END IF;
+                                            
+                                            SET current_index = CAST(index_str AS UNSIGNED); 
+                                            SET current_open_balance = 0; 
+                                            IF open_balance IS NOT NULL AND open_balance != '' THEN 
+                                                SET open_balance_value = ''; 
+                                                SET temp_balance = open_balance;
+                                                SET temp_index = 0;
+                                                
+                                                WHILE temp_index <= current_index AND LENGTH(temp_balance) > 0 DO
+                                                    SET sep_pos = LOCATE(separator_, temp_balance);
+                                                    IF sep_pos = 0 THEN
+                                                        IF temp_index = current_index THEN
+                                                            SET open_balance_value = temp_balance;
+                                                        END IF;
+                                                        SET temp_balance = '';
+                                                    ELSE
+                                                        IF temp_index = current_index THEN
+                                                            SET open_balance_value = LEFT(temp_balance, sep_pos - 1);
+                                                            SET temp_balance = '';
+                                                        ELSE
+                                                            SET temp_balance = SUBSTRING(temp_balance, sep_pos + LENGTH(separator_));
+                                                        END IF;
+                                                    END IF;
+                                                    SET temp_index = temp_index + 1;
+                                                END WHILE; 
+                                                SET open_balance_value = TRIM(open_balance_value);
+                                                IF open_balance_value = '' OR open_balance_value IS NULL THEN 
+                                                    SET open_balance_value = '0.0';
+                                                END IF;
+                                                
+                                                SET current_open_balance = CAST(open_balance_value AS DECIMAL(15,2));
+                                            END IF; 
+                                            SET montant_pert_total = ROUND(current_open_balance, 2);
+                                        END WHILE; 
+                                        IF montant_pert_total < 0 THEN
+                                            SET result = montant_pert_total * -1;
+                                        ELSE
+                                            SET result = montant_pert_total;
+                                        END IF; 
+                                        RETURN result;
+                                    END IF;
+                                END;  
+                            """
+                        },
+                        {
+                            "name": "Suppression de la fonction get_customer ",
+                            "sql": "DROP FUNCTION IF EXISTS get_customer"
+                        },
+                        {
+                            "name": "Creation de la fonction get_customer ",
+                            "sql": f"""  
+
+                                CREATE FUNCTION get_customer(arrangement_ids VARCHAR(255)) 
+                                RETURNS VARCHAR(255)
+                                DETERMINISTIC
+                                BEGIN 
+                                    DECLARE first_id VARCHAR(50); 
+                                    
+                                    -- Vérifier si arrangement_ids est NULL ou vide
+                                    IF arrangement_ids IS NULL OR arrangement_ids = '' THEN
+                                        RETURN NULL;
+                                    END IF;
+                                    
+                                    -- Extraire le premier ID avant le séparateur '|'
+                                    SET first_id = SUBSTRING_INDEX(arrangement_ids, '|', 1);
+                                    
+                                    -- Nettoyer l'ID (supprimer les espaces)
+                                    SET first_id = TRIM(first_id);  
+                                    RETURN first_id;
+                                END """
+                        },
+                        {
+                            "name": "Suppression de la Table temp_AMOUNT ",
+                            "sql": f""" DROP TABLE IF EXISTS temp_AMOUNT """
+                        },
+                        {
+                            "name": "CREATION de la Table temp_AMOUNT ",
+                            "sql": f"""  
+                                CREATE TABLE temp_AMOUNT AS
+                                    SELECT id_comp_1, amount 
+                                    FROM AA_ARR_TERM_MCBC_LIVE_FULL 
+                                    WHERE   activity IN ('LENDING-TAKEOVER-ARRANGEMENT', 'LENDING-NEW-ARRANGEMENT')
+                            """
+                        },
+                        {
+                            "name": "Suppression de la Table temp_payment_date ",
+                            "sql": f""" DROP TABLE IF EXISTS temp_payment_date  """
+                        },
+                        {
+                            "name": "Creation de la Table temp_payment_date ",
+                            "sql": f"""   
+                                    CREATE TABLE temp_payment_date AS
+                                    SELECT  arrangement_id, 
+                                                MIN(bill.payment_date) as payment_date 
+                                            FROM aa_bill_details_mcbc_live_full  AS bill
+                                            GROUP BY bill.arrangement_id """
+                        },
+                        {
+                            "name": "Suppression de la Table temp_Nombre_de_jour_retard ",
+                            "sql": f"""   DROP TABLE IF EXISTS temp_Nombre_de_jour_retard  """
+                        },
+                        {
+                            "name": "CREATION de la Table temp_Nombre_de_jour_retard ",
+                            "sql": """ 
+                                    CREATE TABLE temp_Nombre_de_jour_retard AS
+                                    SELECT arrangement_id,DATEDIFF('{current_date}', MIN(payment_date)) as Nombre_de_jour_retard  FROM aa_bill_details_mcbc_live_full 
+                                            WHERE settle_status = 'UNPAID'
+                                            GROUP BY arrangement_id
+                            """
+                        },
+                        {
+                            "name": "Suppression de la Table temp_od_pen ",
+                            "sql": f"""   DROP TABLE IF EXISTS temp_od_pen  """
+                        },
+                        {
+                            "name": "CREATION de la Table temp_od_pen ",
+                            "sql": f""" 
+                                    CREATE TABLE temp_od_pen AS
+                                    SELECT arrangement_id, payment_date, SUM(os_total_amount) AS OD_PEN
+                                    FROM (
+                                        SELECT arrangement_id, payment_date, os_total_amount,
+                                            ROW_NUMBER() OVER (PARTITION BY arrangement_id ORDER BY payment_date DESC) as rn
+                                        FROM aa_bill_details_mcbc_live_full
+                                    ) ranked
+                                    WHERE rn = 1 
+                                    GROUP BY arrangement_id, payment_date
+                                    ORDER BY payment_date
+                            """
+                        },
+                        {
+                            "name": "Creation de la INDEX idx_id_comp_1 ",
+                            "sql": "ALTER TABLE temp_AMOUNT ADD INDEX idx_id_comp_1 (id_comp_1)"
+                        },
+                        {
+                            "name": "Creation de la INDEX idx_arrangement_id ",
+                            "sql": "ALTER TABLE temp_payment_date ADD INDEX idx_arrangement_id (arrangement_id)"
+                        },
+                        {
+                            "name": "Creation de la TABLE temp_Nombre_de_jour_retard  ADD INDEX idx_arrangement_id ",
+                            "sql": "ALTER TABLE temp_Nombre_de_jour_retard  ADD INDEX idx_arrangement_id (arrangement_id);"
+                        }, 
+                        {
+                            "name": "Creation de la TABLE temp_od_pen ADD INDEX idx_arrangement_id  ",
+                            "sql": "ALTER TABLE temp_od_pen ADD INDEX idx_arrangement_id (arrangement_id)"
+                        },
+                        {
+                            "name": "Suppression de la TABLE IF EXISTS temp_INTEREST ",
+                            "sql": "DROP TABLE IF EXISTS temp_INTEREST"
+                        },
+                        {
+                            "name": "Creation de la fonction temp_INTEREST ",
+                            "sql": f""" CREATE TABLE temp_INTEREST AS
+                                    SELECT id_comp_1,effective_rate as taux_d_interet,DATEDIFF(maturity_date, base_date)  AS Duree_Remboursement,maturity_date AS Date_fin_pret
+                                        FROM aa_arr_interest_mcbc_live_full  
+                                        INNER JOIN aa_account_details_mcbc_live_full as account
+                                        ON account.id = id_comp_1
+                                        WHERE  id_comp_2 = 'PRINCIPALINT' GROUP BY id_comp_1 """
+                        },
+                        {
+                            "name": "Creation de la TABLE temp_INTEREST ADD INDEX idx_id_comp_1  ",
+                            "sql": "ALTER TABLE temp_INTEREST ADD INDEX idx_id_comp_1 (id_comp_1)"
+                        }, 
+                        {
+                            "name": "Creation de la TABLE industry_mcbc_live_full ADD INDEX idx_id_comp_1  ",
+                            "sql": "ALTER TABLE industry_mcbc_live_full ADD INDEX idx_id_comp_1 (id)"
+                        },
+                        {
+                            "name": "Creation de la TABLE temp_clients ADD PRIMAR  ",
+                            "sql": "ALTER TABLE temp_clients ADD PRIMARY KEY (id), ADD INDEX idx_id (id);"
+                        },
+                        {
+                            "name": "Creation de la temp_clients ADD INDEX idx_industy  ",
+                            "sql": "ALTER TABLE temp_clients ADD INDEX idx_industy (industry)"
+                        },
+                        {
+                            "name": """Suppression de la Table encours_credit_{current_date} """,
+                            "sql": """DROP TABLE IF EXISTS encours_credit_{current_date}"""
+                        },
+                        {
+                            "name":"""Creation de la Table  encours_credit_{current_date} """,
+                            "sql": """ 
+                            CREATE TABLE encours_credit_{current_date} AS
+                                    SELECT 
+                                                arrangement.id,
+                                                arrangement.co_code AS Agence,
+                                                arrangement.customer AS identification_client,
+                                                arrangement.customer,
+                                                arrangement.id AS Numero_pret,
+                                                tmp_CLT.nom_complet AS Nom_client,
+                                                arrangement.linked_appl_id AS linked_appl_id,
+                                                COALESCE(arrangement.orig_contract_date, arrangement.start_date) AS Date_pret, 
+                                                tmp_int.Date_fin_pret AS Date_fin_pret,
+                                                arrangement.product AS Produits,
+                                                tmp_amnt.amount AS Amount,
+                                                tmp_int.`Duree_Remboursement` as Duree_Remboursement,
+                                                tmp_int.taux_d_interet as taux_d_interet,
+                                                tmp_Nombre_de_jour_retard.Nombre_de_jour_retard AS Nombre_de_jour_retard,
+                                                tmp_payment_date.payment_date AS payment_date,
+                                                calculate_all_capitals(
+                                                    eb_cont.type_sysdate, 
+                                                    eb_cont.open_balance, 
+                                                    eb_cont.credit_mvmt, 
+                                                    eb_cont.debit_mvmt
+                                                ) AS Capital_,
+                                                calculate_total_interet_echus(cont_bal.type_sysdate,cont_bal.open_balance,'|') as Total_interet_echus,
+                                                '' as "OD Pen",
+                                                tmp_od_pen.OD_PEN as "OD & PEN",  
+                                                tmp_CLT.gender AS Genre, 
+                                                industry.description AS Secteur_d_activité,
+                                                tmp_CLT.industry AS CODE,
+                                                arrangement.arr_status
+                                            FROM aa_arrangement_mcbc_live_full AS arrangement
+                                            INNER JOIN eb_cont_bal_mcbc_live_full as eb_cont
+                                                ON eb_cont.id = arrangement.linked_appl_id
+                                            LEFT JOIN temp_AMOUNT as tmp_amnt
+                                                ON tmp_amnt.id_comp_1 = arrangement.id 
+                                            LEFT JOIN temp_INTEREST as tmp_int
+                                                ON tmp_int.id_comp_1 = arrangement.id
+                                            LEFT JOIN eb_cont_bal_mcbc_live_full as cont_bal
+                                                ON cont_bal.id = arrangement.linked_appl_id
+                                            LEFT JOIN temp_payment_date as tmp_payment_date
+                                                ON tmp_payment_date.arrangement_id = arrangement.id
+                                            LEFT JOIN temp_Nombre_de_jour_retard as tmp_Nombre_de_jour_retard
+                                                ON tmp_Nombre_de_jour_retard.arrangement_id = arrangement.id
+                                            LEFT JOIN temp_od_pen as tmp_od_pen
+                                                ON tmp_od_pen.arrangement_id = arrangement.id
+                                            LEFT JOIN temp_clients as tmp_CLT
+                                                ON tmp_CLT.id = get_customer(arrangement.customer) 
+                                            LEFT JOIN industry_mcbc_live_full AS industry 
+                                                ON industry.id = tmp_CLT.industry
+                                            WHERE arrangement.product_line = 'LENDING' 
+                                                AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH','CLOSE')
+                                                -- AND NOT (tmp_od_pen.OD_PEN  = 0.0 AND (arrangement.arr_status = 'EXPIRED' OR arrangement.arr_status = 'CLOSE'))
+                                                -- HAVING NOT (Capital_ = '0.00|0.00|0.00' AND (tmp_od_pen.OD_PEN='0.00' OR tmp_od_pen.OD_PEN =''))   
+
+
+                            
+                            """
+                        }, 
                     ]
 
                 # Exemple d’utilisation :
                 # sql = steps[23]["sql"].format(current_date="20250611")
 
-            current_date = "20250531"
+
+            # print("------------------------------------ icii ----------------------------------")
+
+            current_date = "20250711"
             cursor.execute("DELETE FROM init_status")
             requets_len=len(steps)
             
             yield {"status": "success", "data_step": steps}
+            # print( {"status": "success", "data_step": steps})
             for i, step in enumerate(steps, 0):
                 name = step["name"]
                 yield {"name": name, "status": "processing","total":requets_len,"current":i}
+                # print( {"name": name, "status": "processing","total":requets_len,"current":i})
 
                 cursor.execute("SELECT status FROM init_status WHERE name = %s", (name,))
                 existing = cursor.fetchone()
 
                 if existing and existing[0] == "done":
                     yield {"name": name, "status": "skipped"}
+                    # print( {"name": name, "status": "skipped"})
                     continue
                 try:
                     sql = step["sql"]
@@ -824,18 +1296,22 @@ class Credits:
                         (name, "done", "OK")
                     )
                     yield {"name": name, "status": "done","total":requets_len,"current":i}
+                    # print( {"name": name, "status": "done","total":requets_len,"current":i})
                 except Exception as e:
                     cursor.execute(
                         "REPLACE INTO init_status (name, status, message) VALUES (%s, %s, %s)",
                         (name, "error", str(e))
                     )
                     yield {"name": name, "status": "error", "message": str(e)}
+                    # print( {"name": name, "status": "error_ici", "message": str(e)})
             conn.commit()
             yield {"name": name, "status": "done","message":"Toutes les étapes sont terminées"}
+            # print( {"name": name, "status": "done","message":"Toutes les étapes sont terminées"})
             return
             # return status_report
         except Exception as e:
-            yield { "status": "error","message":str(e)}
+            yield { "status": "error_ici_","message":str(e)}
+            # print( { "status": "error","message":str(e)})
             return
     
     def run_init(self):

@@ -32,7 +32,8 @@ class Credit_outstanding_report:
     def fetch_data_from_table(self, conn, query):
         """Fetch data from the database based on the query and return as list of dicts."""
         try:
-            cursor = conn.cursor()
+            # cursor = conn.cursor()
+            cursor = conn.connection.cursor()
             print(f"Executing query in progress...")
             cursor.execute(query)
             
