@@ -117,6 +117,8 @@ async def create_multiple_table(request: Request):
 
     filenames: List[str] = data['files'] 
     folder: str = data['folder']
+    str_date: str = data['str_date']
+     
 
     if not isinstance(filenames, list) or not filenames:
         return StreamingResponse(
@@ -125,7 +127,9 @@ async def create_multiple_table(request: Request):
         )
 
     def generate_all():
+        credits.create_history_table()
         for filename in filenames:
+            # continue
             yield json.dumps({
                 "status": "start",
                 "message": f"[INFO] Début du traitement du fichier : {filename}",
@@ -136,7 +140,7 @@ async def create_multiple_table(request: Request):
                 print("File name",filename)
                 print("Folder",folder)
                 # Appel à ta méthode (instance de classe contenant `load_file_csv_in_database`)
-                generator = credits.load_file_csv_in_database(filename, folder)
+                generator = credits.load_file_csv_in_database(filename, folder, str_date)
                 if generator is None:
                     yield json.dumps({
                         "status": "critical_error",
@@ -157,7 +161,7 @@ async def create_multiple_table(request: Request):
                 "status": "end",
                 "message": f"[INFO] Fin du traitement du fichier : {filename}"
             }) + "\n"
-
+        credits.insert_into_history_table(label_value=str_date, used=1,stat_of=None)
     return StreamingResponse(generate_all(), media_type="application/json")
 
 @router.get("/show_files")

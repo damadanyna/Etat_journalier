@@ -1,25 +1,9 @@
 <template>
     <v-toolbar color=" " class=" bg-transparent" title="Encours des crédits">
-      <v-btn stacked>
-        <v-badge
-          color="error"
-          dot
-        >
-          <v-icon icon=" mdi-magnify"></v-icon>
-        </v-badge> 
-      </v-btn>
+      
   
       <v-btn stacked>
-        <v-badge
-          color="error"
-          dot
-        >
-          <v-icon icon=" mdi-account-supervisor"></v-icon>
-        </v-badge> 
-      </v-btn>
-  
-      <v-btn stacked>
-        <v-avatar image="https://randomuser.me/api/portraits/men/85.jpg"></v-avatar>
+        <v-avatar image="https://avatars.githubusercontent.com/u/60171474?v=4"></v-avatar>
       </v-btn>
    
     </v-toolbar>

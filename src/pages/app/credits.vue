@@ -89,7 +89,7 @@ const steps = ref([
   { title: 'Initialisation', status: 'pending' },
   { title: 'États des encours', status: 'pending' },
   { title: 'État des remboursements', status: 'pending' },
-  { title: 'État prévisionnel de remboursement', status: 'pending' },
+  // { title: 'État prévisionnel de remboursement', status: 'pending' },
   { title: 'Limit AVM', status: 'pending' },
   { title: 'Limit Caution', status: 'pending' },
 ])

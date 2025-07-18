@@ -67,7 +67,7 @@ class Credits:
 
         return unique_headers, merged_data
     
-    def load_file_csv_in_database(self, filename: str,  folder: str):
+    def load_file_csv_in_database(self, filename: str,  folder: str, str_date: str):
         """
         Charge un fichier CSV depuis './load_file/{filename}' avec séparateur '^' 
         et insère les données dans la base avec progression en temps réel.
@@ -418,6 +418,63 @@ class Credits:
 
         return tree
     
+    def create_history_table(self):
+        conn = self.db.connect()
+        """
+        Crée la table `history_insert` si elle n'existe pas déjà.
+        """
+        create_query = """
+        CREATE TABLE IF NOT EXISTS `history_insert` ( 
+            `label` VARCHAR(255) NOT NULL PRIMARY KEY,
+            `stat_of` VARCHAR(100),
+            `used` TINYINT(1) DEFAULT 0,
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+        conn.execute(text(create_query))
+
+    def insert_into_history_table(self, label_value: str, used: int = 1, stat_of=None):
+       
+        try:
+            conn = self.db.connect()
+
+            # Étape 1 : mettre tous les used = 0
+            reset_query = "UPDATE `history_insert` SET `used` = 0"
+            conn.execute(text(reset_query))
+
+            # Étape 2 : insérer ou mettre à jour la ligne ciblée
+            upsert_query = """
+                INSERT INTO `history_insert` (`label`, `stat_of`, `used`)
+                VALUES (:label, :stat_of, :used)
+                ON DUPLICATE KEY UPDATE
+                    stat_of = VALUES(stat_of),
+                    used = VALUES(used),
+                    created_at = CURRENT_TIMESTAMP
+            """
+            conn.execute(text(upsert_query), {
+                "label": label_value,
+                "stat_of": stat_of,
+                "used": used
+            })
+
+            conn.commit()
+            print(f"[INFO] Mise à jour réussie de history_insert, actif: {label_value}")
+
+        except Exception as e:
+            print(f"[ERREUR] Erreur lors de la mise à jour de history_insert : {e}")
+            try:
+                conn.rollback()
+            except:
+                pass
+        finally:
+            try:
+                if conn:
+                    conn.close()
+            except Exception as close_err:
+                print(f"[ERREUR] Fermeture de la connexion échouée : {close_err}")
+
+
+
     def allowed_file(self, filename):
         """
         Vérifie si l'extension du fichier est autorisée
@@ -1291,9 +1348,6 @@ class Credits:
                                                 AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH','CLOSE')
                                                 -- AND NOT (tmp_od_pen.OD_PEN  = 0.0 AND (arrangement.arr_status = 'EXPIRED' OR arrangement.arr_status = 'CLOSE'))
                                                 -- HAVING NOT (Capital_ = '0.00|0.00|0.00' AND (tmp_od_pen.OD_PEN='0.00' OR tmp_od_pen.OD_PEN =''))   
-
-
-                            
                             """
                         }, 
                     ]
@@ -1304,7 +1358,7 @@ class Credits:
 
             # print("------------------------------------ icii ----------------------------------")
 
-            current_date = "20250711"
+            current_date = "20250630"
             cursor.execute("DELETE FROM init_status")
             requets_len=len(steps)
             

@@ -143,6 +143,7 @@ const handleFileUpload = (event) => {
 
 const chargerDossier = (file,activatorProps) => {
   activatorProps.value=false
+  let date_string= file.title.replace(/-/g, "")
   const id = 'refresh' + file.title.replaceAll(/[^a-zA-Z0-9_-]/g, '_');
   const refresh = document.getElementById(id);
 
@@ -150,8 +151,9 @@ const chargerDossier = (file,activatorProps) => {
     refresh.classList.add('animIt')
   }
   // console.log(file.children);
-  usePopupStore().cdi_list_stream=file.children
-  load_database(refresh,file.children,file.title)
+  usePopupStore().cdi_list_stream=file.children 
+  
+  load_database(refresh,file.children,file.title,date_string)
 
   setTimeout(() => {
     usePopupStore().togglePopupCDI();
@@ -180,7 +182,7 @@ const open_dialoge_date=()=> {
   isDialogActive.value = true
 }
 
-const load_database = async (refresh, files, folder) => {
+const load_database = async (refresh, files, folder,date_string) => {
 
   var index_table=0;
   try {
@@ -192,7 +194,8 @@ const load_database = async (refresh, files, folder) => {
       body: JSON.stringify({
         files: files.map(f => f.title),
         app: null,
-        folder: folder
+        folder: folder,
+        str_date:date_string
       })
     });
 

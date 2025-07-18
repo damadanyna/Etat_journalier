@@ -5,7 +5,7 @@
           permanent 
         >
           <v-list-item 
-            title="John Leider"
+            title="Dama Dany"
             nav
             
             @click.stop="rail = !rail"
