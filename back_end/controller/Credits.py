@@ -434,7 +434,6 @@ class Credits:
         conn.execute(text(create_query))
 
     def insert_into_history_table(self, label_value: str, used: int = 1, stat_of=None):
-       
         try:
             conn = self.db.connect()
 

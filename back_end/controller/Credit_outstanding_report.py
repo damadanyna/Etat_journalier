@@ -166,5 +166,23 @@ class Credit_outstanding_report:
             else:
                 yield {"status": "error", "message": "Aucune donnée trouvée."}
 
-        
- 
+    def get_last_import_file(self): 
+        try:
+            conn = self.db.connect()
+            query = """
+            SELECT label,stat_of
+            FROM history_insert
+            WHERE used = 1
+            LIMIT 1
+            """
+            result = conn.execute(text(query)).mappings().fetchone()
+            return dict(result) if result else None
+        except Exception as e:
+            print(f"[ERREUR] Impossible de récupérer le dernier fichier importé : {e}")
+            return None
+        finally:
+            try:
+                if conn:
+                    conn.close()
+            except Exception as close_err:
+                print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")

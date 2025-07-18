@@ -171,7 +171,13 @@ async def show_files(app: Optional[str] = Query(None)):
 
 
 
+@router.get("/get_last_import_file")
+async def show_files(app: Optional[str] = Query(None)):
+    response = credit_outstanding_report.get_last_import_file()
+    print(response)
+    return JSONResponse(content={"response": response})
 
+ 
 
 @router.get("/run_encours")
 def run_encours():
