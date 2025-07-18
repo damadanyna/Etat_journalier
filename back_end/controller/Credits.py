@@ -18,6 +18,7 @@ from db.db  import DB
 from werkzeug.utils import secure_filename 
 import aiofiles
 import io
+from sqlalchemy import text
 
 
 
@@ -109,37 +110,42 @@ class Credits:
 
                     with open(filepath, 'r', encoding='utf-8', newline='') as csvfile:
                         csv_reader = csv.reader(csvfile, delimiter='^')
-                        is_header = True
                         row_count = 0
+                        data = []
 
+                        # Lire et nettoyer les en-têtes
+                        try:
+                            header_raw = next(csv_reader)
+                        except StopIteration:
+                            yield json.dumps({"status": "error", "message": "[ERREUR] Fichier vide ou invalide"})
+                            return
+
+                        headers = []
+                        for i, cell in enumerate(header_raw):
+                            cleaned_cell = cell.strip().replace('.', '_').lower()
+                            if not cleaned_cell:
+                                cleaned_cell = f'colonne_{i+1}'
+                            cleaned_cell = ''.join(c if c.isalnum() or c == '_' else '_' for c in cleaned_cell)
+                            if cleaned_cell and cleaned_cell[0].isdigit():
+                                cleaned_cell = f'col_{cleaned_cell}'
+                            headers.append(cleaned_cell)
+
+                        data.append(headers)
+
+                        # Lecture des lignes de données
                         for row in csv_reader:
-                            if is_header:
-                                cleaned_row = []
-                                for i, cell in enumerate(row):
-                                    cleaned_cell = cell.strip().replace('.', '_').lower()
-                                    if not cleaned_cell:
-                                        cleaned_cell = f'colonne_{i+1}'
-                                    cleaned_cell = ''.join(c if c.isalnum() or c == '_' else '_' for c in cleaned_cell)
-                                    if cleaned_cell and cleaned_cell[0].isdigit():
-                                        cleaned_cell = f'col_{cleaned_cell}'
-                                    cleaned_row.append(cleaned_cell)
-                                is_header = False
-                            else:
-                                cleaned_row = [cell.strip() for cell in row]
-                                row_count += 1
-                                if row_count % 1000 == 0:
-                                    yield json.dumps({
-                                        "status": "reading",
-                                        "task": "Lecture encours",
-                                        "row_count": row_count
-                                    })
-                                    # print({"status": "reading", "task": "Lecture encours", "row_count": row_count})
-                                    yield json.dumps({
-                                        "status": "info",
-                                        "message": f"[INFO] Lecture en cours. Ligne : {row_count}"
-                                    })
-                                    # print({"status": "info", "message": f"[INFO] Lecture en cours. Ligne : {row_count}"})
+                            cleaned_row = [cell.strip() for cell in row]
                             data.append(cleaned_row)
+                            row_count += 1
+
+                            if row_count % 1000 == 0:
+                                yield json.dumps({
+                                    "status": "reading",
+                                    "task": "Lecture en cours",
+                                    "row_count": row_count,
+                                    "message": f"[INFO] Lecture en cours. Ligne : {row_count}"
+                                })
+
 
                     if data:
                         yield json.dumps({
@@ -224,13 +230,17 @@ class Credits:
                     yield json.dumps({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}...",
                                     "task": "Suppression de la table existante"})
                     # print({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}..."})
-                    cursor.execute(f'DROP TABLE IF EXISTS `{table_name}`;')
+                    # Suppression de la table
+                    conn.execute(text(f'DROP TABLE IF EXISTS `{table_name}`;'))
                     yield json.dumps({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
                     # print({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
+                    # Traitement des données
                     headers, data_rows = self.merge_duplicate_columns(headers, data[1:])
                     columns = ', '.join([f'`{col}` TEXT' for col in headers])
                     create_query = f'CREATE TABLE IF NOT EXISTS `{table_name}` ({columns});'
-                    cursor.execute(create_query)
+
+                    # Création de la table
+                    conn.execute(text(create_query))
                     yield json.dumps({"status": "info", "message": f"[INFO] Table `{table_name}` créée avec succès"})
                     # print({"status": "info", "message": f"[INFO] Table `{table_name}` création avec succès"})
                     total_rows = len(data_rows)
@@ -241,40 +251,66 @@ class Credits:
                         "message": f"[INFO] Début de l'insertion de {total_rows} lignes..."
                     })
                     # print({"status": "start_insert", "task": "Debut de l'insertion", "total_rows": total_rows,})
-                    for i, row in enumerate(data_rows, 1):
-                        try:
-                            while len(row) < len(headers):
-                                row.append('')
-                            if len(row) > len(headers):
-                                row = row[:len(headers)]
-                            placeholders = ', '.join(['%s'] * len(headers))
-                            insert_query = f'INSERT INTO `{table_name}` VALUES ({placeholders})'
-                            # print("Insert into:", table_name)
-                            # print("Longueur réelle de la ligne:", len(row))  # pour éviter d'afficher les 95 colonnes à chaque fois
-                            # print("Nombre de colonnes:", len(headers))
-                            if i % 100 == 0 or i == 1:
+                    batch_size = 10000
+                    placeholders = ', '.join([f':val{j}' for j in range(len(headers))])
+                    insert_query = text(f'INSERT INTO `{table_name}` VALUES ({placeholders})')
+
+                    try:
+                        for start in range(0, total_rows, batch_size):
+                            end = min(start + batch_size, total_rows)
+                            batch = data_rows[start:end]
+
+                            # Normalisation des lignes (ajouter/remplir pour que chaque ligne ait la bonne longueur)
+                            cleaned_batch = []
+                            for row in batch:
+                                # Corrige les longueurs
+                                if len(row) < len(headers):
+                                    row += [''] * (len(headers) - len(row))
+                                elif len(row) > len(headers):
+                                    row = row[:len(headers)]
+                                cleaned_batch.append(row)
+
+                            # Création de la liste de dictionnaires pour executemany
+                            params_list = [
+                                {f'val{j}': row[j] for j in range(len(headers))}
+                                for row in cleaned_batch
+                            ]
+
+                            conn.execute(insert_query, params_list)
+
+                            # Afficher la progression
+                            if start % (batch_size * 5) == 0 or end == total_rows:
+                                percentage = round((end / total_rows) * 100, 2)
                                 yield json.dumps({
                                     "status": "inserting",
-                                    "current": i,
+                                    "current": end,
                                     "total": total_rows,
-                                    "percentage": round((i / total_rows) * 100, 2),
-                                    "row_count": i,
+                                    "percentage": percentage,
+                                    "row_count": end,
                                     "task": "insertion",
-                                    "message": f"[INFO] Insertion de la ligne {i}/{total_rows}",
-                                    "debug": f"[DEBUG] Longueur de l'entête: {len(headers)}, Longueur de la ligne: {len(row)}"
+                                    "message": f"[INFO] Insertion des lignes {start+1} à {end} / {total_rows}",
+                                    "debug": f"[DEBUG] Batch insert : {start+1}-{end} | {len(cleaned_batch)} lignes"
                                 })
                                 sys.stdout.flush()
-                            cursor.execute(insert_query, row)
-                        except Exception as insert_error:
-                            yield json.dumps({
-                                "status": "error",
-                                "message": f"[ERREUR] Échec à l'insertion de la ligne {i} : {str(insert_error)}",
-                                "row_content": str(row[:5])
-                            })
-                            print({"status": "error", "message": f"[ERREUR] Échec à l'insertion de la ligne {i} : {str(insert_error)}"})
-                            conn.rollback()
-                            return 
-                    yield json.dumps({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
+
+                        yield json.dumps({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
+                        conn.commit()
+                        yield json.dumps({
+                            "status": "success",
+                            "total_inserted": total_rows,
+                            "table_name": table_name,
+                            "message": f"[SUCCESS] {total_rows} lignes insérées avec succès dans la table `{table_name}`"
+                        })
+
+                    except Exception as insert_error:
+                        yield json.dumps({
+                            "status": "error",
+                            "message": f"[ERREUR] Échec à l'insertion des lignes : {str(insert_error)}",
+                        })
+                        print(f"[ERREUR] Insertion échouée : {insert_error}")
+                        conn.rollback()
+                        return
+
                     # print({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
                     conn.commit()
                     yield json.dumps({
