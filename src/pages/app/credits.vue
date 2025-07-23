@@ -76,10 +76,13 @@
         </v-col>
       </v-col>
 </div>
-<div class="flex flex-col px-3" v-else>
-  <sparkLineVue></sparkLineVue> 
-  <div class=" my-2"></div>
-  <Data_viewer></Data_viewer>
+<div class="flex flex-col px-3 overflow-auto max-h-[91vh] " v-else> 
+    <sparkLineVue :selected_date="selected_date" ></sparkLineVue> 
+    <div class=" my-2"></div>
+    <Data_viewer></Data_viewer>
+    <div class=" my-2"></div>
+    <v-divider></v-divider>
+    <Data_table_view ></Data_table_view> 
   <!-- <Dougnut></Dougnut> -->
 
 </div>
@@ -92,7 +95,8 @@
 import { ref, watch } from 'vue' 
 import { usePopupStore } from '../../stores'
 import sparkLineVue from '../../components/sparkLines/sparkLineVue.vue';
-import Data_viewer from '../../components/sparkLines/Data_viewer.vue';
+import Data_viewer from '../../components/Data_Cart_view.vue';
+import Data_table_view from '../../components/Data_table_view.vue';
 const popupStore = usePopupStore();
 const isRunning = ref(false)
 const currentStep = ref(0)

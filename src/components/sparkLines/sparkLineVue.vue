@@ -1,30 +1,22 @@
 <template>
-  <div class="chart-container">
+  <div class="chart-container  ">
     <Line :data="chartData" :options="chartOptions" />
   </div>
 </template>
 
-<script setup>
-// import {
-//   Chart as ChartJS,
-//   LineElement,
-//   PointElement,
-//   LinearScale,
-//   CategoryScale,
-//   Filler,
-//   Tooltip,
-// } from 'chart.js'
+<script setup> 
 import { Line } from 'vue-chartjs'
-import { onMounted, ref, computed  } from 'vue' 
+import { onMounted, ref, computed,watch  } from 'vue'
+const props = defineProps({
+  selected_date: Object
+}) 
 const capitalSums = ref([])
 const loading = ref(true)
-const error = ref(null) 
-// ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip)
+const error = ref(null)  
  
 
 const label_val = ref([])
-const values = ref([])
-// dégradé vert transparent (sera défini dynamiquement via `ctx`)
+const values = ref([]) 
 const chartData = computed(() => ({
   labels: label_val.value,
   datasets: [
@@ -116,18 +108,22 @@ function adaptCapitalSumsToChart(capital_sums) {
 
   return { labels, values };
 }
-
-
-onMounted(() => {
-  fetchCapitalSums()
-})
+// Watch sur la date sélectionnée
+watch(
+  () => props.selected_date,
+  () => { 
+      fetchCapitalSums() 
+  },
+  { immediate: true }
+)
+ 
 
 
 </script>
 
 <style scoped>
 .chart-container {
-  height: 300px;
+  height: 500px;
   width: 100%;
   background-color: #00000022;
   padding: 16px;

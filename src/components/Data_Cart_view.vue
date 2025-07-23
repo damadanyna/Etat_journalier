@@ -25,7 +25,7 @@
 </script>
 
 
-<style>
+<style scoped>
 .bg_data{
     background-color: #00000022;
     border-radius: 20px ;

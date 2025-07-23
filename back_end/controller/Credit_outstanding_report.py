@@ -205,3 +205,35 @@ class Credit_outstanding_report:
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
                      
+                    
+
+    def get_encours_credit_by_date(self, date: str):
+        conn = None
+        try:
+            # Validation simple du format AAAAMMJJ
+            if not date.isdigit() or len(date) != 8:
+                raise ValueError(f"Format de date invalide : {date}")
+
+            table_name = f"encours_credit_{date}"
+            query = text(f"SELECT * FROM `{table_name}`")  # les backticks évitent des erreurs si le nom a des caractères spéciaux
+
+            conn = self.db.connect()
+            result = conn.execute(query)
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            print(f"✅ Données extraites depuis la table {table_name} :", data)
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
+                        

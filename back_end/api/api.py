@@ -291,4 +291,21 @@ def convert_decimals(obj):
         return obj
 
 
+
+
+
+@router.get("/get_encours_credits")
+async def get_encours_credits(date: str = Query(...)):  # obligatoire (not None)
+    try:
+        response = credit_outstanding_report.get_encours_credit_by_date(date)
+        if response is None or len(response) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la date donnée.")
+        return {"response": response}
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+ 
+
+
 api_router = router
