@@ -81,32 +81,32 @@ class Credits:
                 if not os.path.exists(folder_path):
                     yield json.dumps({"status": "error", "message": f"[ERREUR] Le répertoire {folder_path} n'existe pas",
                                     "task": f"Le répertoire {folder_path} n'existe pas"})
-                    # print({"status": "error", "message": f"[ERREUR] Le répertoire {folder_path} n'existe pas"})
+                    print({"status": "error", "message": f"[ERREUR] Le répertoire {folder_path} n'existe pas"})
                     return
 
                 files_in_dir = os.listdir(folder_path)
                 yield json.dumps({"status": "info", "message": f"[INFO] Fichiers disponibles dans le répertoire : {files_in_dir}"})
-                # print({"status": "info", "message": f"[INFO] Fichiers disponibles dans le répertoire : {files_in_dir}"})
+                print({"status": "info", "message": f"[INFO] Fichiers disponibles dans le répertoire : {files_in_dir}"})
                 found_file = next((file for file in files_in_dir if file == filename), None)
 
 
                 if not found_file:
                     yield json.dumps({"status": "error", "message": f"[ERREUR] Fichier {filename} introuvable dans {folder_path}",
                                     "task": f"Fichier {filename} introuvable dans"})
-                    # print({"status": "error", "message": f"[ERREUR] Fichier {filename} introuvable dans {folder_path}"})
+                    print({"status": "error", "message": f"[ERREUR] Fichier {filename} introuvable dans {folder_path}"})
                     return
 
                 filepath = os.path.join(folder_path, found_file)
                 yield json.dumps({"status": "info", "message": f"[INFO] Fichier trouvé : {found_file}"})
-                # print({"status": "info", "message": f"[INFO] Fichier rencontré : {found_file}"})
+                print({"status": "info", "message": f"[INFO] Fichier rencontré : {found_file}"})
                 yield json.dumps({"status": "info", "message": f"[INFO] Chemin complet du fichier : {filepath}"})
-                # print({"status": "info", "message": f"[INFO] Chemin complet du fichier : {filepath}"})
+                print({"status": "info", "message": f"[INFO] Chemin complet du fichier : {filepath}"})
 
                 try:
                     data = []
                     yield json.dumps({"status": "info", "message": "[INFO] Début de la lecture du fichier CSV...",
                                     "task": "Début de la lecture du fichier CSV."})
-                    # print({"status": "info", "message": "[INFO] Début de la lecture du fichier CSV..."})
+                    print({"status": "info", "message": "[INFO] Début de la lecture du fichier CSV..."})
 
                     with open(filepath, 'r', encoding='utf-8', newline='') as csvfile:
                         csv_reader = csv.reader(csvfile, delimiter='^')
@@ -152,15 +152,15 @@ class Credits:
                             "status": "info",
                             "message": f"[INFO] Lecture réussie. Nombre de lignes : {len(data)}"
                         })
-                        # print({"status": "info", "message": f"[INFO] Lecture réussie. Nombre de lignes : {len(data)}"})
+                        print({"status": "info", "message": f"[INFO] Lecture réussie. Nombre de lignes : {len(data)}"})
                         yield json.dumps({
                             "status": "info",
                             "message": f"[INFO] Entêtes détectées : {data[0] if data else 'Aucune'}"
                         })
-                        # print({"status": "info", "message": f"[INFO] Entités détectées : {data[0] if data else 'Aucune'}"})
+                        print({"status": "info", "message": f"[INFO] Entités détectées : {data[0] if data else 'Aucune'}"})
                     else:
                         yield json.dumps({"status": "error", "message": "[ERREUR] Le fichier a été lu mais ne contient pas de données"})
-                        # print({"status": "error", "message": "[ERREUR] Le fichier a été lu mais ne contient pas de données"})
+                        print({"status": "error", "message": "[ERREUR] Le fichier a été lu mais ne contient pas de données"})
                         return
 
                 except Exception as read_error:
@@ -168,24 +168,24 @@ class Credits:
                         "status": "error",
                         "message": f"[ERREUR] Lecture du fichier CSV échouée : {str(read_error)}"
                     })
-                    # print({"status": "error", "message": f"[ERREUR] Lecture du fichier CSV échouée : {str(read_error)}"})
+                    print({"status": "error", "message": f"[ERREUR] Lecture du fichier CSV échouée : {str(read_error)}"})
                     return
 
                 try:
                     yield json.dumps({"status": "info", "message": "[INFO] Tentative de connexion à la base de données"})
-                    # print({"status": "info", "message": "[INFO] Tentative de connexion à la base de données"})
+                    print({"status": "info", "message": "[INFO] Tentative de connexion à la base de données"})
                     conn = self.db.connect()
                     yield json.dumps({"status": "info", "message": "[INFO] Connexion à la base de données établie"})
-                    # print({"status": "info", "message": "[INFO] Connexion à la base de données établie"})
+                    print({"status": "info", "message": "[INFO] Connexion à la base de données établie"})
                     cursor = conn.connection.cursor()
                     yield json.dumps({"status": "info", "message": "[INFO] Curseur créé avec succès"})
-                    # print({"status": "info", "message": "[INFO] Curseur création avec succès"})
+                    print({"status": "info", "message": "[INFO] Curseur création avec succès"})
                 except Exception as db_error:
                     yield json.dumps({
                         "status": "error",
                         "message": f"[ERREUR] Échec de connexion à la base de données : {str(db_error)}"
                     })
-                    # print({"status": "error", "message": f"[ERREUR] Échec de connexion à la base de données : {str(db_error)}"})
+                    print({"status": "error", "message": f"[ERREUR] Échec de connexion à la base de données : {str(db_error)}"})
                     return
 
                 try:
@@ -194,7 +194,7 @@ class Credits:
                         "status": "debug",
                         "message": f"[DEBUG] En-têtes avant traitement : {headers}"
                     })
-                    # print({"status": "debug", "message": f"[DEBUG] En-têtes avant traitement : {headers}"})
+                    print({"status": "debug", "message": f"[DEBUG] En-têtes avant traitement : {headers}"})
 
                     for i, header in enumerate(headers):
                         if not header or header.strip() == '':
@@ -203,7 +203,7 @@ class Credits:
                                 "status": "warning",
                                 "message": f"[WARNING] En-tête vide détecté à la position {i}, remplacé par 'colonne_{i+1}'"
                             })
-                            # print({"status": "warning", "message": f"[WARNING] En-tête vide détecté à la position {i}, remplacé par 'colonne_{i+1}'"})
+                            print({"status": "warning", "message": f"[WARNING] En-tête vide détecté à la position {i}, remplacé par 'colonne_{i+1}'"})
 
                     seen_headers = {}
                     for i, header in enumerate(headers):
@@ -217,7 +217,7 @@ class Credits:
                                 "status": "warning",
                                 "message": f"[WARNING] En-tête dupliqué '{original_header}' renommé en '{headers[i]}'"
                             })
-                            # print({"status": "warning", "message": f"[WARNING] En-tête dupliqué '{original_header}' renommé en '{headers[i]}'"})
+                            print({"status": "warning", "message": f"[WARNING] En-tête dupliqué '{original_header}' renommé en '{headers[i]}'"})
                         seen_headers[headers[i]] = i
 
                     yield json.dumps({
@@ -225,15 +225,15 @@ class Credits:
                         "message": f"[DEBUG] En-têtes après nettoyage : {headers}",
                         "task": "En-têtes après nettoyage"
                     })
-                    # print({"status": "debug", "message": f"[DEBUG] En-têtes aprés nettoyage : {headers}"})
+                    print({"status": "debug", "message": f"[DEBUG] En-têtes aprés nettoyage : {headers}"})
 
                     yield json.dumps({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}...",
                                     "task": "Suppression de la table existante"})
-                    # print({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}..."})
+                    print({"status": "info", "message": f"[INFO] Suppression de la table existante {table_name}..."})
                     # Suppression de la table
                     conn.execute(text(f'DROP TABLE IF EXISTS `{table_name}`;'))
                     yield json.dumps({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
-                    # print({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
+                    print({"status": "info", "message": "[INFO] Traitement des colonnes dupliquées..."})
                     # Traitement des données
                     headers, data_rows = self.merge_duplicate_columns(headers, data[1:])
                     columns = ', '.join([f'`{col}` TEXT' for col in headers])
@@ -242,7 +242,7 @@ class Credits:
                     # Création de la table
                     conn.execute(text(create_query))
                     yield json.dumps({"status": "info", "message": f"[INFO] Table `{table_name}` créée avec succès"})
-                    # print({"status": "info", "message": f"[INFO] Table `{table_name}` création avec succès"})
+                    print({"status": "info", "message": f"[INFO] Table `{table_name}` création avec succès"})
                     total_rows = len(data_rows)
                     yield json.dumps({
                         "status": "start_insert",
@@ -250,7 +250,7 @@ class Credits:
                         "total_rows": total_rows,
                         "message": f"[INFO] Début de l'insertion de {total_rows} lignes..."
                     })
-                    # print({"status": "start_insert", "task": "Debut de l'insertion", "total_rows": total_rows,})
+                    print({"status": "start_insert", "task": "Debut de l'insertion", "total_rows": total_rows,})
                     batch_size = 10000
                     placeholders = ', '.join([f':val{j}' for j in range(len(headers))])
                     insert_query = text(f'INSERT INTO `{table_name}` VALUES ({placeholders})')
@@ -311,7 +311,7 @@ class Credits:
                         conn.rollback()
                         return
 
-                    # print({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
+                    print({"status": "info", "message": "[INFO] Validation des modifications (commit)..."})
                     conn.commit()
                     yield json.dumps({
                         "status": "success",
@@ -319,44 +319,44 @@ class Credits:
                         "table_name": table_name,
                         "message": f"[SUCCESS] {total_rows} lignes insérées avec succès dans la table `{table_name}`"
                     })
-                    # print({"status": "success", "total_inserted": total_rows, "table_name": table_name,})
+                    print({"status": "success", "total_inserted": total_rows, "table_name": table_name,})
                 except Exception as e:
                     yield json.dumps({
                         "status": "error",
                         "message": f"[ERREUR] Exception non gérée : {str(e)}"
                     })
-                    # print({"status": "error", "message": f"[ERREUR] Exception non gérée : {str(e)}"})
+                    print({"status": "error", "message": f"[ERREUR] Exception non gérée : {str(e)}"})
                     try:
                         conn.rollback()
                         yield json.dumps({"status": "info", "message": "[INFO] Rollback effectué"})
-                        # print({"status": "info", "message": "[INFO] Rollback effectué"})
+                        print({"status": "info", "message": "[INFO] Rollback effectué"})
                     except Exception as rollback_error:
                         yield json.dumps({
                             "status": "error",
                             "message": f"[ERREUR] Échec du rollback : {str(rollback_error)}"
                         })
-                        # print({"status": "error", "message": f"[ERREUR] Échec du rollback : {str(rollback_error)}"})
+                        print({"status": "error", "message": f"[ERREUR] Échec du rollback : {str(rollback_error)}"})
                 finally:
                     try:
                         if 'conn' in locals() and conn:
                             conn.close()
                             yield json.dumps({"status": "info", "message": "[INFO] Connexion à la base de données fermée"})
-                            # print({"status": "info", "message": "[INFO] Connexion à la base de données fermée"})
+                            print({"status": "info", "message": "[INFO] Connexion à la base de données fermée"})
                     except Exception as close_error:
                         yield json.dumps({
                             "status": "error",
                             "message": f"[ERREUR] Problème lors de la fermeture de la connexion : {str(close_error)}"
                         })
-                        # print({"status": "error", "message": f"[ERREUR] Problème lors de la fermeture de la connexion : {str(close_error)}"})
+                        print({"status": "error", "message": f"[ERREUR] Problème lors de la fermeture de la connexion : {str(close_error)}"})
             except Exception as global_error:
                 yield json.dumps({
                     "status": "critical_error",
                     "message": f"[ERREUR CRITIQUE] Exception non gérée dans la fonction principale : {str(global_error)}"
                 })
-                # print({"status": "critical_error", "message": f"[ERREUR CRITIQUE] Exception non gérée dans la fonction principale : {str(global_error)}"})
+                print({"status": "critical_error", "message": f"[ERREUR CRITIQUE] Exception non gérée dans la fonction principale : {str(global_error)}"})
                 return
             yield json.dumps({"fait": "true", "message": "insertion fait"})
-            # print({"fait", "insertion fait"})
+            print({"fait", "insertion fait"})
         return progress_generator()
 
     def upload_multiple_files(self, files, folder_name=None):
@@ -472,8 +472,6 @@ class Credits:
             except Exception as close_err:
                 print(f"[ERREUR] Fermeture de la connexion échouée : {close_err}")
 
-
-
     def allowed_file(self, filename):
         """
         Vérifie si l'extension du fichier est autorisée
@@ -481,7 +479,7 @@ class Credits:
         ALLOWED_EXTENSIONS = {'csv', 'xlsx'}
         if '.' in filename:
             ext = filename.rsplit('.', 1)[1].lower()
-            # print("Extension détectée:", ext)
+            print("Extension détectée:", ext)
             return ext in ALLOWED_EXTENSIONS
         return False
        
@@ -590,8 +588,7 @@ class Credits:
                     os.remove(backup_filepath)
                 except:
                     pass
-    
-                  
+             
     def run_initialisation_sql(self, **kwargs):
         current_date = kwargs.get("str_date")
         try:
@@ -1429,25 +1426,25 @@ class Credits:
                 # sql = steps[23]["sql"].format(current_date="20250611")
 
 
-            # print("------------------------------------ icii ----------------------------------")
+            print("------------------------------------ icii ----------------------------------")
 
            
             cursor.execute("DELETE FROM init_status")
             requets_len=len(steps)
             
             yield {"status": "success", "data_step": steps}
-            # print( {"status": "success", "data_step": steps})
+            print( {"status": "success", "data_step": steps})
             for i, step in enumerate(steps, 0):
                 name = step["name"]
                 yield {"name": name, "status": "processing","total":requets_len,"current":i}
-                # print( {"name": name, "status": "processing","total":requets_len,"current":i})
+                print( {"name": name, "status": "processing","total":requets_len,"current":i})
 
                 cursor.execute("SELECT status FROM init_status WHERE name = %s", (name,))
                 existing = cursor.fetchone()
 
                 if existing and existing[0] == "done":
                     yield {"name": name, "status": "skipped"}
-                    # print( {"name": name, "status": "skipped"})
+                    print( {"name": name, "status": "skipped"})
                     continue
                 try:
                     sql = step["sql"]
@@ -1459,33 +1456,29 @@ class Credits:
                         (name, "done", "OK")
                     )
                     yield {"name": name, "status": "done","total":requets_len,"current":i}
-                    # print( {"name": name, "status": "done","total":requets_len,"current":i})
+                    print( {"name": name, "status": "done","total":requets_len,"current":i})
                 except Exception as e:
                     cursor.execute(
                         "REPLACE INTO init_status (name, status, message) VALUES (%s, %s, %s)",
                         (name, "error", str(e))
                     )
                     yield {"name": name, "status": "error", "message": str(e)}
-                    # print( {"name": name, "status": "error_ici", "message": str(e)})
+                    print( {"name": name, "status": "error_ici", "message": str(e)})
             conn.commit()
             yield {"name": name, "status": "done","message":"Toutes les étapes sont terminées"}
             yield "event: end\ndata: done\n\n" 
-            # print( {"name": name, "status": "done","message":"Toutes les étapes sont terminées"})
+            print( {"name": name, "status": "done","message":"Toutes les étapes sont terminées"})
             return
             # return status_report
         except Exception as e:
             yield { "status": "error_ici_","message":str(e)}
-            # print( { "status": "error","message":str(e)})
+            print( { "status": "error","message":str(e)})
             return
     
     def run_init(self):
         yield {"index": 1, "status": "running", "message": "Traitement des encours..."}
         time.sleep(1)  # Simulation
         yield {"index": 1, "status": "done", "message": "Encours terminés."}
-
-# Mercredi: 11:00 à 12:00
-
-  
 
     def run_etat_remboursement(self):
         yield {"index": 1, "status": "running", "message": "Traitement des etat_remboursements..."}
@@ -1497,18 +1490,15 @@ class Credits:
         time.sleep(1)
         yield {"index": 2, "status": "done", "message": "Remboursements terminés."}
 
-
     def run_previsionnel(self):
         yield {"index": 3, "status": "running", "message": "Génération de l'état prévisionnel..."}
         time.sleep(1)
         yield {"index": 3, "status": "done", "message": "Prévisionnel terminé."}
 
-
     def run_limit_avm(self):
         yield {"index": 4, "status": "running", "message": "Analyse des limites AVM..."}
         time.sleep(1)
         yield {"index": 4, "status": "done", "message": "Limite AVM traitée."}
-
 
     def run_limit_caution(self):
         yield {"index": 5, "status": "running", "message": "Analyse des limites de caution..."}

@@ -151,10 +151,8 @@ const chargerDossier = (file,activatorProps) => {
     refresh.classList.add('animIt')
   }
   // console.log(file.children);
-  usePopupStore().cdi_list_stream=file.children 
-  
-  load_database(refresh,file.children,file.title,date_string)
-
+  usePopupStore().cdi_list_stream=file.children  
+  load_database(refresh,file.children,file.title,date_string) 
   setTimeout(() => {
     usePopupStore().togglePopupCDI();
   }, 300);
