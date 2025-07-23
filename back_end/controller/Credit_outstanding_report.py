@@ -222,7 +222,7 @@ class Credit_outstanding_report:
             columns = result.keys()
             data = [dict(zip(columns, row)) for row in result.fetchall()]
 
-            print(f"✅ Données extraites depuis la table {table_name} :", data)
+            # print(f"✅ Données extraites depuis la table {table_name} :", data)
             return {"data": data}
 
         except Exception as e:

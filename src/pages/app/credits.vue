@@ -76,13 +76,13 @@
         </v-col>
       </v-col>
 </div>
-<div class="flex flex-col px-3 overflow-auto max-h-[91vh] " v-else> 
-    <sparkLineVue :selected_date="selected_date" ></sparkLineVue> 
+<div class="flex flex-col px-3 overflow-auto max-h-[91vh] hide-scrollbar " v-else> 
+    <sparkLineVue :selected_date="selected_date"   ></sparkLineVue> 
     <div class=" my-2"></div>
     <Data_viewer></Data_viewer>
     <div class=" my-2"></div>
     <v-divider></v-divider>
-    <Data_table_view ></Data_table_view> 
+    <Data_table_view style="" ></Data_table_view> 
   <!-- <Dougnut></Dougnut> -->
 
 </div>
@@ -294,4 +294,14 @@ const getSubtitle = (status) => {
   background-color: transparent !important;
   box-shadow: none !important;
 }
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
 </style>

@@ -9,10 +9,17 @@
     <v-tabs-window v-model="tab" class="bg_data" style="  padding: 5px 40px; ">
         <v-tabs-window-item v-for="item in tabs" :key="item.value" :value="item.value">
         <v-card style="background: transparent;" :title="item.title" flat>
-            <template v-slot:text>
-            <v-text-field v-model="item.search" label="Search" prepend-inner-icon="mdi-magnify" variant="outlined" hide-details single-line></v-text-field>
+            <template v-slot:text> 
+                <v-text-field
+                    v-model="item.search"
+                    label="Search"
+                    prepend-inner-icon="mdi-magnify"
+                    variant="outlined"
+                    hide-details
+                    single-line 
+                ></v-text-field> 
             </template> 
-            <v-data-table class=" bg-transparent" :headers="item.headers"    item-value="Numero_pret" :search="item.search" fixed-header height="450px" item-key="id"  >
+            <v-data-table class=" bg-transparent" :headers="item.headers" :items="item.liste"   item-value="Numero_pret" :search="item.search" fixed-header height="450px" item-key="id" :items-per-page="50" >
                 <!-- Slot pour tronquer l'ID -->
                 <template v-slot:item.ID="{ item }">
                 {{ item.ID ? item.ID.slice(0, 2) : '' }}
@@ -32,8 +39,8 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-const tab = ref("one"); 
-
+const tab = ref("one");  
+const  listes_encours_credits=ref([])
 const headers_encours = [
   {
     align: 'start',
@@ -67,11 +74,18 @@ const headers_encours = [
 
 
 const tabs = [
-  { value: 'one',search:'',headers:headers_encours, label: 'Etat des cours', title: 'Etats des encours' },
-  { value: 'two',search:'', label: 'Etat DE Remboursement', title: 'Etats de remboursement' },
-  { value: 'three',search:'', label: 'Limit AVM', title: 'Limite AVM' },
-  { value: 'four',search:'', label: 'Limit CAUTION', title: 'Limite CAUTION' }
+  { value: 'one',search:'',headers:headers_encours,liste:listes_encours_credits.value, label: 'Etat des cours', title: 'Etats des encours' },
+  { value: 'two',search:'',headers:[],liste:[], label: 'Etat DE Remboursement', title: 'Etats de remboursement' },
+  { value: 'three',search:'',headers:[],liste:[], label: 'Limit AVM', title: 'Limite AVM' },
+  { value: 'four',search:'',headers:[],liste:[], label: 'Limit CAUTION', title: 'Limite CAUTION' }
 ]
+
+
+// const refreshTable=()=> { 
+//     this.item.liste = this.item.listeOriginale.filter(el =>
+//       el.Nom_client?.toLowerCase().includes(this.item.search.toLowerCase())
+//     );
+//   }
 
 
 const get_encours_credits = async () => {
@@ -90,7 +104,19 @@ const get_encours_credits = async () => {
     }
 
     const data = await response.json(); 
-    console.log(data); 
+    
+    for (let index = 0; index <data.response.data.length; index++) {
+      const element = data.response.data[index];
+    //   data_temp.value.push (element);
+        listes_encours_credits.value.push(element)
+    //   list_encours.value.push (element);
+    // console.log(element);
+
+    //   listes_encours_credits.value=data_temp.value[0]
+    }
+    // console.log(data.response.data[0]);
+    // listes_encours_credits.value=data.response.data 
+    // console.log(data.response[0]); 
 
   } catch (error) {
     console.error("❌ Erreur lors du chargement du fichier dans la base :", error);
