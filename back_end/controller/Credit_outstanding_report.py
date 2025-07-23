@@ -21,8 +21,7 @@ import io
 from sqlalchemy import text
 
 
-
-EXTRACT_DATE='20250620'
+ 
 
 class Credit_outstanding_report:
     def __init__(self):
@@ -186,3 +185,23 @@ class Credit_outstanding_report:
                     conn.close()
             except Exception as close_err:
                 print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+                
+    def get_capital_sums(self):
+        conn = None
+        try:
+            conn = self.db.connect()
+            capital_result = conn.execute(text("SELECT * FROM total_capital_encours_credit;"))
+            columns = capital_result.keys()
+            capital_data = [dict(zip(columns, row)) for row in capital_result.fetchall()]
+            print("Capital sums data:", capital_data)
+            return {"capital_sums": capital_data}
+        except Exception as e:
+            print(f"[ERREUR] Impossible de récupérer les données : {e}")
+            return None
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+                     

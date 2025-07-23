@@ -15,6 +15,7 @@
 </template>
 <script setup>
 import { onMounted, ref } from 'vue';
+import { usePopupStore } from '../stores'
 
 const date_last_import_file = ref('');
 
@@ -32,7 +33,9 @@ const get_last_import_file = async () => {
     }
 
     const data = await response.json(); 
-    console.log(data);
+    // console.log(data);
+    usePopupStore().selected_date=data.response
+    // console.log(usePopupStore().selected_date);
     
 
     // ✅ Exemple de réponse attendue : { date: "2025-07-18" }

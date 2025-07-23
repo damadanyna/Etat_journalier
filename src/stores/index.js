@@ -10,6 +10,7 @@ export const usePopupStore = defineStore('popup', () => {
   const precentage=ref(0)
   const loadFile=ref("Préparation ...");
   const list_a_traiter=ref([])
+  const selected_date=ref(null)
   const show_notification=ref({status:false,message:"null",ico:"null"})
   const user_access=ref([{
     name:"rgpp-onisoa",
@@ -38,5 +39,17 @@ export const usePopupStore = defineStore('popup', () => {
     showPopupCDI.value = !showPopupCDI.value
   }
 
-  return { showPopup,togglePopupCDI,precentage,showPopupCDI,cdi_list_file_stream,cdi_list_stream, togglePopup,loadFile,show_notification,user_access,list_a_traiter}
+  return { showPopup,
+    togglePopupCDI,
+    precentage,
+    showPopupCDI,
+    cdi_list_file_stream,
+    cdi_list_stream,
+     togglePopup,
+    loadFile,
+    show_notification,
+    user_access,
+    list_a_traiter,
+    selected_date
+  }
 })

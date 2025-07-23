@@ -6,6 +6,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import routes from 'virtual:generated-pages' 
 import '@mdi/font/css/materialdesignicons.css' 
 import { createPinia } from 'pinia'
+import './plugins/chart'
 
 
 // Initialize Pinia

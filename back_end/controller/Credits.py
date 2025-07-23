@@ -592,7 +592,8 @@ class Credits:
                     pass
     
                   
-    def run_initialisation_sql(self):
+    def run_initialisation_sql(self, **kwargs):
+        current_date = kwargs.get("str_date")
         try:
             conn = self.db.connect()
             # cursor = conn.cursor()
@@ -1349,6 +1350,79 @@ class Credits:
                                                 -- HAVING NOT (Capital_ = '0.00|0.00|0.00' AND (tmp_od_pen.OD_PEN='0.00' OR tmp_od_pen.OD_PEN =''))   
                             """
                         }, 
+                        {
+                            "name": """Ajustemen de la Table encours_credit_{current_date} """,
+                            "sql": """
+                                DELETE encours
+                                FROM  encours_credit_{current_date}  AS encours
+                                LEFT JOIN em_lo_application_mcbc_live_full AS em_
+                                    ON em_.arrangement_id = encours.id 
+                                WHERE em_.proc_status != 'DISBURSED';"""
+                        }, 
+                        {
+                            "name": """Suppréssion de la DROP PROCEDURE calculate_capital_sums  IF EXISTS """,
+                            "sql": """
+                                DROP PROCEDURE IF EXISTS calculate_capital_sums """
+                        }, 
+                        {
+                            "name": """ CREATING PROCEDURE calculate_capital_sum """,
+                            "sql": """
+                                CREATE PROCEDURE calculate_capital_sums()
+                                BEGIN
+                                    DECLARE done INT DEFAULT FALSE;
+                                    DECLARE tbl_name VARCHAR(255);
+                                    DECLARE sql_query TEXT;
+
+                                    -- curseur pour toutes les tables qui commencent par encours_credit_
+                                    DECLARE cur CURSOR FOR
+                                        SELECT table_name
+                                        FROM information_schema.tables
+                                        WHERE table_schema = DATABASE()
+                                        AND table_name LIKE 'encours_credit_%';
+
+                                    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+                                    -- table temporaire pour stocker les résultats
+                                    -- DROP  TABLE IF EXISTS tmp_capital_sums;
+                                    DROP  TABLE IF EXISTS total_capital_encours_credit;
+                                    CREATE  TABLE total_capital_encours_credit (
+                                        table_name VARCHAR(255),
+                                        Total_amount DECIMAL(30,6)
+                                    );
+
+                                    OPEN cur;
+
+                                    read_loop: LOOP
+                                        FETCH cur INTO tbl_name;
+                                        IF done THEN
+                                            LEAVE read_loop;
+                                        END IF;
+
+                                        -- construire la requête dynamique pour cette table
+                                        SET @sql_query = CONCAT(
+                                            'INSERT INTO total_capital_encours_credit ',
+                                            'SELECT ''', tbl_name, ''' AS table_name, ',
+                                            'SUM(ABS(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(Capital_, ''|'', 3), ''|'', -1) AS DECIMAL(20,6)))) ',
+                                            'FROM ', tbl_name
+                                        );
+
+                                        -- préparer et exécuter
+                                        PREPARE stmt FROM @sql_query;
+                                        EXECUTE stmt;
+                                        DEALLOCATE PREPARE stmt;
+                                    END LOOP;
+
+                                    CLOSE cur;
+
+                                    -- afficher les résultats
+                                    SELECT * FROM total_capital_encours_credit;
+                                END ;
+                                """
+                        }, 
+                        {
+                            "name": """ appelle du fonction calculate_capital_sums """,
+                            "sql": """CALL calculate_capital_sums();"""
+                        }, 
                     ]
 
                 # Exemple d’utilisation :
@@ -1357,7 +1431,7 @@ class Credits:
 
             # print("------------------------------------ icii ----------------------------------")
 
-            current_date = "20250630"
+           
             cursor.execute("DELETE FROM init_status")
             requets_len=len(steps)
             
@@ -1395,6 +1469,7 @@ class Credits:
                     # print( {"name": name, "status": "error_ici", "message": str(e)})
             conn.commit()
             yield {"name": name, "status": "done","message":"Toutes les étapes sont terminées"}
+            yield "event: end\ndata: done\n\n" 
             # print( {"name": name, "status": "done","message":"Toutes les étapes sont terminées"})
             return
             # return status_report

@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 from typing import List
 from typing import Optional
 from fastapi.responses import JSONResponse
+from decimal import Decimal
 import json
 import time
 import asyncio 
@@ -180,13 +181,16 @@ async def show_files(app: Optional[str] = Query(None)):
  
 
 @router.get("/run_encours")
-def run_encours():
+async def run_encours(request: Request, str_date: str = Query(None)):
+    # print("DATE",str_date)
+    
     gens = [
         {
             "Methode": credits.run_initialisation_sql,
             # "Methode": credits.run_init,
             "title": "Initialisation",
-            "status": "pending"
+            "status": "pending",
+            "params": {"str_date": str_date} 
         },
         {
             # "Methode": credit_outstanding_report.get_all_outstanding,
@@ -221,18 +225,27 @@ def run_encours():
         }
     ]
 
+    
     def event_generator():
         yield "data: " + json.dumps({"title": "Initialisation", "status": "starting"}) + "\n\n"
         time.sleep(0.1)
 
         for i, gen in enumerate(gens):
             title = gen["title"]
-            status_global = gen['status']
+            status_global = gen["status"]
 
+            # Message de début d'étape
             yield f"data: {json.dumps({'title_parent': title, 'status_parent': status_global, 'step': i})}\n\n"
+            time.sleep(0.1)
 
-            method_gen = gen["Methode"]()
+            # Appel de la méthode avec ou sans paramètres
+            methode = gen["Methode"]
+            if "params" in gen:
+                method_gen = methode(**gen["params"])
+            else:
+                method_gen = methode()
 
+            # Itération sur le générateur retourné par la méthode
             for step_status in method_gen:
                 data = {
                     "title": title,
@@ -241,13 +254,41 @@ def run_encours():
                 }
                 yield "data: " + json.dumps(data) + "\n\n"
                 time.sleep(0.1)
-            
-            yield f"data: {json.dumps({'title_parent': title, 'status_parent': 'done', 'step': i})}\n\n"
-        yield "data: " + json.dumps({"title": "Initialisation", "status_final": "done"}) + "\n\n"
 
+            # Message de fin d'étape
+            yield f"data: {json.dumps({'title_parent': title, 'status_parent': 'done', 'step': i})}\n\n"
+
+        # Fin de l'initialisation
+        yield "data: " + json.dumps({"title": "Initialisation", "status_final": "done"}) + "\n\n"
+        
+    credits.insert_into_history_table(label_value=str_date, used=1,stat_of='init')
+    
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+@router.get("/get_capital_sums")
+def get_capital_sums():
+    try:
+        data = credit_outstanding_report.get_capital_sums()
+        if data is None:
+            return JSONResponse(status_code=500, content={"status": "error", "detail": "Erreur lors de la récupération des données."})
 
+        data_serializable = convert_decimals(data)
+        return JSONResponse(content={"status": "success", "data": data_serializable})
+
+    except Exception as e:
+        print("Erreur dans get_capital_sums:", e)
+        return JSONResponse(status_code=500, content={"status": "error", "detail": str(e)})
+    
+    
+def convert_decimals(obj):
+    if isinstance(obj, list):
+        return [convert_decimals(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {k: convert_decimals(v) for k, v in obj.items()}
+    elif isinstance(obj, Decimal):
+        return float(obj)  # ou str(obj) si tu préfères garder la précision
+    else:
+        return obj
 
 
 api_router = router
