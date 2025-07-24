@@ -75,14 +75,22 @@
           </div>
         </v-col>
       </v-col>
-</div>
-<div class="flex flex-col px-3 overflow-auto max-h-[91vh] hide-scrollbar " v-else> 
-    <sparkLineVue :selected_date="selected_date"   ></sparkLineVue> 
-    <div class=" my-2"></div>
-    <Data_viewer></Data_viewer>
-    <div class=" my-2"></div>
-    <v-divider></v-divider>
-    <Data_table_view style="" ></Data_table_view> 
+</div> 
+  <div class="  flex-col overflow-auto h-[91vh]   text-white hide-scrollbar" v-else>
+    <div class="flex flex-col px-3 gap-2 hide-scrollbar">
+      <div class="h-[70vh]">
+        <sparkLineVue :selected_date="selected_date" class="w-full h-full" />
+      </div> 
+      <div class=" my-2"></div>
+      <Data_viewer></Data_viewer>
+      <div class=" my-2"></div>
+      <v-divider></v-divider>
+      <div class="overflow-auto">
+        <Data_table_view class="w-full" />
+      </div>
+    </div> 
+
+   
   <!-- <Dougnut></Dougnut> -->
 
 </div>

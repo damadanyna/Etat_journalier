@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-container  ">
+  <div class="chart-container   ">
     <Line :data="chartData" :options="chartOptions" />
   </div>
 </template>
@@ -122,8 +122,7 @@ watch(
 </script>
 
 <style scoped>
-.chart-container {
-  height: 500px;
+.chart-container { 
   width: 100%;
   background-color: #00000022;
   padding: 16px;
