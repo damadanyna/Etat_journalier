@@ -11,6 +11,7 @@ export const usePopupStore = defineStore('popup', () => {
   const loadFile=ref("Préparation ...");
   const list_a_traiter=ref([])
   const selected_date=ref(null)
+  const encours_actual_data=ref([])
   const show_notification=ref({status:false,message:"null",ico:"null"})
   const user_access=ref([{
     name:"rgpp-onisoa",
@@ -50,6 +51,7 @@ export const usePopupStore = defineStore('popup', () => {
     show_notification,
     user_access,
     list_a_traiter,
-    selected_date
+    selected_date,
+    encours_actual_data
   }
 })

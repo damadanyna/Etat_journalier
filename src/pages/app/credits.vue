@@ -1,5 +1,9 @@
 <template>  
-<div v-if="selected_date?.stat_of==null || selected_date?.stat_of=='' || selected_date?.stat_of=='NULL'">
+<!-- <div v-if="!selected_dat " class="flex h-full w-full items-center justify-center">
+    <h3>Chargement ...</h3>
+</div> -->
+
+<div  v-if="selected_date?.stat_of==null ||   selected_date?.stat_of=='' || selected_date?.stat_of=='NULL'">
   <v-btn @click="runAllSteps()"
           class="me-2 text-none ml-10 text-white"
           color="#00DF76"
@@ -76,7 +80,8 @@
         </v-col>
       </v-col>
 </div> 
-  <div class="  flex-col overflow-auto h-[91vh]   text-white hide-scrollbar" v-else>
+
+<div class="  flex-col overflow-auto h-[91vh]   text-white hide-scrollbar" v-else>
     <div class="flex flex-col px-3 gap-2 hide-scrollbar">
       <div class="h-[70vh]">
         <sparkLineVue :selected_date="selected_date" class="w-full h-full" />
@@ -94,8 +99,7 @@
   <!-- <Dougnut></Dougnut> -->
 
 </div>
-
-
+ 
 </template>
 
 <script setup>
@@ -139,6 +143,8 @@ watch(
   },
   { immediate: true }
 );
+
+ 
 
 const runStep_ = async (index) => {
   // Exemple de logique pour chaque étape

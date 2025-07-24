@@ -39,6 +39,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import { usePopupStore } from '../stores';  
 const tab = ref("one");  
 const  listes_encours_credits=ref([])
 const headers_encours = [
@@ -117,7 +118,10 @@ const get_encours_credits = async () => {
     // console.log(data.response.data[0]);
     // listes_encours_credits.value=data.response.data 
     // console.log(data.response[0]); 
-
+    
+    usePopupStore().encours_actual_data=listes_encours_credits
+    // console.log(usePopupStore().encours_actual_data);
+    
   } catch (error) {
     console.error("❌ Erreur lors du chargement du fichier dans la base :", error);
   }
