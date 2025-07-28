@@ -18,7 +18,7 @@ from db.db  import DB
 from werkzeug.utils import secure_filename 
 import aiofiles
 import io
-from sqlalchemy import text
+from sqlalchemy import text,bindparam
 
 
  
@@ -235,5 +235,69 @@ class Credit_outstanding_report:
                     conn.close()
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+     
 
-                        
+    def get_encours_etat_remboursement(self, date: str):
+        conn = None
+        try:
+            # ✅ Validation du format AAAAMMJJ
+            if not date.isdigit() or len(date) != 8:
+                raise ValueError(f"Format de date invalide : {date}")
+
+            # ✅ Extrait AAAAMM pour LIKE
+            date_prefix = date[:6] + '%'
+
+            query = text("""
+                SELECT *
+                FROM etat_remboursement
+                WHERE payment_date LIKE :date_prefix
+                ORDER BY payment_date;
+            """)
+
+            conn = self.db.connect()
+            result = conn.execute(query, {"date_prefix": date_prefix})
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+    def get_limit(self, limit_type: str):
+        conn = None 
+        try: 
+
+            query = text("""
+                  SELECT 
+            limit_cau.co_code,limit_cau.id,limit_product,concat(customer.short_name,' ',customer.name_1) as Name,limit_cau.approval_date,limit_cau.expiry_date,limit_cau.internal_amount,limit_cau.total_os,limit_cau.avail_amt from limit_mcbc_live_full as limit_cau INNER JOIN customer_mcbc_live_full as customer ON customer.id = limit_cau.liability_number 
+        WHERE limit_product = :limit_type;
+            """)
+
+            conn = self.db.connect()
+            result = conn.execute(query, {"limit_type": limit_type})
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
+    
+    

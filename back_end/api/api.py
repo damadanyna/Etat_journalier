@@ -304,8 +304,36 @@ async def get_encours_credits(date: str = Query(...)):  # obligatoire (not None)
     except Exception as e:
         print(f"[ERREUR route get_encours_credits] {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+    
+@router.get("/encours_remboursement")
+async def encours_remboursement(date: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_encours_etat_remboursement(date)
 
- 
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la date donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    
+@router.get("/encours_limit")
+async def encours_limit(limit_type: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_limit(limit_type)
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 api_router = router

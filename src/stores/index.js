@@ -12,6 +12,9 @@ export const usePopupStore = defineStore('popup', () => {
   const list_a_traiter=ref([])
   const selected_date=ref(null)
   const encours_actual_data=ref([])
+  const remboursement_actual_data=ref([])
+  const limit_avm_actual_data=ref([]) 
+  const limit_caution_actual_data=ref([])
   const show_notification=ref({status:false,message:"null",ico:"null"})
   const user_access=ref([{
     name:"rgpp-onisoa",
@@ -52,6 +55,10 @@ export const usePopupStore = defineStore('popup', () => {
     user_access,
     list_a_traiter,
     selected_date,
-    encours_actual_data
+    encours_actual_data,
+    remboursement_actual_data,
+    limit_caution_actual_data, 
+    limit_avm_actual_data
+
   }
 })

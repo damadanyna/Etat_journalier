@@ -800,6 +800,38 @@ class Credits:
                             "sql": "CREATE INDEX IF NOT EXISTS idx_arrangement_customer ON aa_arrangement_mcbc_live_full(customer);"
                         },
                         {
+                            "name": "Créer index INDEX idx_industry_id",
+                            "sql": "CREATE INDEX idx_industry_id ON industry_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_arrangement_id ON temp_arrangement_customers",
+                            "sql": "CREATE INDEX idx_arrangement_id ON temp_arrangement_customers (arrangement_id);  "
+                        },
+                        {
+                            "name": "Créer INDEX idx_arrangement_id ON temp_arrangement_customers",
+                            "sql": "CREATE INDEX idx_customer_id ON temp_arrangement_customers (customer_id);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_client_id ON temp_clients",
+                            "sql": "CREATE INDEX idx_client_id ON temp_clients (id);"
+                        }, 
+                        {
+                            "name": "Créer INDEX idx_client_id ON temp_clients",
+                            "sql": "CREATE INDEX idx_account_id ON temp_accounts (id);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_client_id ON temp_clients",
+                            "sql": "CREATE INDEX idx_opening_date ON temp_accounts (opening_date); "
+                        },
+                        {
+                            "name": "Créer INDEX idx_client_id ON temp_clients",
+                            "sql": "CREATE INDEX idx_balance_id ON temp_balances (id);"
+                        }, 
+                        {
+                            "name": "Créer INDEX idx_client_id ON temp_clients",
+                            "sql": "CREATE INDEX idx_type_sysdate ON temp_balances (type_sysdate);"
+                        },  
+                        {
                             "name": "Drop table temporaire - temp_arrangement_customers",
                             "sql": """
                             DROP TABLE IF EXISTS temp_arrangement_customers; 
@@ -1420,13 +1452,258 @@ class Credits:
                             "name": """ appelle du fonction calculate_capital_sums """,
                             "sql": """CALL calculate_capital_sums();"""
                         }, 
+                        {
+                            "name": """ Suppréssion de la fonciton split_value IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS split_value;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton split_value IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION split_value(str TEXT, pos INT)
+                                RETURNS TEXT
+                                DETERMINISTIC
+                                BEGIN
+                                    RETURN SUBSTRING_INDEX(SUBSTRING_INDEX(str, '|', pos + 1), '|', -1);
+                                END;"""
+                        }, 
+                        {
+                            "name": """ Suppréssion de la fonciton get_principal_int IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_principal_int;"""
+                        }, 
+                        {
+                            "name": """ Création de la fonciton get_principal_int IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION get_principal_int(property_str TEXT, or_prop_amount TEXT, os_prop_amount TEXT)
+                                    RETURNS DECIMAL(20, 2)
+                                    DETERMINISTIC
+                                    BEGIN
+                                        DECLARE i INT DEFAULT 0;
+                                        DECLARE entry TEXT;
+                                        DECLARE total DECIMAL(20, 2) DEFAULT 0;
+                                        DECLARE len INT;
+                                        DECLARE or_val TEXT;
+                                        DECLARE os_val TEXT;
+
+                                        -- Compter le nombre d'éléments séparés par '|'
+                                        SET len = LENGTH(property_str) - LENGTH(REPLACE(property_str, '|', '')) + 1;
+
+                                        WHILE i < len DO
+                                            SET entry = split_value(property_str, i);
+
+                                            IF entry = 'PRINCIPALINT' THEN
+                                                SET or_val = split_value(or_prop_amount, i);
+                                                SET os_val = split_value(os_prop_amount, i);
+
+                                                IF or_val IS NULL OR TRIM(or_val) = '' THEN
+                                                    SET or_val = '0.0';
+                                                END IF;
+
+                                                IF os_val IS NULL OR TRIM(os_val) = '' THEN
+                                                    SET os_val = '0.0';
+                                                END IF;
+
+                                                SET total = total
+                                                    + CAST(or_val AS DECIMAL(20,2))
+                                                    + CAST(os_val AS DECIMAL(20,2));
+                                            END IF;
+
+                                            SET i = i + 1;
+                                        END WHILE;
+
+                                        RETURN CASE WHEN total < 0 THEN -total ELSE total END;
+                                    END"""
+                        }, 
+                        {
+                            "name": """ Suppréssion de la fonciton get_penality_int IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_penality_int;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton get_penality_int IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION get_penality_int(property_str TEXT, or_prop_amount TEXT, os_prop_amount TEXT)
+                                        RETURNS DECIMAL(20, 2)
+                                        DETERMINISTIC
+                                        BEGIN
+                                            DECLARE i INT DEFAULT 0;
+                                            DECLARE entry TEXT;
+                                            DECLARE total DECIMAL(20, 2) DEFAULT 0;
+                                            DECLARE len INT;
+                                            DECLARE or_val TEXT;
+                                            DECLARE os_val TEXT;
+
+                                            -- Nombre d'éléments séparés par '|'
+                                            SET len = LENGTH(property_str) - LENGTH(REPLACE(property_str, '|', '')) + 1;
+
+                                            WHILE i < len DO
+                                                SET entry = split_value(property_str, i);
+
+                                                IF entry = 'PENALTYINT' THEN
+                                                    SET or_val = split_value(or_prop_amount, i);
+                                                    SET os_val = split_value(os_prop_amount, i);
+
+                                                    IF or_val IS NULL OR TRIM(or_val) = '' THEN
+                                                        SET or_val = '0.0';
+                                                    END IF;
+
+                                                    IF os_val IS NULL OR TRIM(os_val) = '' THEN
+                                                        SET os_val = '0.0';
+                                                    END IF;
+
+                                                    SET total = total
+                                                        + CAST(or_val AS DECIMAL(20,2))
+                                                        + CAST(os_val AS DECIMAL(20,2));
+                                                END IF;
+
+                                                SET i = i + 1;
+                                            END WHILE;
+
+                                            RETURN CASE WHEN total < 0 THEN -total ELSE total END;
+                                        END;"""
+                        },  
+                        {
+                            "name": """ Suppréssion de la fonciton get_capital_amount IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_capital_amount;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton get_capital_amount IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION get_capital_amount(property_str TEXT, or_prop_amount TEXT, os_prop_amount TEXT)
+                                        RETURNS DECIMAL(20, 2)
+                                        DETERMINISTIC
+                                        BEGIN
+                                            DECLARE i INT DEFAULT 0;
+                                            DECLARE entry TEXT;
+                                            DECLARE total_or DECIMAL(20, 2) DEFAULT 0;
+                                            DECLARE total_os DECIMAL(20, 2) DEFAULT 0;
+                                            DECLARE len INT;
+                                            DECLARE or_val TEXT;
+                                            DECLARE os_val TEXT;
+
+                                            -- Compter le nombre d'éléments
+                                            SET len = LENGTH(property_str) - LENGTH(REPLACE(property_str, '|', '')) + 1;
+
+                                            WHILE i < len DO
+                                                SET entry = split_value(property_str, i);
+
+                                                IF entry = 'ACCOUNT' THEN
+                                                    SET or_val = split_value(or_prop_amount, i);
+                                                    SET os_val = split_value(os_prop_amount, i);
+
+                                                    IF or_val IS NULL OR TRIM(or_val) = '' THEN
+                                                        SET or_val = '0.0';
+                                                    END IF;
+
+                                                    IF os_val IS NULL OR TRIM(os_val) = '' THEN
+                                                        SET os_val = '0.0';
+                                                    END IF;
+
+                                                    SET total_or = total_or + CAST(or_val AS DECIMAL(20,2));
+                                                    SET total_os = total_os + CAST(os_val AS DECIMAL(20,2));
+                                                END IF;
+
+                                                SET i = i + 1;
+                                            END WHILE;
+
+                                            RETURN CASE 
+                                                WHEN (total_or - total_os) < 0 THEN -(total_or - total_os)
+                                                ELSE (total_or - total_os)
+                                            END;
+                                        END;"""
+                        },  
+                        {
+                            "name": """ Suppréssion de la fonciton get_total_amount IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_total_amount;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton get_total_amount IF EXISTS """,
+                            "sql": """CREATE FUNCTION get_total_amount(capital DECIMAL(20,2), principal_int DECIMAL(20,2), penality_int DECIMAL(20,2))
+                                        RETURNS DECIMAL(20,2)
+                                        DETERMINISTIC
+                                        BEGIN
+                                            RETURN IFNULL(capital, 0) + IFNULL(principal_int, 0) + IFNULL(penality_int, 0);
+                                        END;"""
+                        },   
+                        {
+                            "name": """ Suppression de la table temp_etat_remb IF EXISTS """,
+                            "sql": """DROP TABLE IF EXISTS temp_etat_remb"""
+                        },   
+                        {
+                            "name": """ Création de la table temp_etat_remb IF EXISTS """,
+                            "sql": """create    TABLE IF NOT EXISTS temp_etat_remb AS
+                                            SELECT 
+                                                            account.opening_date as Date_pret,  
+                                                            arrangement.product,
+                                                            arrangement.co_code,
+                                                            bill_detail.arrangement_id,
+                                                            arrangement.linked_appl_id AS linked_appl_id,
+                                                            client.nom_complet as Nom_client,
+                                                            arrangement.customer,
+                                                            echeance.echeance,
+                                                            bill_detail.payment_date as date_echeance,
+                                                            CASE 
+                                                                WHEN LOCATE('|',  bill_detail.set_st_chg_dt) > 0 
+                                                                THEN SUBSTRING_INDEX( bill_detail.set_st_chg_dt, '|', 1) 
+                                                                ELSE  bill_detail.set_st_chg_dt 
+                                                            END AS payment_date, 
+                                                            get_capital_amount(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount) as capital,
+                                                            get_principal_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount) as principal_int,
+                                                            get_penality_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount) as penality_int, 
+                                                            get_total_amount(
+                                                                    get_capital_amount(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount),
+                                                                    get_principal_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount),
+                                                                    get_penality_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount)
+                                                                ) AS total,
+                                                            bill_detail.property,
+                                                            bill_detail.or_prop_amount,
+                                                            bill_detail.os_prop_amount
+                                                        FROM aa_bill_details_mcbc_live_full as bill_detail
+                                                        INNER JOIN aa_arrangement_mcbc_live_full as arrangement 
+                                                                ON arrangement.id = bill_detail.arrangement_id
+                                                        LEFT JOIN account_mcbc_live_full as account
+                                                                ON `account`.id= arrangement.linked_appl_id
+                                                        LEFT JOIN temp_arrangement_customers as temp_arr
+                                                                ON temp_arr.arrangement_id=arrangement.id
+                                                        LEFT JOIN temp_clients as client   
+                                                                ON client.id=temp_arr.customer_id
+                                                        LEFT JOIN temp_echeances as echeance 
+                                                                ON echeance.arrangement_id=temp_arr.arrangement_id
+                                                        LEFT JOIN temp_balances as balance 
+                                                                ON balance.id=arrangement.linked_appl_id 
+                                                        WHERE    (bill_detail.property NOT LIKE '%DISBURSEMENTFEE%' 
+                                                                OR bill_detail.property NOT LIKE '%NEWARRANGEMENTFEE%')
+                                                                AND CAST(SUBSTRING_INDEX(bill_detail.bill_date, '|', 1) AS UNSIGNED) > '20250101'
+                                                                AND bill_detail.os_prop_amount >= 0
+                                                                AND arrangement.product NOT LIKE '%.DAT%' 
+                                                                AND opening_date is NOT NULL 
+                                                                HAVING total!=0 ;"""
+                        },    
+                        {
+                            "name": """ Suppression de la TABLE etat_remboursement IF EXISTS """,
+                            "sql": """DROP TABLE IF EXISTS etat_remboursement"""
+                        },    
+                        {
+                            "name": """ Création de la TABLE etat_remboursement IF EXISTS """,
+                            "sql": """CREATE TABLE IF NOT EXISTS etat_remboursement AS
+                                        SELECT
+                                        arrangement_id,
+                                        Date_pret,
+                                        product,
+                                        co_code,
+                                        linked_appl_id,
+                                        Nom_client,
+                                        customer,
+                                        echeance,
+                                        date_echeance,
+                                        payment_date,
+                                        SUM(Capital) AS Capital,
+                                        SUM(principal_int) AS principal_int,
+                                        SUM(penality_int) AS penality_int,
+                                        SUM(TOTAL) AS TOTAL
+                                        FROM temp_etat_remb   GROUP BY arrangement_id;"""
+                        }, 
                     ]
 
                 # Exemple d’utilisation :
                 # sql = steps[23]["sql"].format(current_date="20250611")
 
 
-            print("------------------------------------ icii ----------------------------------")
+            # print("
 
            
             cursor.execute("DELETE FROM init_status")

@@ -5,8 +5,32 @@
 
     <div class="flex flex-row justify-end items-center space-x-4">
         <div class="text-center mr-14"> 
-          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel">
-              <span class="text-md">Exporter</span>
+          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_encours">
+              <span class="text-md">Encours</span>
+          <template v-slot:prepend>
+              <v-icon color="success"></v-icon>
+          </template>
+          </v-btn> 
+        </div> 
+        <div class="text-center mr-14"> 
+          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_LIMIT_AVM">
+              <span class="text-md">LIMI_AVM</span>
+          <template v-slot:prepend>
+              <v-icon color="success"></v-icon>
+          </template>
+          </v-btn> 
+        </div> 
+        <div class="text-center mr-14"> 
+          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_LIMIT_CAUTION">
+              <span class="text-md">LIMI_CAUTION</span>
+          <template v-slot:prepend>
+              <v-icon color="success"></v-icon>
+          </template>
+          </v-btn> 
+        </div> 
+        <div class="text-center mr-14"> 
+          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_remboursement">
+              <span class="text-md">Etat_remboursement</span>
           <template v-slot:prepend>
               <v-icon color="success"></v-icon>
           </template>
@@ -35,23 +59,46 @@
   import * as XLSX from 'xlsx'
   
   const listes_encours_credits = ref([])
-  const popupStore = usePopupStore()
-  const items = ['2025-02-28','2025-05-30','2025-06-30','2025-07-04',] 
-  const value = ref('2025-02-28')
+  const listes_remboursement_credits = ref([])
+  const listes_limit_avm = ref([])
+  const listes_limit_caution = ref([])
+  const popupStore = usePopupStore() 
 
   watch(
     () => popupStore.encours_actual_data,
-    (elt_resp) => {
-      // console.log('ions');
-      listes_encours_credits.value = elt_resp
-      // console.log(elt_resp);
+    (elt_resp) => { 
+      listes_encours_credits.value = elt_resp  
+    },
+    { immediate: true }
+  )
+  watch(
+    () => popupStore.remboursement_actual_data,
+    (elt_resp) => { 
+      listes_remboursement_credits.value = elt_resp 
+        
+    },
+    { immediate: true }
+  )
+
+  watch(
+    () => popupStore.limit_avm_actual_data,
+    (elt_resp) => { 
+      listes_limit_avm.value = elt_resp 
+        
+    },
+    { immediate: true }
+  )
+  watch(
+    () => popupStore.limit_caution_actual_data,
+    (elt_resp) => { 
+      listes_limit_caution.value = elt_resp 
         
     },
     { immediate: true }
   )
 
 
-function exportToExcel() {
+function exportToExcel_encours() {
   const data = listes_encours_credits.value
 
   if (!data || data.length === 0) {
@@ -69,6 +116,64 @@ function exportToExcel() {
   // 3. Sauvegarder sous forme de fichier xlsx
   XLSX.writeFile(workbook, "encours_credits.xlsx")
 }
+
+function exportToExcel_remboursement() {
+  const data = listes_remboursement_credits.value
+
+  if (!data || data.length === 0) {
+    alert("Aucune donnée à exporter")
+    return
+  }
+
+  // 1. Créer une feuille à partir des objets JS
+  const worksheet = XLSX.utils.json_to_sheet(data)
+
+  // 2. Créer le classeur contenant cette feuille
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
+
+  // 3. Sauvegarder sous forme de fichier xlsx
+  XLSX.writeFile(workbook, "encours_credits.xlsx")
+}
+function exportToExcel_LIMIT_AVM() {
+  const data = listes_limit_avm.value
+
+  if (!data || data.length === 0) {
+    alert("Aucune donnée à exporter")
+    return
+  }
+
+  // 1. Créer une feuille à partir des objets JS
+  const worksheet = XLSX.utils.json_to_sheet(data)
+
+  // 2. Créer le classeur contenant cette feuille
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
+
+  // 3. Sauvegarder sous forme de fichier xlsx
+  XLSX.writeFile(workbook, "encours_credits.xlsx")
+}
+
+function exportToExcel_LIMIT_CAUTION() {
+  const data = listes_limit_caution.value
+
+  if (!data || data.length === 0) {
+    alert("Aucune donnée à exporter")
+    return
+  }
+
+  // 1. Créer une feuille à partir des objets JS
+  const worksheet = XLSX.utils.json_to_sheet(data)
+
+  // 2. Créer le classeur contenant cette feuille
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
+
+  // 3. Sauvegarder sous forme de fichier xlsx
+  XLSX.writeFile(workbook, "encours_credits.xlsx")
+}
+
+
 
 </script>
 

@@ -42,6 +42,9 @@ import { onMounted, ref } from 'vue';
 import { usePopupStore } from '../stores';  
 const tab = ref("one");  
 const  listes_encours_credits=ref([])
+const  listes_remboursement_credits=ref([])
+const  listes_limit_avm=ref([])
+const  listes_limit_caution=ref([])
 const headers_encours = [
   {
     align: 'start',
@@ -74,20 +77,62 @@ const headers_encours = [
 ];
 
 
+const headers_etat_remboursement = [
+  { align: 'start', sortable: false },
+  { title: '#', value: 'index', sortable: false },
+
+  { key: 'arrangement_id', title: 'arrangement_id' },
+  { key: 'Date_pret', title: 'Date_pret' },
+  { key: 'product', title: 'product' },
+  { key: 'co_code', title: 'co_code' },
+  { key: 'linked_appl_id', title: 'linked_appl_id' },
+  { key: 'Nom_client', title: 'Nom_client' },
+  { key: 'customer', title: 'customer' },
+  { key: 'echeance', title: 'echeance' },
+  { key: 'date_echeance', title: 'date_echeance' },
+  { key: 'payment_date', title: 'payment_date' },
+  { key: 'Capital', title: 'Capital' },
+  { key: 'principal_int', title: 'principal_int' },
+  { key: 'penality_int', title: 'penality_int' },
+  { key: 'TOTAL', title: 'TOTAL' },
+];
+
+
+
+const headers_LIMIT_AVM = [ 
+  { align: 'start', sortable: false },
+  { title: '#', value: 'index', sortable: false },
+
+  { key: 'id', title: 'id' },
+  { key: 'Name', title: 'Name' },
+  { key: 'approval_date', title: 'approval_date' },
+  { key: 'expiry_date', title: 'expiry_date' },
+  { key: 'internal_amount', title: 'internal_amount' },
+  { key: 'total_os', title: 'total_os' },
+  { key: 'avail_amt', title: 'avail_amt' },
+];
+const headers_LIMIT_CAUTION = [ 
+  { align: 'start', sortable: false },
+  { title: '#', value: 'index', sortable: false },
+
+  { key: 'id', title: 'id' },
+  { key: 'Name', title: 'Name' },
+  { key: 'approval_date', title: 'approval_date' },
+  { key: 'expiry_date', title: 'expiry_date' },
+  { key: 'internal_amount', title: 'internal_amount' },
+  { key: 'total_os', title: 'total_os' },
+  { key: 'avail_amt', title: 'avail_amt' },
+];
+
+
 const tabs = [
   { value: 'one',search:'',headers:headers_encours,liste:listes_encours_credits.value, label: 'Etat des cours', title: 'Etats des encours' },
-  { value: 'two',search:'',headers:[],liste:[], label: 'Etat DE Remboursement', title: 'Etats de remboursement' },
-  { value: 'three',search:'',headers:[],liste:[], label: 'Limit AVM', title: 'Limite AVM' },
-  { value: 'four',search:'',headers:[],liste:[], label: 'Limit CAUTION', title: 'Limite CAUTION' }
+  { value: 'two',search:'',headers:headers_etat_remboursement,liste:listes_remboursement_credits.value, label: 'Etat DE Remboursement', title: 'Etats de remboursement' },
+  { value: 'three',search:'',headers:headers_LIMIT_AVM,liste:listes_limit_avm.value, label: 'Limit AVM', title: 'Limite AVM' },
+  { value: 'four',search:'',headers:headers_LIMIT_CAUTION,liste:listes_limit_caution.value, label: 'Limit CAUTION', title: 'Limite CAUTION' }
 ]
 
-
-// const refreshTable=()=> { 
-//     this.item.liste = this.item.listeOriginale.filter(el =>
-//       el.Nom_client?.toLowerCase().includes(this.item.search.toLowerCase())
-//     );
-//   }
-
+ 
 
 const get_encours_credits = async () => {
   try {
@@ -98,30 +143,92 @@ const get_encours_credits = async () => {
     headers: {
         'Content-Type': 'application/json',
     }
-    });
-
+    }); 
     if (!response.ok) {
       throw new Error(`Erreur HTTP : ${response.status}`);
-    }
+    } 
+    const data = await response.json();  
+    for (let index = 0; index <data.response.data.length; index++) {
+      const element = data.response.data[index]; 
+        listes_encours_credits.value.push(element) 
+    }  
+    usePopupStore().encours_actual_data=listes_encours_credits  
+  } catch (error) {
+    console.error("❌ Erreur lors du chargement du fichier dans la base :", error);
+  }
+};
 
-    const data = await response.json(); 
+const encours_remboursement = async () => {
+  try {
+    const date = '20250711' 
+
+    const response = await fetch(`http://192.168.1.212:8000/api/encours_remboursement?date=${date}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+    }
+    }); 
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP : ${response.status}`);
+    } 
+    const data = await response.json();  
+    console.log("DATA",data);
     
     for (let index = 0; index <data.response.data.length; index++) {
-      const element = data.response.data[index];
-    //   data_temp.value.push (element);
-        listes_encours_credits.value.push(element)
-    //   list_encours.value.push (element);
-    // console.log(element);
+      const element = data.response.data[index]; 
+        listes_remboursement_credits.value.push(element) 
+    }  
+    usePopupStore().remboursement_actual_data=listes_remboursement_credits  
+  } catch (error) {
+    console.error("❌ Erreur lors du chargement du fichier dans la base :", error);
+  }
+};
 
-    //   listes_encours_credits.value=data_temp.value[0]
+
+const get_limit_AVM = async () => {
+  try {  
+    const code="8400"
+    const response = await fetch(`http://192.168.1.212:8000/api/encours_limit?limit_type=${code}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
     }
-    // console.log(data.response.data[0]);
-    // listes_encours_credits.value=data.response.data 
-    // console.log(data.response[0]); 
+    }); 
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP : ${response.status}`);
+    } 
+    const data = await response.json();  
+    console.log("DATA",data);
     
-    usePopupStore().encours_actual_data=listes_encours_credits
-    // console.log(usePopupStore().encours_actual_data);
+    for (let index = 0; index <data.response.data.length; index++) {
+      const element = data.response.data[index]; 
+        listes_limit_avm.value.push(element) 
+    }  
+    usePopupStore().limit_avm_actual_data=listes_limit_avm  
+  } catch (error) {
+    console.error("❌ Erreur lors du chargement du fichier dans la base :", error);
+  }
+};
+const get_limit_CAUTION = async () => {
+  try {  
+    const code="2900"
+    const response = await fetch(`http://192.168.1.212:8000/api/encours_limit?limit_type=${code}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+    }
+    }); 
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP : ${response.status}`);
+    } 
+    const data = await response.json();  
+    console.log("DATA",data);
     
+    for (let index = 0; index <data.response.data.length; index++) {
+      const element = data.response.data[index]; 
+        listes_limit_caution.value.push(element) 
+    }  
+    usePopupStore().limit_caution_actual_data=listes_limit_caution  
   } catch (error) {
     console.error("❌ Erreur lors du chargement du fichier dans la base :", error);
   }
@@ -129,6 +236,9 @@ const get_encours_credits = async () => {
 
 onMounted(() => {
    get_encours_credits()
+   encours_remboursement()
+   get_limit_AVM()
+   get_limit_CAUTION()
   
 })
 
