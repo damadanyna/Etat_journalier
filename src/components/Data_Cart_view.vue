@@ -133,7 +133,7 @@ function exportToExcel_remboursement() {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
 
   // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "encours_credits.xlsx")
+  XLSX.writeFile(workbook, "Etat_de_remboursement.xlsx")
 }
 function exportToExcel_LIMIT_AVM() {
   const data = listes_limit_avm.value
@@ -151,7 +151,7 @@ function exportToExcel_LIMIT_AVM() {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
 
   // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "encours_credits.xlsx")
+  XLSX.writeFile(workbook, "Limit_AVM.xlsx")
 }
 
 function exportToExcel_LIMIT_CAUTION() {
@@ -170,7 +170,7 @@ function exportToExcel_LIMIT_CAUTION() {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
 
   // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "encours_credits.xlsx")
+  XLSX.writeFile(workbook, "Limit_Caution.xlsx")
 }
 
 
