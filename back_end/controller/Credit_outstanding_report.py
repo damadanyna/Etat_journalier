@@ -51,7 +51,6 @@ class Credit_outstanding_report:
         finally:
             cursor.close()
 
-
     def split_value(self,value, index, default=None):
         """Helper function to split values by '|' and return the part at the given index."""
         if value:
@@ -204,9 +203,7 @@ class Credit_outstanding_report:
                     conn.close()
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
-                     
-                    
-
+                                       
     def get_encours_credit_by_date(self, date: str):
         conn = None
         try:
@@ -215,7 +212,35 @@ class Credit_outstanding_report:
                 raise ValueError(f"Format de date invalide : {date}")
 
             table_name = f"encours_credit_{date}"
-            query = text(f"SELECT * FROM `{table_name}`")  # les backticks évitent des erreurs si le nom a des caractères spéciaux
+            query = text(f"""SELECT  
+                                id,
+                                Agence,
+                                Numero_pret,
+                                identification_client, 
+                                Nom_client,
+                                Genre,
+                                linked_appl_id,
+                                Date_pret,
+                                Date_fin_pret,
+                                Produits,
+                                Amount,
+                                Duree_Remboursement,
+                                taux_d_interet,
+                                IFNULL(Nombre_de_jour_retard, 0) AS Nombre_de_jour_retard,
+                                payment_date, 
+                                ABS(split_by_pipe(`capital_`, 1)) AS capital_non_appele,
+                                ABS(split_by_pipe(`capital_`, 2)) AS capital_appele,
+                                ABS(split_by_pipe(`capital_`, 3)) AS capital_total,
+                                Total_interet_echus,
+                                `OD Pen`,
+                                `OD & PEN`,
+                                Chiffre_Affaire,
+                                Secteur_d_activité,
+                                CODE,
+                                arr_status AS status
+
+                            FROM  `{table_name}`
+                            WHERE ABS(split_by_pipe(`capital_`, 3)) != 0 """)  # les backticks évitent des erreurs si le nom a des caractères spéciaux
 
             conn = self.db.connect()
             result = conn.execute(query)
@@ -236,7 +261,6 @@ class Credit_outstanding_report:
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
      
-
     def get_encours_etat_remboursement(self, date: str):
         conn = None
         try:
@@ -271,6 +295,7 @@ class Credit_outstanding_report:
                     conn.close()
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
     def get_limit(self, limit_type: str):
         conn = None 
         try: 
@@ -283,6 +308,29 @@ class Credit_outstanding_report:
 
             conn = self.db.connect()
             result = conn.execute(query, {"limit_type": limit_type})
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
+    
+    def get_history_insert(self):
+        conn = None 
+        try:  
+            query = text("""  SELECT * FROM `history_insert` ORDER BY `label` DESC """) 
+            conn = self.db.connect()
+            result = conn.execute(query )
             columns = result.keys()
             data = [dict(zip(columns, row)) for row in result.fetchall()]
 

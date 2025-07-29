@@ -1,187 +1,90 @@
 <template>
-  <div class=" bg_data mr-4    ">
-
-    
-
+  <div class="bg_data mr-4">
     <div class="flex flex-row justify-end items-center space-x-4">
-        <div class="text-center mr-14"> 
-          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_encours">
-              <span class="text-md">Encours</span>
-          <template v-slot:prepend>
-              <v-icon color="success"></v-icon>
-          </template>
-          </v-btn> 
-        </div> 
-        <div class="text-center mr-14"> 
-          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_LIMIT_AVM">
-              <span class="text-md">LIMI_AVM</span>
-          <template v-slot:prepend>
-              <v-icon color="success"></v-icon>
-          </template>
-          </v-btn> 
-        </div> 
-        <div class="text-center mr-14"> 
-          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_LIMIT_CAUTION">
-              <span class="text-md">LIMI_CAUTION</span>
-          <template v-slot:prepend>
-              <v-icon color="success"></v-icon>
-          </template>
-          </v-btn> 
-        </div> 
-        <div class="text-center mr-14"> 
-          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel_remboursement">
-              <span class="text-md">Etat_remboursement</span>
-          <template v-slot:prepend>
-              <v-icon color="success"></v-icon>
-          </template>
-          </v-btn> 
-        </div> 
+      <h3 class="mr-5 text-xl">Date d'arrêt</h3>
 
-        <h3 class=" mr-5 text-xl">Date d'arrêt</h3>
-        <div class="text-center">
-            
-          <v-btn prepend-icon="mdi-calendar-range">
-          <template v-slot:prepend>
-              <v-icon color="success"></v-icon>
-          </template>
-              <span class="text-2xl">2025-02-28</span>
-          </v-btn> 
-        </div> 
-        <!-- <daugnut></daugnut> -->
+      <v-menu
+        v-model="menu"
+        close-on-content-click
+        offset-y
+        max-width="200"
+        min-width="200"
+      >
+        <template #activator="{ props }">
+          <v-btn v-bind="props" prepend-icon="mdi-calendar-range" variant="outlined">
+            <template #prepend>
+              <v-icon color="success" />
+            </template>
+            <span class="text-2xl">{{ selectedDate }}</span>
+          </v-btn>
+        </template>
+
+      <v-list style="max-height: 200px; overflow-y: auto;">
+        <v-list-item
+          v-for="date in historyDates"
+          :key="date.label"
+          @click="selectDate(date.label)"
+          clickable
+        > 
+        <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
+          
+          <v-icon v-if="date.stat_of !== 'init'"   class=" mr-2 text-red-700">mdi-database-alert</v-icon> 
+          <v-icon v-else color="success" class=" mr-2">mdi-database-check</v-icon> 
+          <v-list-item-title>{{ date.label }}</v-list-item-title>
+        </div>
+        </v-list-item>
+      </v-list>
+      </v-menu>
     </div>
-
   </div>
 </template>
-<script setup>   
-// import daugnut from '../doughnut/Dougnut.vue'
-  import { ref, watch } from 'vue'
-  import { usePopupStore } from '../stores' 
-  import * as XLSX from 'xlsx'
+
+<script setup>
+import { onMounted, ref, watch } from 'vue'
+
+const menu = ref(false)
+const selectedDate = ref('Chargement en cours...')
+
+// Tableau des dates prédéfinies
+const historyDates  = ref([])
+
+function selectDate(date) {
+  selectedDate.value = date
+  menu.value = false // ferme le menu après sélection
+}
+
+// history_insert
+async function fetchData(url, targetRef) {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`)
+    const data = await response.json()
+    targetRef.value = data.response.data
+  } catch (error) {
+    console.error('❌ Erreur de chargement :', error)
+  }
+} 
+
+watch(historyDates, (val) => {
+  if (Array.isArray(val) && val.length > 0) {
+    // Si tes éléments sont des objets avec une propriété `label`
+    selectedDate.value = val[0].label
+    console.log("📅 Date sélectionnée automatiquement :", selectedDate.value)
+  }
+}, { immediate: true })
+
+onMounted(() => {
   
-  const listes_encours_credits = ref([])
-  const listes_remboursement_credits = ref([])
-  const listes_limit_avm = ref([])
-  const listes_limit_caution = ref([])
-  const popupStore = usePopupStore() 
+  fetchData('http://192.168.1.212:8000/api/history_insert', historyDates)
 
-  watch(
-    () => popupStore.encours_actual_data,
-    (elt_resp) => { 
-      listes_encours_credits.value = elt_resp  
-    },
-    { immediate: true }
-  )
-  watch(
-    () => popupStore.remboursement_actual_data,
-    (elt_resp) => { 
-      listes_remboursement_credits.value = elt_resp 
-        
-    },
-    { immediate: true }
-  )
-
-  watch(
-    () => popupStore.limit_avm_actual_data,
-    (elt_resp) => { 
-      listes_limit_avm.value = elt_resp 
-        
-    },
-    { immediate: true }
-  )
-  watch(
-    () => popupStore.limit_caution_actual_data,
-    (elt_resp) => { 
-      listes_limit_caution.value = elt_resp 
-        
-    },
-    { immediate: true }
-  )
-
-
-function exportToExcel_encours() {
-  const data = listes_encours_credits.value
-
-  if (!data || data.length === 0) {
-    alert("Aucune donnée à exporter")
-    return
-  }
-
-  // 1. Créer une feuille à partir des objets JS
-  const worksheet = XLSX.utils.json_to_sheet(data)
-
-  // 2. Créer le classeur contenant cette feuille
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
-
-  // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "encours_credits.xlsx")
-}
-
-function exportToExcel_remboursement() {
-  const data = listes_remboursement_credits.value
-
-  if (!data || data.length === 0) {
-    alert("Aucune donnée à exporter")
-    return
-  }
-
-  // 1. Créer une feuille à partir des objets JS
-  const worksheet = XLSX.utils.json_to_sheet(data)
-
-  // 2. Créer le classeur contenant cette feuille
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
-
-  // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "Etat_de_remboursement.xlsx")
-}
-function exportToExcel_LIMIT_AVM() {
-  const data = listes_limit_avm.value
-
-  if (!data || data.length === 0) {
-    alert("Aucune donnée à exporter")
-    return
-  }
-
-  // 1. Créer une feuille à partir des objets JS
-  const worksheet = XLSX.utils.json_to_sheet(data)
-
-  // 2. Créer le classeur contenant cette feuille
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
-
-  // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "Limit_AVM.xlsx")
-}
-
-function exportToExcel_LIMIT_CAUTION() {
-  const data = listes_limit_caution.value
-
-  if (!data || data.length === 0) {
-    alert("Aucune donnée à exporter")
-    return
-  }
-
-  // 1. Créer une feuille à partir des objets JS
-  const worksheet = XLSX.utils.json_to_sheet(data)
-
-  // 2. Créer le classeur contenant cette feuille
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
-
-  // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "Limit_Caution.xlsx")
-}
-
-
+})
 
 </script>
 
-
 <style scoped>
-.bg_data{
-    background-color: #00000022;
-    border-radius: 20px ;
-    padding: 10px 20px;
+.bg_data {
+  background-color: #00000022;
+  border-radius: 20px;
+  padding: 10px 20px;
 }
 </style>

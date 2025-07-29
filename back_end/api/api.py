@@ -336,4 +336,19 @@ async def encours_limit(limit_type: str = Query(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/history_insert")
+async def history_insert( ): 
+    try:
+        response = credit_outstanding_report.get_history_insert()
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 api_router = router

@@ -861,7 +861,7 @@ class Credits:
                             "name": "Créer table temporaire - temp_clients",
                             "sql": """ 
                               CREATE TABLE temp_clients AS 
-                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,phone_1,sms_1,industry
+                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,salary,phone_1,sms_1,industry
                                 FROM customer_mcbc_live_full
                             """
                         },
@@ -1328,12 +1328,14 @@ class Credits:
                                     SELECT 
                                                 arrangement.id,
                                                 arrangement.co_code AS Agence,
-                                                arrangement.customer AS identification_client,
-                                                arrangement.customer,
+                                                arrangement.customer AS identification_client, 
                                                 arrangement.id AS Numero_pret,
                                                 tmp_CLT.nom_complet AS Nom_client,
                                                 arrangement.linked_appl_id AS linked_appl_id,
-                                                COALESCE(arrangement.orig_contract_date, arrangement.start_date) AS Date_pret, 
+                                                CASE
+                                                    WHEN arrangement.orig_contract_date IS NULL OR TRIM(arrangement.orig_contract_date) = '' THEN arrangement.start_date
+                                                    ELSE arrangement.orig_contract_date
+                                                END AS Date_pret, 
                                                 tmp_int.Date_fin_pret AS Date_fin_pret,
                                                 arrangement.product AS Produits,
                                                 tmp_amnt.amount AS Amount,
@@ -1346,11 +1348,12 @@ class Credits:
                                                     eb_cont.open_balance, 
                                                     eb_cont.credit_mvmt, 
                                                     eb_cont.debit_mvmt
-                                                ) AS Capital_,
+                                                ) AS capital_,
                                                 calculate_total_interet_echus(cont_bal.type_sysdate,cont_bal.open_balance,'|') as Total_interet_echus,
                                                 '' as "OD Pen",
                                                 tmp_od_pen.OD_PEN as "OD & PEN",  
                                                 tmp_CLT.gender AS Genre, 
+                                                tmp_CLT.salary AS Chiffre_Affaire, 
                                                 industry.description AS Secteur_d_activité,
                                                 tmp_CLT.industry AS CODE,
                                                 arrangement.arr_status
@@ -1374,9 +1377,7 @@ class Credits:
                                             LEFT JOIN industry_mcbc_live_full AS industry 
                                                 ON industry.id = tmp_CLT.industry
                                             WHERE arrangement.product_line = 'LENDING' 
-                                                AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH','CLOSE')
-                                                -- AND NOT (tmp_od_pen.OD_PEN  = 0.0 AND (arrangement.arr_status = 'EXPIRED' OR arrangement.arr_status = 'CLOSE'))
-                                                -- HAVING NOT (Capital_ = '0.00|0.00|0.00' AND (tmp_od_pen.OD_PEN='0.00' OR tmp_od_pen.OD_PEN =''))   
+                                                AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH')   
                             """
                         }, 
                         {
@@ -1400,9 +1401,7 @@ class Credits:
                                 BEGIN
                                     DECLARE done INT DEFAULT FALSE;
                                     DECLARE tbl_name VARCHAR(255);
-                                    DECLARE sql_query TEXT;
-
-                                    -- curseur pour toutes les tables qui commencent par encours_credit_
+                                    DECLARE sql_query TEXT; 
                                     DECLARE cur CURSOR FOR
                                         SELECT table_name
                                         FROM information_schema.tables
@@ -1410,9 +1409,7 @@ class Credits:
                                         AND table_name LIKE 'encours_credit_%';
 
                                     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-                                    -- table temporaire pour stocker les résultats
-                                    -- DROP  TABLE IF EXISTS tmp_capital_sums;
+ 
                                     DROP  TABLE IF EXISTS total_capital_encours_credit;
                                     CREATE  TABLE total_capital_encours_credit (
                                         table_name VARCHAR(255),
@@ -1426,24 +1423,21 @@ class Credits:
                                         IF done THEN
                                             LEAVE read_loop;
                                         END IF;
-
-                                        -- construire la requête dynamique pour cette table
+ 
                                         SET @sql_query = CONCAT(
                                             'INSERT INTO total_capital_encours_credit ',
                                             'SELECT ''', tbl_name, ''' AS table_name, ',
-                                            'SUM(ABS(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(Capital_, ''|'', 3), ''|'', -1) AS DECIMAL(20,6)))) ',
+                                            'SUM(ABS(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(capital_, ''|'', 3), ''|'', -1) AS DECIMAL(20,6)))) ',
                                             'FROM ', tbl_name
                                         );
-
-                                        -- préparer et exécuter
+ 
                                         PREPARE stmt FROM @sql_query;
                                         EXECUTE stmt;
                                         DEALLOCATE PREPARE stmt;
                                     END LOOP;
 
                                     CLOSE cur;
-
-                                    -- afficher les résultats
+ 
                                     SELECT * FROM total_capital_encours_credit;
                                 END ;
                                 """
@@ -1696,6 +1690,24 @@ class Credits:
                                         SUM(penality_int) AS penality_int,
                                         SUM(TOTAL) AS TOTAL
                                         FROM temp_etat_remb   GROUP BY arrangement_id;"""
+                        }, 
+                        {
+                            "name": """ Suppréssion de la fonction split_by_pipe si elle existe  """,
+                            "sql": """ DROP FUNCTION IF EXISTS split_by_pipe;"""
+                        }, 
+                        {
+                            "name": """ Création de la fonction split_by_pipe si elle existe  """,
+                            "sql": """ CREATE FUNCTION split_by_pipe(input TEXT, pos INT) RETURNS TEXT
+                                        DETERMINISTIC
+                                        BEGIN
+                                        DECLARE result TEXT;
+                                        SET result = TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(input, '|', pos), '|', -1));
+                                        RETURN result;
+                                        END """
+                        }, 
+                        {
+                            "name": """ finalisation """,
+                            "sql": """  select count(*) from history_insert;"""
                         }, 
                     ]
 
