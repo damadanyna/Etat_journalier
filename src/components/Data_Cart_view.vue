@@ -36,11 +36,41 @@
       </v-list>
       </v-menu>
     </div>
+ 
+    <div class="grid grid-cols-2 gap-4">
+      <doughnut
+        v-for="(item, index) in charts"
+        :key="item.id"
+        :id="item.id"
+        :title="item.title"
+        :data="item.data"
+        :labels="item.labels"
+        :colors="item.colors"
+      />
+    </div> 
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import doughnut from './doughnut/Dougnut.vue'
+
+const charts = [
+  {
+    id: 'pa_chart',
+    title: 'Répartition des PA',
+    data: [15, 50, 20, 15],
+    labels: ['PA1', 'PA2', 'PA3', 'PA4'],
+    colors: ['#FF0031', '#00c62b', '#ffffff', '#00FFFF']
+  },
+  {
+    id: 'second_chart',
+    title: 'Autre graphique',
+    data: [25, 25, 25, 25],
+    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+    colors: ['#eab308', '#3b82f6', '#f43f5e', '#10b981']
+  }
+]
 
 const menu = ref(false)
 const selectedDate = ref('Chargement en cours...')

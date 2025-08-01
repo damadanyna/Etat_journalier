@@ -91,19 +91,17 @@
       <div class=" my-2"></div>
       <v-divider></v-divider>
       <div class="overflow-auto">
-        <Data_table_view class="w-full" />
+        <!-- <Data_table_view class="w-full" /> -->
       </div>
     </div> 
 
-   
-  <!-- <Dougnut></Dougnut> -->
+    
 
 </div>
  
 </template>
 
-<script setup>
-// import Dougnut from '../../components/doughnut/Dougnut.vue';
+<script setup> 
 import { ref, watch } from 'vue' 
 import { usePopupStore } from '../../stores'
 import sparkLineVue from '../../components/sparkLines/sparkLineVue.vue';
