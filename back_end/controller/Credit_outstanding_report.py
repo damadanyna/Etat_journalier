@@ -212,42 +212,67 @@ class Credit_outstanding_report:
                 raise ValueError(f"Format de date invalide : {date}")
 
             table_name = f"encours_credit_{date}"
-            query = text(f"""SELECT  
-                                id,
+            query = text(f"""SELECT   
                                 Agence,
-                                Numero_pret,
                                 identification_client, 
-                                Nom_client,
-                                Genre,
+                                Numero_pret,
                                 linked_appl_id,
                                 Date_pret,
                                 Date_fin_pret,
+                                Nom_client,
                                 Produits,
                                 Amount,
-                                Duree_Remboursement,
+                                Duree_Remboursement, 
                                 taux_d_interet,
                                 IFNULL(Nombre_de_jour_retard, 0) AS Nombre_de_jour_retard,
                                 payment_date, 
+                                '' AS Status_du_client, 
                                 ABS(split_by_pipe(`capital_`, 1)) AS capital_non_appele,
                                 ABS(split_by_pipe(`capital_`, 2)) AS capital_appele,
                                 ABS(split_by_pipe(`capital_`, 3)) AS capital_total,
                                 Total_interet_echus,
                                 `OD Pen`,
                                 `OD & PEN`,
-                                Chiffre_Affaire,
+                                Genre,
                                 Secteur_d_activité,
-                                CODE,
+                                Agent_de_gestion,
+                                Chiffre_Affaire,    
+                                Secteur_d_activité_code,   
+                                Code_Garantie,
+                                Valeur_garantie, 
                                 arr_status AS status
-
-                            FROM  `{table_name}`
-                            WHERE ABS(split_by_pipe(`capital_`, 3)) != 0 """)  # les backticks évitent des erreurs si le nom a des caractères spéciaux
+                            FROM `{table_name}`
+                            WHERE ABS(split_by_pipe(`capital_`, 3)) != 0""")
 
             conn = self.db.connect()
             result = conn.execute(query)
             columns = result.keys()
-            data = [dict(zip(columns, row)) for row in result.fetchall()]
+            rows = result.fetchall()
 
-            # print(f"✅ Données extraites depuis la table {table_name} :", data)
+            data = []
+            for row in rows:
+                row_dict = dict(zip(columns, row))
+
+                # ✅ Calcul de Status_du_client basé sur Nombre_de_jour_retard
+                retard = row_dict.get("Nombre_de_jour_retard")
+                try:
+                    retard = int(retard) if retard is not None else 0
+                except ValueError:
+                    retard = 0
+
+                if 0 < retard <= 30:
+                    row_dict["Status_du_client"] = "PA1"
+                elif 30 < retard <= 60:
+                    row_dict["Status_du_client"] = "PA2"
+                elif 60 < retard <= 90:
+                    row_dict["Status_du_client"] = "PA3"
+                elif retard > 90:
+                    row_dict["Status_du_client"] = "PA4"
+                else:
+                    row_dict["Status_du_client"] = ""
+
+                data.append(row_dict)
+
             return {"data": data}
 
         except Exception as e:
@@ -260,7 +285,7 @@ class Credit_outstanding_report:
                     conn.close()
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
-     
+
     def get_encours_etat_remboursement(self, date: str):
         conn = None
         try:

@@ -810,27 +810,36 @@ class Credits:
                         {
                             "name": "Créer INDEX idx_arrangement_id ON temp_arrangement_customers",
                             "sql": "CREATE INDEX idx_customer_id ON temp_arrangement_customers (customer_id);"
-                        },
-                        {
-                            "name": "Créer INDEX idx_client_id ON temp_clients",
-                            "sql": "CREATE INDEX idx_client_id ON temp_clients (id);"
                         }, 
+                        
                         {
-                            "name": "Créer INDEX idx_client_id ON temp_clients",
-                            "sql": "CREATE INDEX idx_account_id ON temp_accounts (id);"
+                            "name": "Créer INDEX PK_id ON temp_clients",
+                            "sql": "ALTER TABLE temp_clients ADD PRIMARY KEY (id);"
                         },
                         {
-                            "name": "Créer INDEX idx_client_id ON temp_clients",
-                            "sql": "CREATE INDEX idx_opening_date ON temp_accounts (opening_date); "
+                            "name": "Créer INDEX idx_account_officer ON temp_clients",
+                            "sql": "CREATE INDEX idx_account_officer ON temp_clients (account_officer);"
                         },
                         {
-                            "name": "Créer INDEX idx_client_id ON temp_clients",
-                            "sql": "CREATE INDEX idx_balance_id ON temp_balances (id);"
-                        }, 
+                            "name": "Créer INDEX idx_phone_1 ON temp_clients",
+                            "sql": "CREATE INDEX idx_phone_1 ON temp_clients (phone_1);"
+                        },
                         {
-                            "name": "Créer INDEX idx_client_id ON temp_clients",
-                            "sql": "CREATE INDEX idx_type_sysdate ON temp_balances (type_sysdate);"
-                        },  
+                            "name": "Créer INDEX idx_sms_1 ON temp_clients",
+                            "sql": "CREATE INDEX idx_sms_1 ON temp_clients (sms_1);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_industry ON temp_clients",
+                            "sql": "CREATE INDEX idx_industry ON temp_clients (industry);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_gender ON temp_clients",
+                            "sql": "CREATE INDEX idx_gender ON temp_clients (gender);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_salary ON temp_clients",
+                            "sql": "CREATE INDEX idx_salary ON temp_clients (salary);"
+                        },
                         {
                             "name": "Drop table temporaire - temp_arrangement_customers",
                             "sql": """
@@ -861,7 +870,7 @@ class Credits:
                             "name": "Créer table temporaire - temp_clients",
                             "sql": """ 
                               CREATE TABLE temp_clients AS 
-                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,salary,phone_1,sms_1,industry
+                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,salary,account_officer,phone_1,sms_1,industry
                                 FROM customer_mcbc_live_full
                             """
                         },
@@ -1320,13 +1329,80 @@ class Credits:
                         {
                             "name": """Suppression de la Table encours_credit_{current_date} """,
                             "sql": """DROP TABLE IF EXISTS encours_credit_{current_date}"""
+                        }, 
+                        {
+                            "name": """Suppression de la Table temps_code_garantie""",
+                            "sql": """DROP TABLE IF EXISTS temps_code_garantie;"""
                         },
+                        {
+                            "name": """Suppression de la Table temps_code_garantie""",
+                            "sql": """CREATE TABLE temps_code_garantie AS
+                                        SELECT  
+                                            arr.id AS arrangement_id, 
+                                            cg.customer,
+                                            cg.collateral_code AS Code_Garantie
+                                        FROM aa_arrangement_mcbc_live_full AS arr
+                                        LEFT JOIN (
+                                            SELECT 
+                                                DISTINCT SUBSTRING(id, 1, LOCATE('.', id) - 1) AS customer_id,
+                                                collateral_code,customer
+                                            FROM collateral_right_mcbc_live_full
+                                        ) AS cg ON cg.customer_id = arr.customer
+                                        WHERE arr.product_line = 'LENDING'
+                                        AND arr.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH');"""
+                        },
+                        {
+                            "name": """Suppression de la Table temp_value_garantie""",
+                            "sql": """DROP table IF EXISTS temp_value_garantie;"""
+                        },
+                        {
+                            "name": """Suppression de la Table temp_value_garantie""",
+                            "sql": """CREATE TABLE temp_value_garantie AS
+                                        SELECT  
+                                            arr.id AS arrangement_id, 
+                                            arr.customer, 
+                                            (     
+                                            SELECT 
+                                                SUM(col.nominal_value)
+                                            FROM collateral_mcbc_live_full AS col
+                                            WHERE col.id LIKE CONCAT('%',(
+                                                            SELECT   CONCAT(SUBSTRING(co_coll_id, 1, LOCATE('.', co_coll_id) - 1))
+                                                                FROM em_lo_application_mcbc_live_full AS em
+                                                            LEFT JOIN collateral_right_mcbc_live_full AS coll_r 
+                                                            ON  (LOCATE('.', coll_r.id) > 0 
+                                                                AND SUBSTRING(coll_r.id, 1, LOCATE('.', coll_r.id) - 1) LIKE CONCAT(SUBSTRING(em.co_coll_id, 1, LOCATE('.', em.co_coll_id) - 1), '%')) 
+                                                            -- WHERE em.arrangement_id = 'AA25161V86WR' limit 1
+                                                            WHERE em.arrangement_id = arr.id limit 1
+                                                        ), '%')
+                                            AND col.collateral_type in  ('100','200','300','400')
+                                            ) AS Valeur_garantie
+                                        FROM aa_arrangement_mcbc_live_full AS arr WHERE arr.product_line = 'LENDING' AND arr.arr_status IN ('CURRENT', 'EXPIRED')"""
+                        },
+                        {
+                            "name": """Mise à jour de la table temp_value_garantie""",
+                            "sql": """ALTER TABLE temp_value_garantie ADD PRIMARY KEY (arrangement_id)"""
+                        },
+                        {
+                            "name": """Indexiation de la Table temp_value_garantie""",
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_arr_id ON temp_value_garantie (arrangement_id);"""
+                        },
+                        {
+                            "name": """indexiation de la Colonne  Valeur_garantie """,
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_garantie ON temp_value_garantie (Valeur_garantie);"""
+                        },
+                        {
+                            "name": """indexiation de la Colonne  idx_temp_val_customer """,
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_customer ON temp_value_garantie (customer);"""
+                        },
+                        {
+                            "name": """indexiation de la Colonne  idx_temp_val_arr_id""",
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_arr_id ON temp_value_garantie (arrangement_id)"""
+                        },  
                         {
                             "name":"""Creation de la Table  encours_credit_{current_date} """,
                             "sql": """ 
                             CREATE TABLE encours_credit_{current_date} AS
-                                    SELECT 
-                                                arrangement.id,
+                                    SELECT  
                                                 arrangement.co_code AS Agence,
                                                 arrangement.customer AS identification_client, 
                                                 arrangement.id AS Numero_pret,
@@ -1352,10 +1428,13 @@ class Credits:
                                                 calculate_total_interet_echus(cont_bal.type_sysdate,cont_bal.open_balance,'|') as Total_interet_echus,
                                                 '' as "OD Pen",
                                                 tmp_od_pen.OD_PEN as "OD & PEN",  
-                                                tmp_CLT.gender AS Genre, 
+                                                tmp_CLT.gender AS Genre,  
                                                 tmp_CLT.salary AS Chiffre_Affaire, 
-                                                industry.description AS Secteur_d_activité,
-                                                tmp_CLT.industry AS CODE,
+                                                industry.description AS Secteur_d_activité,     
+                                                tmp_CLT.industry AS Secteur_d_activité_code,
+                                                tmp_CLT.account_officer AS Agent_de_gestion,
+                                                code_gar.Code_Garantie as Code_Garantie,
+                                                val_gar.Valeur_garantie as Valeur_garantie,
                                                 arrangement.arr_status
                                             FROM aa_arrangement_mcbc_live_full AS arrangement
                                             INNER JOIN eb_cont_bal_mcbc_live_full as eb_cont
@@ -1376,8 +1455,13 @@ class Credits:
                                                 ON tmp_CLT.id = get_customer(arrangement.customer) 
                                             LEFT JOIN industry_mcbc_live_full AS industry 
                                                 ON industry.id = tmp_CLT.industry
+                                            LEFT JOIN temp_value_garantie AS val_gar 
+                                                ON val_gar.arrangement_id = arrangement.id
+                                            LEFT JOIN temps_code_garantie AS code_gar 
+                                                ON code_gar.arrangement_id = arrangement.id
                                             WHERE arrangement.product_line = 'LENDING' 
-                                                AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH')   
+                                                AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH') ;
+  
                             """
                         }, 
                         {

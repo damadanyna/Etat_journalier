@@ -63,30 +63,36 @@ const headersBase = [
 
 const headers = {
   encours: [
-    ...headersBase,
-    { key: 'id', title: 'id' },
+    ...headersBase, 
     { key: 'Agence', title: 'Agence' },
-    { key: 'Numero_pret', title: 'Numero_pret' },
     { key: 'identification_client', title: 'identification_client' }, 
-    { key: 'Nom_client', title: 'Nom_client' },
-    { key: 'Genre', title: 'Genre' },
+    { key: 'Numero_pret', title: 'Numero_pret' },
     { key: 'linked_appl_id', title: 'linked_appl_id' },
     { key: 'Date_pret', title: 'Date_pret' },
     { key: 'Date_fin_pret', title: 'Date_fin_pret' },
+    { key: 'Nom_client', title: 'Nom_client' },
     { key: 'Produits', title: 'Produits' },
     { key: 'Amount', title: 'Amount' },
     { key: 'Duree_Remboursement', title: 'Duree_Remboursement' }, 
-    { key: 'capital_appele', title: 'capital_appele' },
-    { key: 'capital_non_appele', title: 'capital_non_appele' },
-    { key: 'Total_interet_echus', title: 'Total_interet_echus' },
     { key: 'taux_d_interet', title: 'taux_d_interet' },
     { key: 'Nombre_de_jour_retard', title: 'Nombre_de_jour_retard' },
     { key: 'payment_date', title: 'payment_date' }, 
+    { key: 'Status_du_client', title: 'Status_du_client' }, 
+    { key: 'capital_non_appele', title: 'capital_non_appele' },
+    { key: 'capital_appele', title: 'capital_appele' },
+    { key: 'Total_capital_echus_non_echus', title: 'Total_capital_echus_non_echus' },
+    { key: 'Total_interet_echus', title: 'Total_interet_echus' },
     { key: 'OD Pen', title: 'OD Pen' },
     { key: 'OD & PEN', title: 'OD & PEN' },
-    { key: 'Chiffre_Affaire', title: 'Chiffre_Affaire' },
+    { key: 'Genre', title: 'Genre' },
     { key: 'Secteur_d_activité', title: 'Secteur_d_activité' },
-    { key: 'CODE', title: 'CODE' },
+    { key: 'Agent_de_gestion', title: 'Agent_de_gestion' },
+    { key: 'Code_Garantie', title: 'Code_Garantie' },
+    { key: 'Chiffre_Affaire', title: 'Chiffre_Affaire' },
+    { key: 'Valeur_garantie', title: 'Valeur_garantie' },
+    { key: 'CODE', title: 'Secteur_d_activité_code' },
+ 
+
     { key: 'status', title: 'status' },
   ],
   remboursement: [
@@ -151,7 +157,7 @@ async function fetchData(url, listRef, storeKey) {
 onMounted(() => {
   console.log(usePopupStore().selected_date);
   
-  const date = '20250725';
+  const date = '20250729';
   fetchData(`http://192.168.1.212:8000/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
   fetchData(`http://192.168.1.212:8000/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
   fetchData(`http://192.168.1.212:8000/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');
