@@ -90,10 +90,9 @@ const headers = {
     { key: 'Code_Garantie', title: 'Code_Garantie' },
     { key: 'Chiffre_Affaire', title: 'Chiffre_Affaire' },
     { key: 'Valeur_garantie', title: 'Valeur_garantie' },
-    { key: 'CODE', title: 'Secteur_d_activité_code' },
- 
-
+    { key: 'CODE', title: 'Secteur_d_activité_code' }, 
     { key: 'status', title: 'status' },
+    { key: 'local_refs', title: 'local_refs' }
   ],
   remboursement: [
     ...headersBase,
@@ -157,7 +156,7 @@ async function fetchData(url, listRef, storeKey) {
 onMounted(() => {
   console.log(usePopupStore().selected_date);
   
-  const date = '20250729';
+  const date = '20250731';
   fetchData(`http://192.168.1.212:8000/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
   fetchData(`http://192.168.1.212:8000/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
   fetchData(`http://192.168.1.212:8000/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');

@@ -91,7 +91,7 @@
       <div class=" my-2"></div>
       <v-divider></v-divider>
       <div class="overflow-auto">
-        <!-- <Data_table_view class="w-full" /> -->
+        <Data_table_view class="w-full" />
       </div>
     </div> 
 

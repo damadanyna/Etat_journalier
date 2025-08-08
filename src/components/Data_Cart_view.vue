@@ -36,17 +36,22 @@
       </v-list>
       </v-menu>
     </div>
- 
-    <div class="grid grid-cols-2 gap-4">
-      <doughnut
-        v-for="(item, index) in charts"
-        :key="item.id"
-        :id="item.id"
-        :title="item.title"
-        :data="item.data"
-        :labels="item.labels"
-        :colors="item.colors"
-      />
+    <div class="flex flex-row   w-full   "> 
+      <div   v-for="(item) in charts" key="item.id" class=" w-full h-full flex justify-between"> 
+         
+        <div   class=" flex flex-col">
+           <doughnut 
+          :key="item.id"
+          :id="item.id"
+          :title="item.title"
+          :data="item.data"
+          :labels="item.labels"
+          :colors="item.colors"
+          :circumference="item.circumference"
+          :heigth="item.heigths"
+        />
+        </div> 
+      </div>
     </div> 
   </div>
 </template>
@@ -55,28 +60,43 @@
 import { onMounted, ref, watch } from 'vue'
 import doughnut from './doughnut/Dougnut.vue'
 
-const charts = [
-  {
-    id: 'pa_chart',
-    title: 'Répartition des PA',
-    data: [15, 50, 20, 15],
-    labels: ['PA1', 'PA2', 'PA3', 'PA4'],
-    colors: ['#FF0031', '#00c62b', '#ffffff', '#00FFFF']
-  },
-  {
-    id: 'second_chart',
-    title: 'Autre graphique',
-    data: [25, 25, 25, 25],
-    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-    colors: ['#eab308', '#3b82f6', '#f43f5e', '#10b981']
-  }
-]
+const charts = ref([
+  // {
+  //   id: 'pa_chart',
+  //   title: 'Répartition des PA',
+  //   data: [15, 50, 20, 15],
+  //   labels: ['PA1', 'PA2', 'PA3', 'PA4'],
+  //   colors: ['#FF0031', '#00c62b', '#ffffff', '#00FFFF'],
+  //   circumference: 180,
+  //   heigth:'200px'
+  // },
+  // {
+  //   id: 'pa_chart_tree',
+  //   title: 'Répartition des PA',
+  //   data: [15, 50, 20, 15],
+  //   labels: ['PA1', 'PA2', 'PA3', 'PA4'],
+  //   colors: ['#FF0031', '#00c62b', '#ffffff', '#00FFFF'],
+  //   circumference: 180,
+  //   heigth:'200px'
+  // }
+  // ,
+  // {
+  //   id: 'second_chart',
+  //   title: 'Autre graphique',
+  //   data: [25, 25, 25, 25],
+  //   labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+  //   colors: ['#eab308', '#3b82f6', '#f43f5e', '#10b981'],
+  //   circumference: 360
+  // }
+])
 
 const menu = ref(false)
 const selectedDate = ref('Chargement en cours...')
 
 // Tableau des dates prédéfinies
 const historyDates  = ref([])
+const stat_local_ref  = ref([])
+const stat_PA  = ref([])
 
 function selectDate(date) {
   selectedDate.value = date
@@ -84,20 +104,68 @@ function selectDate(date) {
 }
 
 // history_insert
-async function fetchData(url, targetRef) {
+async function fetchData(baseUrl, date = null) {
   try {
+    // Si une date est fournie, on l’ajoute à l’URL
+    const url = date ? `${baseUrl}?date=${date}` : baseUrl
+
     const response = await fetch(url)
     if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`)
+
     const data = await response.json()
-    targetRef.value = data.response.data
+    return data.response.data
   } catch (error) {
     console.error('❌ Erreur de chargement :', error)
+    return []
   }
-} 
+}
+
+function updateSecondChartFromData(dataArray,name, circumference,color = null,height = null) {
+  if (!Array.isArray(dataArray) || dataArray.length === 0) return
+
+  const labels = []
+  const data = []
+  const colors = []
+  const heigths = []
+
+  dataArray.forEach((item) => {
+    labels.push(item.initial || 'Inconnu')
+    data.push(item.total || 0)
+    colors.push(generateRandomColor())
+  })
+  var chart_Data= {
+                    id: name,
+                    title: 'Local ref',
+                    data: [25, 25, 25, 25],
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                    colors: ['#eab308', '#3b82f6', '#f43f5e', '#10b981'],
+                    circumference: circumference, 
+                    heigths:'400px' 
+                  }
+  chart_Data.data=data
+  chart_Data.labels=labels
+  chart_Data.colors=color===null?colors:   color
+  chart_Data.heigths=color===null?'400px':   height
+
+  charts.value.push(chart_Data)
+ 
+ 
+  
+}
+
+function generateRandomColor() {
+  const letters = '0123456789ABCDEF'
+  let color = '#'
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)]
+  }
+  return color
+}
+
+
 
 watch(historyDates, (val) => {
-  if (Array.isArray(val) && val.length > 0) {
-    // Si tes éléments sont des objets avec une propriété `label`
+  if (Array.isArray(val) && val.length > 0) { 
     selectedDate.value = val[0].label
     console.log("📅 Date sélectionnée automatiquement :", selectedDate.value)
   }
@@ -105,8 +173,21 @@ watch(historyDates, (val) => {
 
 onMounted(() => {
   
-  fetchData('http://192.168.1.212:8000/api/history_insert', historyDates)
+ ;(async () => {
+    historyDates.value = await fetchData('http://192.168.1.212:8000/api/history_insert')
+  })()
 
+ ;(async () => {
+    stat_PA.value = await fetchData('http://192.168.1.212:8000/api/get_pa_class','20250731') 
+    updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
+  })()
+
+  
+ ;(async () => {
+    stat_local_ref.value = await fetchData('http://192.168.1.212:8000/api/get_local_ref','20250731','1000px') 
+    updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
+    
+  })()
 })
 
 </script>

@@ -1327,15 +1327,11 @@ class Credits:
                             "sql": "ALTER TABLE temp_clients ADD INDEX idx_industy (industry)"
                         },
                         {
-                            "name": """Suppression de la Table encours_credit_{current_date} """,
-                            "sql": """DROP TABLE IF EXISTS encours_credit_{current_date}"""
-                        }, 
-                        {
                             "name": """Suppression de la Table temps_code_garantie""",
                             "sql": """DROP TABLE IF EXISTS temps_code_garantie;"""
                         },
                         {
-                            "name": """Suppression de la Table temps_code_garantie""",
+                            "name": """creation de la Table temps_code_garantie""",
                             "sql": """CREATE TABLE temps_code_garantie AS
                                         SELECT  
                                             arr.id AS arrangement_id, 
@@ -1356,7 +1352,7 @@ class Credits:
                             "sql": """DROP table IF EXISTS temp_value_garantie;"""
                         },
                         {
-                            "name": """Suppression de la Table temp_value_garantie""",
+                            "name": """Creation de la Table temp_value_garantie""",
                             "sql": """CREATE TABLE temp_value_garantie AS
                                         SELECT  
                                             arr.id AS arrangement_id, 
@@ -1371,7 +1367,6 @@ class Credits:
                                                             LEFT JOIN collateral_right_mcbc_live_full AS coll_r 
                                                             ON  (LOCATE('.', coll_r.id) > 0 
                                                                 AND SUBSTRING(coll_r.id, 1, LOCATE('.', coll_r.id) - 1) LIKE CONCAT(SUBSTRING(em.co_coll_id, 1, LOCATE('.', em.co_coll_id) - 1), '%')) 
-                                                            -- WHERE em.arrangement_id = 'AA25161V86WR' limit 1
                                                             WHERE em.arrangement_id = arr.id limit 1
                                                         ), '%')
                                             AND col.collateral_type in  ('100','200','300','400')
@@ -1398,6 +1393,10 @@ class Credits:
                             "name": """indexiation de la Colonne  idx_temp_val_arr_id""",
                             "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_arr_id ON temp_value_garantie (arrangement_id)"""
                         },  
+                        {
+                            "name": """Suppression de la Table encours_credit_{current_date} """,
+                            "sql": """DROP TABLE IF EXISTS encours_credit_{current_date}"""
+                        }, 
                         {
                             "name":"""Creation de la Table  encours_credit_{current_date} """,
                             "sql": """ 
@@ -1435,7 +1434,8 @@ class Credits:
                                                 tmp_CLT.account_officer AS Agent_de_gestion,
                                                 code_gar.Code_Garantie as Code_Garantie,
                                                 val_gar.Valeur_garantie as Valeur_garantie,
-                                                arrangement.arr_status
+                                                arrangement.arr_status, 
+                                                SUBSTRING_INDEX(SUBSTRING_INDEX(industry.local_ref, '|', 7), '|', -1) as local_refs
                                             FROM aa_arrangement_mcbc_live_full AS arrangement
                                             INNER JOIN eb_cont_bal_mcbc_live_full as eb_cont
                                                 ON eb_cont.id = arrangement.linked_appl_id
@@ -1794,13 +1794,8 @@ class Credits:
                             "sql": """  select count(*) from history_insert;"""
                         }, 
                     ]
-
-                # Exemple d’utilisation :
-                # sql = steps[23]["sql"].format(current_date="20250611")
-
-
-            # print("
-
+ 
+ 
            
             cursor.execute("DELETE FROM init_status")
             requets_len=len(steps)

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="text-center font-semibold mb-2">{{ title }}</div>
-    <div style="width: 100%; height: 200px;">
+    <div :style="`width: 100%; height: ${props.heigth};`">
       <canvas :id="canvasId"></canvas>
     </div>
   </div>
@@ -19,7 +19,9 @@ const props = defineProps({
   data: { type: Array, required: true },            // ex: [15, 50, 20, 15]
   labels: { type: Array, required: true },          // ex: ['PA1', 'PA2', ...]
   colors: { type: Array, required: true },          // couleurs de fond
-  title: { type: String, default: '' }              // titre facultatif
+  title: { type: String, default: '' },           // titre facultatif
+  circumference: { type: String, default: 180 } ,            // titre facultatif
+  heigth: { type: String, default: 100 } ,            // titre facultatif
 })
 
 const canvasId = `canvas-${props.id}`
@@ -42,7 +44,7 @@ onMounted(() => {
     options: {
       responsive: true,
       rotation: -90,
-      circumference: 180,
+      circumference: props.circumference,
       maintainAspectRatio: false,
       plugins: {
         legend: {

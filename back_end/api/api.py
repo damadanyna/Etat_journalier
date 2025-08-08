@@ -350,5 +350,34 @@ async def history_insert( ):
         print(f"[ERREUR route get_encours_credits] {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/get_local_ref")
+async def get_local_ref(date: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_local_reference(date)
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_pa_class")
+async def get_pa_class(date: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_pa_class(date)
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 api_router = router

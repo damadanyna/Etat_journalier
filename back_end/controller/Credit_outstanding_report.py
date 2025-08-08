@@ -240,9 +240,12 @@ class Credit_outstanding_report:
                                 Secteur_d_activité_code,   
                                 Code_Garantie,
                                 Valeur_garantie, 
-                                arr_status AS status
+                                arr_status AS status,
+                                local_refs
                             FROM `{table_name}`
-                            WHERE ABS(split_by_pipe(`capital_`, 3)) != 0""")
+                            WHERE ABS(split_by_pipe(`capital_`, 3)) != 0
+                            GROUP BY Numero_pret
+                            """)
 
             conn = self.db.connect()
             result = conn.execute(query)
@@ -372,5 +375,89 @@ class Credit_outstanding_report:
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
 
-    
-    
+            
+    def get_local_reference(self, date: str):
+        conn = None
+        try:
+            # Attention : vérification minimale ici, à sécuriser si `date` vient d’un utilisateur
+            if not date.isdigit() or len(date) != 8:
+                raise ValueError("Format de date invalide")
+
+            table_name = f'encours_credit_{date}'
+
+            # On insère directement le nom de la table dans la requête (sécurisé ici car on contrôle la valeur)
+            query = text(f"""
+                SELECT
+                    UPPER(LEFT(local_refs, 1)) AS initial,
+                        COUNT(*) AS total
+                    FROM {table_name}
+                    GROUP BY initial
+                     
+                """)
+
+            conn = self.db.connect()
+            result = conn.execute(query)
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+            
+            
+    def get_pa_class(self, date: str):
+        conn = None
+        try:
+            # Attention : vérification minimale ici, à sécuriser si `date` vient d’un utilisateur
+            if not date.isdigit() or len(date) != 8:
+                raise ValueError("Format de date invalide")
+
+            table_name = f'encours_credit_{date}'
+
+            # On insère directement le nom de la table dans la requête (sécurisé ici car on contrôle la valeur)
+            query = text(f""" 
+                    SELECT
+                    PA_Class AS initial,
+                    COUNT(*) AS total
+                    FROM (
+                    SELECT
+                        CASE
+                        WHEN Nombre_de_jour_retard < 30 THEN 'PA1'
+                        WHEN Nombre_de_jour_retard < 60 THEN 'PA2'
+                        WHEN Nombre_de_jour_retard < 90 THEN 'PA3'
+                        WHEN Nombre_de_jour_retard > 90 THEN 'PA4'
+                        ELSE 'Sain'
+                        END AS PA_Class
+                    FROM {table_name}
+                    ) AS derived
+                    GROUP BY PA_Class
+                    ORDER BY FIELD(PA_Class, 'PA1', 'PA2', 'PA3', 'PA4', 'Sain');
+                     
+                """)
+
+            conn = self.db.connect()
+            result = conn.execute(query)
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
