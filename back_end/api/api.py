@@ -1,10 +1,11 @@
-from fastapi import APIRouter, UploadFile, File,FastAPI, Form, Request,HTTPException,Query
+from fastapi import APIRouter, UploadFile, File,FastAPI,Response,Depends, Form, Request,HTTPException,Query
 from controller.Credits import Credits
 from controller.Credit_outstanding_report import Credit_outstanding_report
 from fastapi.responses import StreamingResponse
 from typing import List
 from typing import Optional
 from fastapi.responses import JSONResponse
+from controller.Authentificate import Authentificate
 from decimal import Decimal
 import json
 import time
@@ -18,12 +19,36 @@ import io
 router = APIRouter()
 credits = Credits()
 credit_outstanding_report = Credit_outstanding_report()
+auth= Authentificate()
+
+credit_outstanding_report = Credit_outstanding_report()
 
 
 
 @router.get("/credits")
 def get_credits():
     return credits.get_data() 
+
+
+#  ------------  LOGIN  -----------
+
+@router.post("/signup")
+def signup(username: str, password: str):
+    return auth.signup(username, password)
+
+@router.post("/signin")
+def signin(username: str, password: str, response: Response):
+    return auth.signin(username, password, response)
+
+@router.post("/logout")
+def logout(response: Response):
+    return auth.logout(response)
+
+@router.get("/protected")
+def protected(request: Request, user=Depends(auth.get_current_user)):
+    return {"message": f"Bienvenue {user} !" }
+
+
 
 @router.post("/upload_multiple_files")
 async def upload_multiple_files(

@@ -1247,6 +1247,7 @@ class Credits:
                                     SELECT  arrangement_id, 
                                                 MIN(bill.payment_date) as payment_date 
                                             FROM aa_bill_details_mcbc_live_full  AS bill
+                                            where bill.settle_status = 'UNPAID'
                                             GROUP BY bill.arrangement_id """
                         },
                         {
@@ -1769,9 +1770,9 @@ class Credits:
                                         echeance,
                                         date_echeance,
                                         payment_date,
-                                        SUM(Capital) AS Capital,
-                                        SUM(principal_int) AS principal_int,
-                                        SUM(penality_int) AS penality_int,
+                                        Capital AS Capital,
+                                        principal_int  AS principal_int,
+                                        penality_int AS penality_int,
                                         SUM(TOTAL) AS TOTAL
                                         FROM temp_etat_remb   GROUP BY arrangement_id;"""
                         }, 
