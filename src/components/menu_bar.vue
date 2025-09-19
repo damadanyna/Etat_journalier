@@ -1,13 +1,51 @@
 <template>
   <v-toolbar color=" " class="bg-transparent" title="Encours des crédits">
     <!-- Badge date -->
-    <div class="flex items-center gap-1 green_transparent mr-2 px-5 rounded-md">
+
+      <div class="flex flex-row justify-end items-center space-x-4">
+        <h3 class="mr-5 text-xl">Date d'arrêt</h3>
+
+        <v-menu
+          v-model="menu"
+          close-on-content-click
+          offset-y
+          max-width="200"
+          min-width="200"
+        >
+          <template #activator="{ props }">
+            <v-btn v-bind="props" prepend-icon="mdi-calendar-range" variant="outlined">
+              <template #prepend>
+                <v-icon color="success" />
+              </template>
+              <span class="text-2xl">{{ selectedDate }}</span>
+            </v-btn>
+          </template>
+
+        <v-list style="max-height: 200px; overflow-y: auto;">
+          <v-list-item
+            v-for="date in historyDates"
+            :key="date.label"
+            @click="() => selectDate(date.label)"
+            role="button"
+          >
+
+          <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
+            
+            <v-icon v-if="date.stat_of !== 'init'"   class=" mr-2 text-red-700">mdi-database-alert</v-icon> 
+            <v-icon v-else color="success" class=" mr-2">mdi-database-check</v-icon> 
+            <v-list-item-title>{{ date.label }}</v-list-item-title>
+          </div>
+          </v-list-item>
+        </v-list>
+        </v-menu>
+      </div>
+    <!-- <div class="flex items-center gap-1 green_transparent mr-2 px-5 rounded-md">
       <v-icon icon="mdi-database" />
       <span v-if="date_last_import_file !== ''" title="Dernière importation">
         {{ formatDateString(date_last_import_file) }}
       </span>
       <span v-else>Récupération ...</span>
-    </div>
+    </div> -->
 
     <!-- ✅ Bouton menu d'exportation -->
     <v-menu offset-y>
@@ -53,7 +91,11 @@ import { ref, watch, onMounted } from 'vue'
 import { usePopupStore } from '../stores'
 import * as XLSX from 'xlsx'
 
+const selectedDate = ref('Chargement en cours...')
+const menu = ref(false)
 const popupStore = usePopupStore()
+
+const historyDates  = ref([])
 
 // 🗓️ Importation de la date
 const date_last_import_file = ref('')
@@ -80,7 +122,12 @@ const formatDateString = (rawDate) => {
   return `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`
 }
 
-onMounted(() => get_last_import_file())
+ onMounted(() => {
+    (async () => {
+      historyDates.value = await fetchData('http://192.168.1.212:8000/api/history_insert')
+    })();
+  get_last_import_file()
+ })
 
 // 📦 Données à exporter
 const listes_encours_credits = ref([])
@@ -125,6 +172,39 @@ const exportToExcel_encours = () => exportToExcel(listes_encours_credits.value, 
 const exportToExcel_remboursement = () => exportToExcel(listes_remboursement_credits.value, 'Etat_de_remboursement', 'Remboursement')
 const exportToExcel_LIMIT_AVM = () => exportToExcel(listes_limit_avm.value, 'Limit_AVM', 'LIMIT_AVM')
 const exportToExcel_LIMIT_CAUTION = () => exportToExcel(listes_limit_caution.value, 'Limit_Caution', 'LIMIT_CAUTION')
+
+async function fetchData(baseUrl, date = null) {
+  try {
+    // Si une date est fournie, on l’ajoute à l’URL
+    const url = date ? `${baseUrl}?date=${date}` : baseUrl
+
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`)
+
+    const data = await response.json()
+    return data.response.data
+  } catch (error) {
+    console.error('❌ Erreur de chargement :', error)
+    return []
+  }
+}
+
+async function selectDate(date) {
+  
+  selectedDate.value = date
+  usePopupStore().selected_date.value = date
+  menu.value = false
+   
+
+}
+
+
+watch(historyDates, (val) => {
+  if (Array.isArray(val) && val.length > 0) { 
+    selectedDate.value = val[0].label
+    console.log("📅 Date sélectionnée automatiquement :", selectedDate.value)
+  }
+}, { immediate: true })
 </script>
 
 <style>

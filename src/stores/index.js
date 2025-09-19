@@ -17,23 +17,14 @@ export const usePopupStore = defineStore('popup', () => {
   const limit_caution_actual_data=ref([])
   const show_notification=ref({status:false,message:"null",ico:"null"})
   const user_access=ref([{
-    name:"rgpp-onisoa",
-    password:"123456",
-    app:"gpp",
-    url:'/gpp/dec_credit'
-  },
-  {
     name:"a",
-    password:"a",
-    app:"cdi",
-    url:'/cdi/list_cdi'
+    password:"a", 
+    access:"admin"
   },
   {
     name:"d",
-    password:"d",
-    app:"reportico",
-    url:'/reportico/compensation'
-  },
+    password:"d", 
+  }, 
 ])
 
   const togglePopup = () => {

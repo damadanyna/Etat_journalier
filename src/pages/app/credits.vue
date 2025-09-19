@@ -137,7 +137,7 @@ watch(
   () => popupStore.selected_date,
   (elt_resp) => {
     selected_date.value = elt_resp;
-    console.log('[watch] selected_date =', elt_resp);
+    // console.log('[watch] selected_date =', elt_resp);
   },
   { immediate: true }
 );

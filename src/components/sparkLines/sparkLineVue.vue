@@ -78,13 +78,13 @@ const fetchCapitalSums = async () => {
 
     const capitalData = json.data?.capital_sums || [];
     capitalSums.value = capitalData;
-    console.log("Capital Sums:", capitalData);
+    // console.log("Capital Sums:", capitalData);
 
     const { labels: newLabels, values: newValues } = adaptCapitalSumsToChart(capitalData);
     label_val.value =  newLabels;
     values.value = newValues;
-    console.log("Labels:", newLabels)
-    console.log("Values:", newValues)
+    // console.log("Labels:", newLabels)
+    // console.log("Values:", newValues)
 
 
   } catch (err) {
