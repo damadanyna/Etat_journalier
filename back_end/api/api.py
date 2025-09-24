@@ -1,11 +1,11 @@
 from fastapi import APIRouter, UploadFile, File,FastAPI,Response,Depends, Form, Request,HTTPException,Query
 from controller.Credits import Credits
 from controller.Credit_outstanding_report import Credit_outstanding_report
+from controller.Users import Users
 from fastapi.responses import StreamingResponse
 from typing import List
 from typing import Optional
 from fastapi.responses import JSONResponse
-from controller.Authentificate import Authentificate
 from decimal import Decimal
 import json
 import time
@@ -18,8 +18,8 @@ import io
  
 router = APIRouter()
 credits = Credits()
+user= Users()
 credit_outstanding_report = Credit_outstanding_report()
-auth= Authentificate()
 
 credit_outstanding_report = Credit_outstanding_report()
 
@@ -30,23 +30,35 @@ def get_credits():
     return credits.get_data() 
 
 
-#  ------------  LOGIN  -----------
+#  ------------  LOGIN  -----------  
 
+
+# --- SIGNUP ---
 @router.post("/signup")
-def signup(username: str, password: str):
-    return auth.signup(username, password)
+def signup(username: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
+    return user.signup(username, password, immatricule)
 
+# --- SIGNIN ---
 @router.post("/signin")
-def signin(username: str, password: str, response: Response):
-    return auth.signin(username, password, response)
+def signin(username: str = Form(...), password: str = Form(...)):
+    return user.signin(username, password)
 
-@router.post("/logout")
-def logout(response: Response):
-    return auth.logout(response)
+# --- GET CURRENT USER ---
+def get_user_from_request(request: Request):
+    return user.get_current_user(request)
 
+# --- ROUTE PROTÉGÉE ---
 @router.get("/protected")
-def protected(request: Request, user=Depends(auth.get_current_user)):
-    return {"message": f"Bienvenue {user} !" }
+def protected(user_: str = Depends(get_user_from_request)):
+    return user_
+
+# --- LOGOUT ---
+@router.post("/logout")
+def logout():
+    # Avec JWT dans les headers, le logout est généralement géré côté client
+    # (ex: suppression du token dans le localStorage ou sessionStorage)
+    return {"message": "Déconnexion réussie"}
+
 
 
 

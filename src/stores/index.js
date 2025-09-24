@@ -16,16 +16,11 @@ export const usePopupStore = defineStore('popup', () => {
   const limit_avm_actual_data=ref([]) 
   const limit_caution_actual_data=ref([])
   const show_notification=ref({status:false,message:"null",ico:"null"})
-  const user_access=ref([{
-    name:"a",
-    password:"a", 
-    access:"admin"
-  },
-  {
-    name:"d",
-    password:"d", 
-  }, 
-])
+  const user_access=ref({
+    name:"",
+    password:"", 
+    access:""
+  })
 
   const togglePopup = () => {
     showPopup.value = !showPopup.value
