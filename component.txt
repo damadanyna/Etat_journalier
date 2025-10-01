@@ -6,4 +6,7 @@ pandas
 sqlalchemy
 werkzeug
 aiofiles
-python-multipart
+python-multipart 
+jwt
+pycrypt
+python-jose[cryptography]
