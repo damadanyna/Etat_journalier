@@ -2,7 +2,7 @@
   <v-toolbar color=" " class="bg-transparent" title="Encours des crédits">
     <!-- Badge date -->
 
-      <div class="flex flex-row justify-end items-center space-x-4">
+      <div class="flex flex-row justify-end items-center space-x-4 mx-4" >
         <h3 class="mr-5 text-xl">Date d'arrêt</h3>
 
         <v-menu
@@ -48,8 +48,8 @@
     </div> -->
 
     <!-- ✅ Bouton menu d'exportation -->
-    <v-menu offset-y>
-      <template v-slot:activator="{ props }">
+    <v-menu offset-y  >
+      <template v-slot:activator="{ props }" style=" margin: 0px 15px;">
         <v-btn v-bind="props" prepend-icon="mdi-share-variant">
           <template #prepend><v-icon color="success"></v-icon></template>
           <span class="text-md">Exporter</span>
@@ -80,13 +80,16 @@
     </v-menu>
 
     <!-- Avatar à droite -->
-    <v-btn stacked>
-      <v-avatar image="https://avatars.githubusercontent.com/u/60171474?v=4"></v-avatar>
-    </v-btn>
+     <user_btn_profil class=" mx-4"></user_btn_profil>
+    <!-- <v-btn stacked>
+      <v-icon icon="mdi mdi-account"></v-icon>
+      <span class=" text-xs">daa</span>
+    </v-btn> -->
   </v-toolbar>
 </template>
 
 <script setup>
+import user_btn_profil from './user_btn_profil.vue'
 import { ref, watch, onMounted } from 'vue'
 import { usePopupStore } from '../stores'
 import * as XLSX from 'xlsx'

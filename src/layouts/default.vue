@@ -1,7 +1,7 @@
 <template>
   <v-app >
     <NavigationDrawer />
-    <Propover_menu  />
+    <!-- <Propover_menu  /> -->
     <v-main class=" h-full  flex-column">
       <menu_bar></menu_bar>
       <slot />
@@ -11,7 +11,7 @@
 
 <script setup>
 import NavigationDrawer from '@/components/navigation_drawer.vue' // ou '../components/' selon ton arborescence
-import Propover_menu from '@/components/propover_menu.vue';
+// import Propover_menu from '@/components/propover_menu.vue';
 import menu_bar from '../components/menu_bar.vue';
 </script>
 

@@ -27,7 +27,7 @@
               :prepend-icon="item.icon"
               :title="item.title"
               color="green-accent-3" 
-            ></v-list-item> 
+            ></v-list-item>  
          
           </v-list>
         </v-navigation-drawer> 

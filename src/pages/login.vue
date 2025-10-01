@@ -70,7 +70,8 @@ const handleSubmit = async () => {
         // ✅ Stocker le token dans le localStorage
         if (data.access_token) {
           localStorage.setItem("access_token", data.access_token);
-          alert(`Bienvenue ${data.user.username} !`);
+          location.replace('/app/credits')
+          // alert(`Bienvenue ${data.user.username} !`);
         } else {
           console.error("Token manquant dans la réponse");
         }
@@ -94,7 +95,8 @@ const handleSubmit = async () => {
 
       if (!response.ok) throw new Error("Erreur lors de l'inscription")
       const data = await response.json()
-      alert(`Utilisateur ${data.username} inscrit avec succès !`)
+      location.replace('/app/credits')
+      // alert(`Utilisateur ${data.username} inscrit avec succès !`)
     }
   } catch (err) {
     errorMessage.value = err.message

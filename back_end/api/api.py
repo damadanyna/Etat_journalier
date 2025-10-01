@@ -53,11 +53,11 @@ def protected(user_: str = Depends(get_user_from_request)):
     return user_
 
 # --- LOGOUT ---
+
 @router.post("/logout")
-def logout():
-    # Avec JWT dans les headers, le logout est généralement géré côté client
-    # (ex: suppression du token dans le localStorage ou sessionStorage)
-    return {"message": "Déconnexion réussie"}
+def logout(response: Response):
+    return user.logout(response)
+
 
 
 
