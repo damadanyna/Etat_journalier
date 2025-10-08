@@ -47,7 +47,7 @@ const stat_PA  = ref([])
 
 watch(usePopupStore().selected_date, async(data) => {  
   charts.value = []
-     stat_PA.value = await fetchData(`${api}api/get_pa_class`,data.value) 
+     stat_PA.value = await fetchData(`${api}/api/get_pa_class`,data.value) 
     updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
     
     stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`, data.value,'1000px') 
