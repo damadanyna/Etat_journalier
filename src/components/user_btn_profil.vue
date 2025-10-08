@@ -85,7 +85,7 @@ const toggleTheme=()=> {
 }
 
 const logout=async ()=> {
-     const response = await fetch("http://192.168.1.212:8000/api/logout", {  
+     const response = await fetch("http://127.0.0.1:8000/api/logout", {  
       method: "POST",
             credentials: "include"
         })

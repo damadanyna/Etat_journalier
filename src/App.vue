@@ -45,7 +45,7 @@ const get_stat = async () => {
     return;
   }
 
-  const protectedResp = await fetch("http://192.168.1.212:8000/api/protected", {
+  const protectedResp = await fetch("http://127.0.0.1:8000/api/protected", {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${token}`,

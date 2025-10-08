@@ -105,7 +105,7 @@ const date_last_import_file = ref('')
 
 const get_last_import_file = async () => {
   try {
-    const response = await fetch('http://192.168.1.212:8000/api/get_last_import_file', {
+    const response = await fetch('http://127.0.0.1:8000/api/get_last_import_file', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     })
@@ -127,7 +127,7 @@ const formatDateString = (rawDate) => {
 
  onMounted(() => {
     (async () => {
-      historyDates.value = await fetchData('http://192.168.1.212:8000/api/history_insert')
+      historyDates.value = await fetchData('http://127.0.0.1:8000/api/history_insert')
     })();
   get_last_import_file()
  })

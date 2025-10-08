@@ -227,9 +227,9 @@ class Credit_outstanding_report:
                                 IFNULL(Nombre_de_jour_retard, 0) AS Nombre_de_jour_retard,
                                 payment_date, 
                                 '' AS Status_du_client, 
-                                ABS(split_by_pipe(`capital_`, 1)) AS capital_non_appele,
-                                ABS(split_by_pipe(`capital_`, 2)) AS capital_appele,
-                                ABS(split_by_pipe(`capital_`, 3)) AS capital_total,
+                                split_by_pipe(`capital_`, 1) AS capital_non_appele,
+                                split_by_pipe(`capital_`, 2) AS capital_appele,
+                                split_by_pipe(`capital_`, 3) AS capital_total,
                                 Total_interet_echus,
                                 `OD Pen`,
                                 `OD & PEN`,
@@ -258,6 +258,7 @@ class Credit_outstanding_report:
 
                 # ✅ Calcul de Status_du_client basé sur Nombre_de_jour_retard
                 retard = row_dict.get("Nombre_de_jour_retard")
+                retard = retard-1
                 try:
                     retard = int(retard) if retard is not None else 0
                 except ValueError:
@@ -273,6 +274,12 @@ class Credit_outstanding_report:
                     row_dict["Status_du_client"] = "PA4"
                 else:
                     row_dict["Status_du_client"] = ""
+
+                if retard < 0:
+                    retard = 0
+
+                row_dict['Nombre_de_jour_retard'] = retard
+                
 
                 data.append(row_dict)
 

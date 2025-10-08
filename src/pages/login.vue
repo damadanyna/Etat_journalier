@@ -58,7 +58,7 @@ const handleSubmit = async () => {
         formData.append("username", username.value);
         formData.append("password", password.value);
 
-        const response = await fetch("http://192.168.1.212:8000/api/signin", {
+        const response = await fetch("http://127.0.0.1:8000/api/signin", {
           method: "POST",
           body: formData
         });
@@ -86,7 +86,7 @@ const handleSubmit = async () => {
         formData.append("password", password.value)
         formData.append("immatricule", immatricule.value)
 
-        const response = await fetch("http://192.168.1.212:8000/api/signup", {
+        const response = await fetch("http://127.0.0.1:8000/api/signup", {
             method: "POST",  
             body:  formData,
             credentials: "include"

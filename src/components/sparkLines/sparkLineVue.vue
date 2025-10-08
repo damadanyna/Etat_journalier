@@ -71,7 +71,7 @@ const chartOptions = {
 
 const fetchCapitalSums = async () => {
   try {
-    const response = await fetch('http://192.168.1.212:8000/api/get_capital_sums');
+    const response = await fetch('http://127.0.0.1:8000/api/get_capital_sums');
     const json = await response.json();
 
     if (!response.ok) throw new Error(json.detail || 'Erreur inconnue');
