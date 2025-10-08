@@ -17,6 +17,7 @@
 </template>
 
 <script setup> 
+const api = inject('api') 
 import login from './pages/login.vue';
 import { usePopupStore} from './stores'
 import LayoutDefault from '@/layouts/default.vue'
@@ -24,7 +25,7 @@ import { useSnackbar } from '@/composables/useSnackbar'
 import popup_view from './components/loading/file_porgress_bar_vues.vue';
 import { useTheme } from 'vuetify' 
 import { useRoute } from 'vue-router'
-import { computed, onMounted,ref } from 'vue' 
+import { computed, onMounted,ref,inject } from 'vue' 
 
 const popupStore = usePopupStore()
 
@@ -45,19 +46,14 @@ const get_stat = async () => {
     return;
   }
 
-  const protectedResp = await fetch("http://127.0.0.1:8000/api/protected", {
+  const protectedResp = await fetch(`${api}/api/protected`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json"
     }
   });
-  isLogged_status.value=protectedResp.status
-  // if (isLogged_status.value=200) {
-  //   route.push('/app/credits')
-  // }
-
-  
+  isLogged_status.value=protectedResp.status  
 
   if (protectedResp.ok) {
     const data = await protectedResp.json(); 

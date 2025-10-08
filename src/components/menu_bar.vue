@@ -90,10 +90,12 @@
 
 <script setup>
 import user_btn_profil from './user_btn_profil.vue'
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted,inject } from 'vue'
 import { usePopupStore } from '../stores'
 import * as XLSX from 'xlsx'
 
+
+const api = inject('api') 
 const selectedDate = ref('Chargement en cours...')
 const menu = ref(false)
 const popupStore = usePopupStore()
@@ -105,7 +107,7 @@ const date_last_import_file = ref('')
 
 const get_last_import_file = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/get_last_import_file', {
+    const response = await fetch(`${api}/api/get_last_import_file`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     })
@@ -127,7 +129,7 @@ const formatDateString = (rawDate) => {
 
  onMounted(() => {
     (async () => {
-      historyDates.value = await fetchData('http://127.0.0.1:8000/api/history_insert')
+      historyDates.value = await fetchData(`${api}/api/history_insert`)
     })();
   get_last_import_file()
  })

@@ -5,8 +5,13 @@
 </template>
 
 <script setup> 
+
+
 import { Line } from 'vue-chartjs'
-import { onMounted, ref, computed,watch  } from 'vue'
+import {  ref, computed,watch,inject  } from 'vue'
+
+
+const api = inject('api') 
 const props = defineProps({
   selected_date: Object
 }) 
@@ -71,7 +76,7 @@ const chartOptions = {
 
 const fetchCapitalSums = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/get_capital_sums');
+    const response = await fetch(`${api}/api/get_capital_sums`);
     const json = await response.json();
 
     if (!response.ok) throw new Error(json.detail || 'Erreur inconnue');

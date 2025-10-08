@@ -44,9 +44,10 @@
 </template> 
  
 <script setup>
-import { onMounted, ref,watch } from 'vue';
+import { onMounted, ref,watch,inject } from 'vue';
 import { usePopupStore } from '../stores';
 
+const api = inject('api') 
 const tab = ref("one");
 
 const listes = {
@@ -168,8 +169,8 @@ watch(usePopupStore().selected_date, (val) => {
   tabs.value[1].liste=[]  
 
 
-  fetchData(`http://127.0.0.1:8000/api/get_encours_credits?date=${val.value}`, listes.encours, 'encours_actual_data');
-  fetchData(`http://127.0.0.1:8000/api/encours_remboursement?date=${val.value}`, listes.remboursement, 'remboursement_actual_data');
+  fetchData(`${api}/api/get_encours_credits?date=${val.value}`, listes.encours, 'encours_actual_data');
+  fetchData(`${api}/api/encours_remboursement?date=${val.value}`, listes.remboursement, 'remboursement_actual_data');
   
   
 
@@ -180,10 +181,10 @@ onMounted(() => {
   // console.log(usePopupStore().selected_date);
   
   const date = '20250829';
-  fetchData(`http://127.0.0.1:8000/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
-  fetchData(`http://127.0.0.1:8000/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
-  fetchData(`http://127.0.0.1:8000/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');
-  fetchData(`http://127.0.0.1:8000/api/encours_limit?limit_type=2900`, listes.caution, 'limit_caution_actual_data');
+  fetchData(`${api}/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
+  fetchData(`${api}/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
+  fetchData(`${api}/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');
+  fetchData(`${api}/api/encours_limit?limit_type=2900`, listes.caution, 'limit_caution_actual_data');
 });
 </script>
 <style scoped>

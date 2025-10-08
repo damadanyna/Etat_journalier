@@ -40,8 +40,9 @@
 </template>
 
 <script setup>
-import { ref } from "vue"
+import { ref,inject } from "vue"
 
+const api = inject('api') 
 const activeTab = ref("signIn") // par défaut "Connexion"
 const username = ref("")
 const password = ref("")
@@ -50,18 +51,20 @@ const immatricule = ref("")
 const errorMessage = ref("")
 
 const handleSubmit = async () => {    
-  try {
-    console.log(activeTab.value)
+  try { 
     if (activeTab.value === "signIn") {
           // ---- Connexion ----
         const formData = new FormData();
         formData.append("username", username.value);
         formData.append("password", password.value);
 
-        const response = await fetch("http://127.0.0.1:8000/api/signin", {
+        const response = await fetch(`${api}/api/signin`, {
           method: "POST",
           body: formData
         });
+
+        console.log(response);
+        
 
         if (!response.ok) throw new Error("Identifiants invalides");
 
@@ -86,7 +89,7 @@ const handleSubmit = async () => {
         formData.append("password", password.value)
         formData.append("immatricule", immatricule.value)
 
-        const response = await fetch("http://127.0.0.1:8000/api/signup", {
+        const response = await fetch(`${api}/api/signup`, {
             method: "POST",  
             body:  formData,
             credentials: "include"

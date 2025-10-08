@@ -7,17 +7,19 @@ import routes from 'virtual:generated-pages'
 import '@mdi/font/css/materialdesignicons.css' 
 import { createPinia } from 'pinia'
 import './plugins/chart'
-
-
+import api from './plugins/api' 
 // Initialize Pinia
 const pinia = createPinia()
 const router = createRouter({
   history: createWebHistory(),
   routes,
 }) 
+
+ 
+
 createApp(App)
-.use(pinia)
-.use(vuetify)
-.use(router)
-.mount('#app')
-  
+  .use(pinia)
+  .use(vuetify)
+  .use(router)
+  .use(api)
+  .mount('#app')

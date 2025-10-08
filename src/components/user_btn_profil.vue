@@ -52,8 +52,12 @@
 </template>
 
 <script setup>
-import { ref , onMounted} from 'vue'
+import { ref , onMounted,inject} from 'vue'
 import { usePopupStore } from '../stores'  
+
+
+
+const api = inject('api') 
 const menu = ref(false) 
 const hints = ref(true)
 const popupStore = usePopupStore()
@@ -85,7 +89,7 @@ const toggleTheme=()=> {
 }
 
 const logout=async ()=> {
-     const response = await fetch("http://127.0.0.1:8000/api/logout", {  
+     const response = await fetch(`${api}/api/logout`, {  
       method: "POST",
             credentials: "include"
         })

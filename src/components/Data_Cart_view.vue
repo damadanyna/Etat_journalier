@@ -22,12 +22,12 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch,inject } from 'vue'
 import doughnut from './doughnut/Dougnut.vue'
 import { usePopupStore } from '../stores'
-
-const charts = ref([])
-
+ 
+const charts = ref([]) 
+const api = inject('api') 
 
 
 // Tableau des dates prédéfinies
@@ -47,10 +47,10 @@ const stat_PA  = ref([])
 
 watch(usePopupStore().selected_date, async(data) => {  
   charts.value = []
-     stat_PA.value = await fetchData('http://127.0.0.1:8000/api/get_pa_class',data.value) 
+     stat_PA.value = await fetchData(`${api}api/get_pa_class`,data.value) 
     updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
     
-    stat_local_ref.value = await fetchData('http://127.0.0.1:8000/api/get_local_ref', data.value,'1000px') 
+    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`, data.value,'1000px') 
     updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
   
 });
@@ -119,13 +119,13 @@ onMounted(() => {
 
 
  (async () => {
-    stat_PA.value = await fetchData('http://127.0.0.1:8000/api/get_pa_class','20250731') 
+    stat_PA.value = await fetchData(`${api}/api/get_pa_class`,'20250731') 
     updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
   })();
 
   
  (async () => {
-    stat_local_ref.value = await fetchData('http://127.0.0.1:8000/api/get_local_ref','20250731','1000px') 
+    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`,'20250731','1000px') 
     updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
     
   })();
