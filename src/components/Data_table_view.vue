@@ -178,13 +178,12 @@ watch(usePopupStore().selected_date, (val) => {
 
 
 onMounted(() => {
-  // console.log(usePopupStore().selected_date);
   
-  const date = '20250829';
-  fetchData(`${api}/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
-  fetchData(`${api}/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
-  fetchData(`${api}/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');
-  fetchData(`${api}/api/encours_limit?limit_type=2900`, listes.caution, 'limit_caution_actual_data');
+  // const date = '20250829';
+  // fetchData(`${api}/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
+  // fetchData(`${api}/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
+  // fetchData(`${api}/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');
+  // fetchData(`${api}/api/encours_limit?limit_type=2900`, listes.caution, 'limit_caution_actual_data');
 });
 </script>
 <style scoped>

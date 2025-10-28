@@ -845,6 +845,10 @@ class Credits:
                             "sql": "CREATE INDEX idx_sector ON temp_clients (sector);"
                         },
                         {
+                            "name": "Créer INDEX idx_target ON temp_clients",
+                            "sql": "CREATE INDEX idx_target ON temp_clients (target);"
+                        },
+                        {
                             "name": "Drop table temporaire - temp_arrangement_customers",
                             "sql": """
                             DROP TABLE IF EXISTS temp_arrangement_customers; 
@@ -874,7 +878,7 @@ class Credits:
                             "name": "Créer table temporaire - temp_clients",
                             "sql": """ 
                               CREATE TABLE temp_clients AS 
-                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,salary,account_officer,phone_1,sms_1,sector,industry
+                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,salary,account_officer,phone_1,sms_1,sector,industry,target
                                 FROM customer_mcbc_live_full
                             """
                         },
