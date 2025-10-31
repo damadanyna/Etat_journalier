@@ -20,8 +20,9 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue"
+import { ref, watch,inject } from "vue"
 import axios from "axios"
+const api = inject('api')
 
 // Props venant de dat.vue
 const props = defineProps({
@@ -34,7 +35,9 @@ const props = defineProps({
 const resume = ref(null)
 
 const fetchResume = async (tableName) => {
+
   if (!tableName) return
+  console.log("📋 TableName utilisé pour résumé :", tableName)
   try {
     const res = await axios.get(`http://127.0.0.1:8000/api/dat/${tableName}/resume`)
     resume.value = res.data

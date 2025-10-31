@@ -339,7 +339,7 @@ async function selectDate(date,stat_compte) {
   selectedDate.value = date
   popupStore.selected_date = date
   popupStore.selected_date_stat_compte = stat_compte
-  usePopupStore().selected_date.value = date
+  usePopupStore().selected_date = date
   menu.value = false
    
  if (isCompte.value) {
