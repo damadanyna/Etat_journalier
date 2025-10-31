@@ -57,7 +57,7 @@ const props = defineProps({
 
 const search = ref("")
 const page = ref(1)
-const itemsPerPage = ref(10)
+const itemsPerPage = ref(20)
 
 const headers = computed(() =>
   props.columns.map(col => ({

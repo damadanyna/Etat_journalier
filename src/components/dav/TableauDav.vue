@@ -59,7 +59,7 @@ const headers = ref([])
 const items = ref([])
 const search = ref("")
 const page = ref(1)
-const itemsPerPage = ref(10)
+const itemsPerPage = ref(20)
 
 const pageCount = computed(() =>
   Math.ceil(items.value.length / itemsPerPage.value)
