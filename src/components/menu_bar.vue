@@ -21,7 +21,7 @@ const date_last_import_file = ref('');
 
 const get_last_import_file = async () => {
   try {
-    const response = await fetch('http://192.168.1.212:8000/api/get_last_import_file', {
+    const response = await fetch('http://10.192.1.94:8000/api/get_last_import_file', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

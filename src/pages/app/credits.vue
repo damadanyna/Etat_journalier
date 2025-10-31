@@ -189,7 +189,7 @@ const runStep = (index) => {
     const str_date = selected_date.value.label; // ta variable dynamique
     // console.log('str_date',str_date);
     
-    const evtSource = new EventSource(`http://192.168.1.212:8000/api/run_encours?str_date=${encodeURIComponent(str_date)}`);
+    const evtSource = new EventSource(`http://10.192.1.94:8000/api/run_encours?str_date=${encodeURIComponent(str_date)}`);
     evtSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)

@@ -93,7 +93,7 @@ const get_encours_credits = async () => {
   try {
     const date = '20250711' 
 
-    const response = await fetch(`http://192.168.1.212:8000/api/get_encours_credits?date=${date}`, {
+    const response = await fetch(`http://10.192.1.94:8000/api/get_encours_credits?date=${date}`, {
     method: 'GET',
     headers: {
         'Content-Type': 'application/json',

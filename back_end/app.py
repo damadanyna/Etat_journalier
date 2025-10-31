@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from controller.Credits import Credits
-from api.api import api_router   
+from api.apiCompte import api_router2   
+from api.api import api_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -21,5 +22,7 @@ credits = Credits()
 
 # Enregistrer les routes de l'API
 app.include_router(api_router, prefix="/api")
+
+app.include_router(api_router2, prefix="/api")
 
 # Pour lancer : uvicorn app:app --reload --port 8081

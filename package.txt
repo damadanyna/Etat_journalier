@@ -1,0 +1,9 @@
+uvicorn
+fastapi
+openpyxl
+pymysql
+pandas
+sqlalchemy
+werkzeug
+aiofiles
+python-multipart
