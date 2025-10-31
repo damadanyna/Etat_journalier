@@ -1,5 +1,5 @@
 <template>
-  <div class="table-wrapper">
+  <div class="table-container">
     <!-- 🔍 Barre de recherche fixée -->
     <div class="table-search-bar">
       <v-text-field
@@ -12,7 +12,7 @@
     </div>
 
     <!-- 📊 Zone défilable -->
-    <div class="table-scroll">
+    <div class="table-content">
       <v-data-table
         :headers="headers"
         :items="items"
@@ -22,23 +22,25 @@
         :search="search"
         dense
         fixed-header
-        height="500px"
+        height="100%"
+        hide-default-footer
       >
-        <template v-slot:footer>
-          <v-pagination
-            v-model="page"
-            :length="pageCount"
-            circle
-            class="my-2"
-          />
-        </template>
-
         <template v-slot:no-data>
           <v-alert type="info" border="left" color="blue" dark>
             Aucune donnée trouvée
           </v-alert>
         </template>
       </v-data-table>
+    </div>
+
+    <!-- 📄 Pagination toujours visible -->
+    <div class="table-pagination">
+      <v-pagination
+        v-model="page"
+        :length="pageCount"
+        circle
+        class="my-2"
+      />
     </div>
   </div>
 </template>
@@ -115,31 +117,41 @@ onUnmounted(() => {
 
 watch(() => props.tableName, fetchTableData, { immediate: true })
 </script>
+
 <style scoped>
-.table-wrapper {
+.table-container {
   display: flex;
   flex-direction: column;
-  height: 600px;
+  height: 100vh; /* 🔹 Prend toute la hauteur visible */
   width: 100%;
-  background-color: transparent;
+  overflow: hidden; /* Évite le scroll global */
 }
 
 .table-search-bar {
+  flex: 0 0 auto;
   position: sticky;
   top: 0;
   z-index: 30;
   padding: 8px;
   border-bottom: 1px solid #333;
+  background-color: #1e1e1e;
 }
 
-.table-scroll {
-  flex: 1;
-  overflow-y: auto;
+.table-content {
+  flex: 1 1 auto;
+  overflow-y: auto; /* 🔹 Seule cette partie défile */
+  background-color: #121212;
 }
 
-.fixed-header-table ::v-deep(.v-data-table__wrapper) {
-  overflow-y: auto;
-  max-height: 500px;
+.table-pagination {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  background-color: #1e1e1e;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
 }
 
 .fixed-header-table ::v-deep(th) {
@@ -153,9 +165,8 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
   border-right: 1px solid #333;
   padding: 10px 12px;
   z-index: 15;
-  white-space: nowrap;         
+  white-space: nowrap;
 }
-
 
 .fixed-header-table ::v-deep(td) {
   border-bottom: 1px solid #333;
@@ -163,8 +174,8 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
   font-size: 14px;
 }
 
-
 .fixed-header-table ::v-deep(tr:hover td) {
   cursor: pointer;
+  background-color: #2a2a2a;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="unified-container" fluid>
     <!-- Liste des history_insert -->
     <HistorySelected ref="historyRef" @select="onSelectHistory" />
 
@@ -94,3 +94,11 @@ const initializeTable = async () => {
 }
 
 </script>
+
+<style scoped>
+.unified-container {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+</style>

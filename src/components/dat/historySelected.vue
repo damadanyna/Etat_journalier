@@ -1,9 +1,9 @@
 <template>
-  <v-card class="pa-4" outlined>
+  <v-card class="pa-4 history-card" outlined>
     <v-card-title class="text-h6">Historique des insertions</v-card-title>
     <v-divider></v-divider>
 
-    <v-list>
+    <v-list class="history-list">
       <v-list-item
         v-for="item in history"
         :key="item.label"
@@ -54,7 +54,24 @@ const fetchHistory = async () => {
 const emit = defineEmits(["select"])
 const selectHistory = (item) => emit("select", item)
 
-defineExpose({ fetchHistory,history })
+defineExpose({ fetchHistory, history })
 
 onMounted(fetchHistory)
 </script>
+
+<style scoped>
+.history-card {
+  max-height: 400px; /* hauteur fixe du bloc */
+  overflow-y: auto;  /* scroll vertical */
+  scrollbar-width: thin;
+}
+
+/* pour un scroll plus esthétique */
+.history-card::-webkit-scrollbar {
+  width: 8px;
+}
+.history-card::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+</style>
