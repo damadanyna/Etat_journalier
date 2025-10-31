@@ -33,61 +33,56 @@ def initialize(name:str):
         if not createStatus:
             raise Exception("Erreur lors de l'ajout des colonnes de statut")
         
-        createTempClients = dav_unique.create_temp_client()
-        if not createTempClients:
-            raise Exception("erreur Creation table temp client")
-        
         createIndexGeneral = db_get.create_indexes()
         if not createIndexGeneral:
             raise Exception("Erreur lors de la création des index généraux")
         
-        # createIndex = dav_unique.create_index()
-        # if not createIndex:
-        #     raise Exception("Erreur lors de la création des index")
+        createIndex = dav_unique.create_index()
+        if not createIndex:
+            raise Exception("Erreur lors de la création des index")
         
-        # createFunctions = dav_unique.create_funct()
-        # if not createFunctions:
-        #     raise Exception("Erreur lors de la création des fonctions")
+        createTempClients = dav_unique.create_temp_client()
+        if not createTempClients:
+            raise Exception("erreur Creation table temp client")
         
-        # if dav_unique.verifie_statu(name):
-        #     return JSONResponse(
-        #         status_code=200,
-        #         content={
-        #             "status": "info",
-        #             "message": f"Le compte {name} est déjà initialisé",
-        #             "already_initialized": True
-        #         }
-        #     )
+        createFunctions = dav_unique.create_funct()
+        if not createFunctions:
+            raise Exception("Erreur lors de la création des fonctions")
         
-        # table_name_dat = db_get.create_tableDatPreCompute(name)
-        # table_name_dav = dav_unique.create_table_dav(name)
-        # table_name_epr = dav_unique.create_table_epr(name)
+        if dav_unique.verifie_statu(name):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "info",
+                    "message": f"Le compte {name} est déjà initialisé",
+                    "already_initialized": True
+                }
+            )
         
-        # if not table_name_dat or not table_name_dav or not table_name_epr:
-        #     raise Exception("Erreur lors de la création des tables DAT, DAV et EPR")
+        table_name_dat = db_get.create_tableDatPreCompute(name)
+        table_name_dav = dav_unique.create_table_dav(name)
+        table_name_epr = dav_unique.create_table_epr(name)
         
-        # operation.calculeAmtCap(table_name_dat)
-        # db_get.traitement_dat(table_name_dat)
+        if not table_name_dat or not table_name_dav or not table_name_epr:
+            raise Exception("Erreur lors de la création des tables DAT, DAV et EPR")
         
-        
-        # dav_unique.add_status_columns()
-        # dav_unique.create_temp_client()
-        # dav_unique.create_index()
-        # dav_unique.create_funct()
-        # dav_unique.update_status(name)
+        operation.calculeAmtCap(table_name_dat)
+        db_get.traitement_dat(table_name_dat)
+        dav_unique.update_status(name)
 
         return JSONResponse(content={
                     "status": "success",
-                    # "message": f"Table créée et nettoyée et calculer : {table_name_dav} et {table_name_epr} et {table_name_dat}✅",
-                    # "table_name_dav": table_name_dav,
-                    # "table_name_epr": table_name_epr,
-                    # "table_name_dat": table_name_dat   
+                    "message": f"Table créée et nettoyée et calculer : {table_name_dav} et {table_name_epr} et {table_name_dat}✅",
+                    "table_name_dav": table_name_dav,
+                    "table_name_epr": table_name_epr,
+                    "table_name_dat": table_name_dat   
         })
         
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
     
-    
+
+#teste decaissement
 @router.post("/compte/decaissement/{name}")
 def create_decaissement(date_limit:str):
     try:

@@ -129,7 +129,7 @@ class DavUnique:
 
     def create_index(self):
         index = [
-                " CREATE INDEX IF NOT EXISTS idx_client_id ON temp_clients (id(255))",
+                " CREATE INDEX IF NOT EXISTS idx_client_id ON temp_clients (id)",
 
                 " CREATE INDEX IF NOT EXISTS idx_account_officer ON temp_clients (account_officer(255))",
 
@@ -278,7 +278,7 @@ class DavUnique:
                 conn.execute(text(query))
                 conn.commit()
             
-            print(f"[INFO] Function solde_account créée avec succès ")
+            print(f"[INFO] Function solde_account créée avec succès ✅ ")
             return True
 
         except Exception as e:
