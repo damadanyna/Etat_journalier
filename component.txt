@@ -8,5 +8,6 @@ werkzeug
 aiofiles
 python-multipart 
 jwt
-pycrypt
+pycryptodome
 python-jose[cryptography]
+bcrypt
