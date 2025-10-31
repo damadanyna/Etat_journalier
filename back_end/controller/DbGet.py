@@ -11,7 +11,7 @@ class DbGet:
       
         indexes = [
             # Table aa_arrangement_mcbc_live_full
-            "CREATE INDEX IF NOT EXISTS idx_arrangement_id ON aa_arrangement_mcbc_live_full(id(255))",
+            "CREATE INDEX IF NOT EXISTS idx_arrangement_id ON aa_arrangement_mcbc_live_full(id)",
             "CREATE INDEX IF NOT EXISTS idx_co_code ON aa_arrangement_mcbc_live_full(co_code(255))",
             "CREATE INDEX IF NOT EXISTS idx_customer ON aa_arrangement_mcbc_live_full(customer(255))",
             "CREATE INDEX IF NOT EXISTS idx_linked_appl_id ON aa_arrangement_mcbc_live_full(linked_appl_id(255))",
@@ -37,7 +37,7 @@ class DbGet:
             "CREATE INDEX IF NOT EXISTS idx_account_details_maturity_date ON aa_account_details_mcbc_live_full(maturity_date(255))",
 
             # Table eb_cont_bal_mcbc_live_full
-            "CREATE INDEX IF NOT EXISTS idx_contract_balance_id ON eb_cont_bal_mcbc_live_full(id(255))",
+            "CREATE INDEX IF NOT EXISTS idx_contract_balance_id ON eb_cont_bal_mcbc_live_full(id)",
             "CREATE INDEX IF NOT EXISTS idx_balance_columns ON eb_cont_bal_mcbc_live_full(open_balance(255))",
             "CREATE INDEX IF NOT EXISTS idx_debit_mvmt ON eb_cont_bal_mcbc_live_full(debit_mvmt(255))",
             "CREATE INDEX IF NOT EXISTS idx_credit_mvmt ON eb_cont_bal_mcbc_live_full(credit_mvmt(255))",

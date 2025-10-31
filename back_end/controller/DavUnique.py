@@ -372,7 +372,7 @@ class DavUnique:
             return table_name
             
         except Exception as e:
-            print(f"[ERREUR] Version ultra-rapide : {e}")
+            print(f"[ERREUR] creation DAV Erreur : {e}")
             return False
         finally:
             if conn:

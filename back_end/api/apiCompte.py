@@ -29,39 +29,59 @@ decaissement = DecaissementOptimise()
 @router.post("/compte/compte_init/{name}")
 def initialize(name:str):
     try:
-        if dav_unique.verifie_statu(name):
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "info",
-                    "message": f"Le compte {name} est déjà initialisé",
-                    "already_initialized": True
-                }
-            )
+        createStatus = dav_unique.add_status_columns()
+        if not createStatus:
+            raise Exception("Erreur lors de l'ajout des colonnes de statut")
         
-        table_name_dat = db_get.create_tableDatPreCompute(name)
-        table_name_dav = dav_unique.create_table_dav(name)
-        table_name_epr = dav_unique.create_table_epr(name)
+        createTempClients = dav_unique.create_temp_client()
+        if not createTempClients:
+            raise Exception("erreur Creation table temp client")
         
-        if not table_name_dat or not table_name_dav or not table_name_epr:
-            raise Exception("Erreur lors de la création des tables DAT, DAV et EPR")
+        createIndexGeneral = db_get.create_indexes()
+        if not createIndexGeneral:
+            raise Exception("Erreur lors de la création des index généraux")
         
-        operation.calculeAmtCap(table_name_dat)
-        db_get.traitement_dat(table_name_dat)
+        # createIndex = dav_unique.create_index()
+        # if not createIndex:
+        #     raise Exception("Erreur lors de la création des index")
+        
+        # createFunctions = dav_unique.create_funct()
+        # if not createFunctions:
+        #     raise Exception("Erreur lors de la création des fonctions")
+        
+        # if dav_unique.verifie_statu(name):
+        #     return JSONResponse(
+        #         status_code=200,
+        #         content={
+        #             "status": "info",
+        #             "message": f"Le compte {name} est déjà initialisé",
+        #             "already_initialized": True
+        #         }
+        #     )
+        
+        # table_name_dat = db_get.create_tableDatPreCompute(name)
+        # table_name_dav = dav_unique.create_table_dav(name)
+        # table_name_epr = dav_unique.create_table_epr(name)
+        
+        # if not table_name_dat or not table_name_dav or not table_name_epr:
+        #     raise Exception("Erreur lors de la création des tables DAT, DAV et EPR")
+        
+        # operation.calculeAmtCap(table_name_dat)
+        # db_get.traitement_dat(table_name_dat)
         
         
-        dav_unique.add_status_columns()
-        dav_unique.create_temp_client()
-        dav_unique.create_index()
-        dav_unique.create_funct()
-        dav_unique.update_status(name)
+        # dav_unique.add_status_columns()
+        # dav_unique.create_temp_client()
+        # dav_unique.create_index()
+        # dav_unique.create_funct()
+        # dav_unique.update_status(name)
 
         return JSONResponse(content={
                     "status": "success",
-                    "message": f"Table créée et nettoyée et calculer : {table_name_dav} et {table_name_epr} et {table_name_dat}✅",
-                    "table_name_dav": table_name_dav,
-                    "table_name_epr": table_name_epr,
-                    "table_name_dat": table_name_dat   
+                    # "message": f"Table créée et nettoyée et calculer : {table_name_dav} et {table_name_epr} et {table_name_dat}✅",
+                    # "table_name_dav": table_name_dav,
+                    # "table_name_epr": table_name_epr,
+                    # "table_name_dat": table_name_dat   
         })
         
     except Exception as e:
