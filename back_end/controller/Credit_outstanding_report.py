@@ -18,7 +18,7 @@ from db.db  import DB
 from werkzeug.utils import secure_filename 
 import aiofiles
 import io
-from sqlalchemy import text
+from sqlalchemy import text,bindparam
 
 
  
@@ -50,7 +50,6 @@ class Credit_outstanding_report:
             return None
         finally:
             cursor.close()
-
 
     def split_value(self,value, index, default=None):
         """Helper function to split values by '|' and return the part at the given index."""
@@ -204,9 +203,7 @@ class Credit_outstanding_report:
                     conn.close()
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
-                     
-                    
-
+                                       
     def get_encours_credit_by_date(self, date: str):
         conn = None
         try:
@@ -215,14 +212,77 @@ class Credit_outstanding_report:
                 raise ValueError(f"Format de date invalide : {date}")
 
             table_name = f"encours_credit_{date}"
-            query = text(f"SELECT * FROM `{table_name}`")  # les backticks évitent des erreurs si le nom a des caractères spéciaux
+            query = text(f"""SELECT   
+                                Agence,
+                                identification_client, 
+                                Numero_pret,
+                                linked_appl_id,
+                                Date_pret,
+                                Date_fin_pret,
+                                Nom_client,
+                                Produits,
+                                Amount,
+                                Duree_Remboursement, 
+                                taux_d_interet,
+                                IFNULL(Nombre_de_jour_retard, 0) AS Nombre_de_jour_retard,
+                                payment_date, 
+                                '' AS Status_du_client, 
+                                split_by_pipe(`capital_`, 1) AS capital_non_appele,
+                                split_by_pipe(`capital_`, 2) AS capital_appele,
+                                split_by_pipe(`capital_`, 3) AS capital_total,
+                                Total_interet_echus,
+                                `OD Pen`,
+                                `OD & PEN`,
+                                Genre,
+                                Secteur_d_activité,
+                                Agent_de_gestion,
+                                Chiffre_Affaire,    
+                                Secteur_d_activité_code,   
+                                Code_Garantie,
+                                Valeur_garantie, 
+                                arr_status AS status,
+                                local_refs
+                            FROM `{table_name}`
+                            WHERE ABS(split_by_pipe(`capital_`, 3)) != 0
+                            GROUP BY Numero_pret
+                            """)
 
             conn = self.db.connect()
             result = conn.execute(query)
             columns = result.keys()
-            data = [dict(zip(columns, row)) for row in result.fetchall()]
+            rows = result.fetchall()
 
-            # print(f"✅ Données extraites depuis la table {table_name} :", data)
+            data = []
+            for row in rows:
+                row_dict = dict(zip(columns, row))
+
+                # ✅ Calcul de Status_du_client basé sur Nombre_de_jour_retard
+                retard = row_dict.get("Nombre_de_jour_retard")
+                retard = retard-1
+                try:
+                    retard = int(retard) if retard is not None else 0
+                except ValueError:
+                    retard = 0
+
+                if 0 < retard <= 30:
+                    row_dict["Status_du_client"] = "PA1"
+                elif 30 < retard <= 60:
+                    row_dict["Status_du_client"] = "PA2"
+                elif 60 < retard <= 90:
+                    row_dict["Status_du_client"] = "PA3"
+                elif retard > 90:
+                    row_dict["Status_du_client"] = "PA4"
+                else:
+                    row_dict["Status_du_client"] = ""
+
+                if retard < 0:
+                    retard = 0
+
+                row_dict['Nombre_de_jour_retard'] = retard
+                
+
+                data.append(row_dict)
+
             return {"data": data}
 
         except Exception as e:
@@ -236,4 +296,175 @@ class Credit_outstanding_report:
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
 
-                        
+    def get_encours_etat_remboursement(self, date: str):
+        conn = None
+        try:
+            # ✅ Validation du format AAAAMMJJ
+            if not date.isdigit() or len(date) != 8:
+                raise ValueError(f"Format de date invalide : {date}")
+
+            # ✅ Extrait AAAAMM pour LIKE
+            date_prefix = date[:6] + '%'
+
+            query = text("""
+                SELECT *
+                FROM etat_remboursement
+                WHERE payment_date LIKE :date_prefix
+                ORDER BY payment_date;
+            """)
+
+            conn = self.db.connect()
+            result = conn.execute(query, {"date_prefix": date_prefix})
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
+    def get_limit(self, limit_type: str):
+        conn = None 
+        try: 
+
+            query = text("""
+                  SELECT 
+            limit_cau.co_code,limit_cau.id,limit_product,concat(customer.short_name,' ',customer.name_1) as Name,limit_cau.approval_date,limit_cau.expiry_date,limit_cau.internal_amount,limit_cau.total_os,limit_cau.avail_amt from limit_mcbc_live_full as limit_cau INNER JOIN customer_mcbc_live_full as customer ON customer.id = limit_cau.liability_number 
+        WHERE limit_product = :limit_type;
+            """)
+
+            conn = self.db.connect()
+            result = conn.execute(query, {"limit_type": limit_type})
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
+    
+    def get_history_insert(self):
+        conn = None 
+        try:  
+            query = text("""  SELECT * FROM `history_insert` ORDER BY `label` DESC """) 
+            conn = self.db.connect()
+            result = conn.execute(query )
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
+            
+    def get_local_reference(self, date: str):
+        conn = None
+        try:
+            # Attention : vérification minimale ici, à sécuriser si `date` vient d’un utilisateur
+            if not date.isdigit() or len(date) != 8:
+                raise ValueError("Format de date invalide")
+
+            table_name = f'encours_credit_{date}'
+
+            # On insère directement le nom de la table dans la requête (sécurisé ici car on contrôle la valeur)
+            query = text(f"""
+                SELECT
+                    UPPER(LEFT(local_refs, 1)) AS initial,
+                        COUNT(*) AS total
+                    FROM {table_name}
+                    GROUP BY initial
+                     
+                """)
+
+            conn = self.db.connect()
+            result = conn.execute(query)
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+            
+            
+    def get_pa_class(self, date: str):
+        conn = None
+        try:
+            # Attention : vérification minimale ici, à sécuriser si `date` vient d’un utilisateur
+            if not date.isdigit() or len(date) != 8:
+                raise ValueError("Format de date invalide")
+
+            table_name = f'encours_credit_{date}'
+
+            # On insère directement le nom de la table dans la requête (sécurisé ici car on contrôle la valeur)
+            query = text(f""" 
+                    SELECT
+                    PA_Class AS initial,
+                    COUNT(*) AS total
+                    FROM (
+                    SELECT
+                        CASE
+                        WHEN Nombre_de_jour_retard < 30 THEN 'PA1'
+                        WHEN Nombre_de_jour_retard < 60 THEN 'PA2'
+                        WHEN Nombre_de_jour_retard < 90 THEN 'PA3'
+                        WHEN Nombre_de_jour_retard > 90 THEN 'PA4'
+                        ELSE 'Sain'
+                        END AS PA_Class
+                    FROM {table_name}
+                    ) AS derived
+                    GROUP BY PA_Class
+                    ORDER BY FIELD(PA_Class, 'PA1', 'PA2', 'PA3', 'PA4', 'Sain');
+                     
+                """)
+
+            conn = self.db.connect()
+            result = conn.execute(query)
+            columns = result.keys()
+            data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            return {"data": data}
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible d’exécuter la requête : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")

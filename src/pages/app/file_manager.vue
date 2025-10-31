@@ -72,13 +72,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import api from '@/api/axios'
+import { ref,inject } from 'vue'
+import axios from '@/api/axios'
 import { usePopupStore } from '../../stores'
 import Cookies from 'js-cookie'
 import import_progress from '../../components/loading/import_progress.vue'
-
 import { VTreeview } from 'vuetify/labs/VTreeview'
+
+
+const api = inject('api') 
 const file_names = ref([]);  // noms des fichiers
 const file_name = ref("Importer un fichier");
 const fileInput = ref(null)
@@ -184,7 +186,7 @@ const load_database = async (refresh, files, folder,date_string) => {
 
   var index_table=0;
   try {
-    const response = await fetch('http://10.192.1.94:8000/api/create_multiple_table', {
+    const response = await fetch('http://192.168.1.212:8000/api/create_multiple_table', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -289,7 +291,7 @@ const uploadFile = async (folder_name) => {
   formData.append('app', app_type.value);
   formData.append('folder_name', folder_name);
   try {
-    const response = await fetch('http://10.192.1.94:8000/api/upload_multiple_files', {
+    const response = await fetch('http://192.168.1.212:8000/api/upload_multiple_files', {
       method: 'POST',
       body: formData,
     });
@@ -380,7 +382,7 @@ const uploadFile = async (folder_name) => {
 // Méthode pour afficher les fichiers
 const showFiles = async () => {
   try {
-    const response = await api.get('/api/show_files', {
+    const response = await axios.get('/api/show_files', {
       params: {
         app:app_type.value
       }

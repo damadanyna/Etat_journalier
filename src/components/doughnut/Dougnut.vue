@@ -1,52 +1,61 @@
 <template>
-  <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-8" v-if="isReady">
-    <!-- Doughnut Chart -->
-    <div>
-      <h2 class="text-xl mb-2 font-semibold">Doughnut Chart</h2>
-      <Doughnut :chart-data="chartData_" :options="chartOptions" />
+  <div>
+    <div class="text-center font-semibold mb-2">{{ title }}</div>
+    <div :style="`width: 100%; height: ${props.heigth};`">
+      <canvas :id="canvasId"></canvas>
     </div>
-  </div>
-
-  <div v-else>
-    Chargement des graphiques...
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Doughnut } from 'vue-chartjs'
+import { onMounted, onBeforeUnmount } from 'vue'
+import { Chart, DoughnutController, ArcElement, Tooltip, Legend } from 'chart.js'
 
-const chartData_ = ref({
-  labels: [],
-  datasets: []
+// Enregistrer manuellement les composants requis si tree-shaking
+Chart.register(DoughnutController, ArcElement, Tooltip, Legend)
+
+const props = defineProps({
+  id: { type: String, required: true },             // identifiant unique du canvas
+  data: { type: Array, required: true },            // ex: [15, 50, 20, 15]
+  labels: { type: Array, required: true },          // ex: ['PA1', 'PA2', ...]
+  colors: { type: Array, required: true },          // couleurs de fond
+  title: { type: String, default: '' },           // titre facultatif
+  circumference: { type: String, default: 180 } ,            // titre facultatif
+  heigth: { type: String, default: 100 } ,            // titre facultatif
 })
-const chartOptions = ref({})
-const isReady = ref(false)
+
+const canvasId = `canvas-${props.id}`
+let chartInstance = null
 
 onMounted(() => {
-  // Initialise les données et options une fois
-  chartData_.value = {
-    labels: ['Rouge', 'Bleu', 'Jaune'],
-    datasets: [
-      {
-        label: 'Votes',
-        data: [30, 50, 20],
-        backgroundColor: ['#f87171', '#60a5fa', '#facc15'],
-        borderWidth: 1,
-      }
-    ]
-  }
+  const ctx = document.getElementById(canvasId).getContext('2d')
 
-  chartOptions.value = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'bottom'
+  chartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: props.labels,
+      datasets: [{
+        data: props.data,
+        backgroundColor: props.colors,
+        borderColor: '#101010',
+        borderWidth: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      rotation: -90,
+      circumference: props.circumference,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
       }
     }
-  }
+  })
+})
 
-  // Définir isReady à true pour afficher le graphique
-  isReady.value = true
+onBeforeUnmount(() => {
+  if (chartInstance) chartInstance.destroy()
 })
 </script>

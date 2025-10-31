@@ -5,8 +5,13 @@
 </template>
 
 <script setup> 
+
+
 import { Line } from 'vue-chartjs'
-import { onMounted, ref, computed,watch  } from 'vue'
+import {  ref, computed,watch,inject  } from 'vue'
+
+
+const api = inject('api') 
 const props = defineProps({
   selected_date: Object
 }) 
@@ -71,20 +76,20 @@ const chartOptions = {
 
 const fetchCapitalSums = async () => {
   try {
-    const response = await fetch('http://10.192.1.94:8000/api/get_capital_sums');
+    const response = await fetch(`${api}/api/get_capital_sums`);
     const json = await response.json();
 
     if (!response.ok) throw new Error(json.detail || 'Erreur inconnue');
 
     const capitalData = json.data?.capital_sums || [];
     capitalSums.value = capitalData;
-    console.log("Capital Sums:", capitalData);
+    // console.log("Capital Sums:", capitalData);
 
     const { labels: newLabels, values: newValues } = adaptCapitalSumsToChart(capitalData);
     label_val.value =  newLabels;
     values.value = newValues;
-    console.log("Labels:", newLabels)
-    console.log("Values:", newValues)
+    // console.log("Labels:", newLabels)
+    // console.log("Values:", newValues)
 
 
   } catch (err) {

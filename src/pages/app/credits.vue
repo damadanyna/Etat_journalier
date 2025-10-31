@@ -95,20 +95,20 @@
       </div>
     </div> 
 
-   
-  <!-- <Dougnut></Dougnut> -->
+    
 
 </div>
  
 </template>
 
-<script setup>
-// import Dougnut from '../../components/doughnut/Dougnut.vue';
-import { ref, watch } from 'vue' 
+<script setup> 
+import { ref, watch,inject } from 'vue' 
 import { usePopupStore } from '../../stores'
 import sparkLineVue from '../../components/sparkLines/sparkLineVue.vue';
 import Data_viewer from '../../components/Data_Cart_view.vue';
 import Data_table_view from '../../components/Data_table_view.vue';
+
+const api = inject('api') 
 const popupStore = usePopupStore();
 const isRunning = ref(false)
 const currentStep = ref(0)
@@ -139,7 +139,7 @@ watch(
   () => popupStore.selected_date,
   (elt_resp) => {
     selected_date.value = elt_resp;
-    console.log('[watch] selected_date =', elt_resp);
+    // console.log('[watch] selected_date =', elt_resp);
   },
   { immediate: true }
 );
@@ -189,7 +189,7 @@ const runStep = (index) => {
     const str_date = selected_date.value.label; // ta variable dynamique
     // console.log('str_date',str_date);
     
-    const evtSource = new EventSource(`http://10.192.1.94:8000/api/run_encours?str_date=${encodeURIComponent(str_date)}`);
+    const evtSource = new EventSource(`${api}/api/run_encours?str_date=${encodeURIComponent(str_date)}`);
     evtSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)

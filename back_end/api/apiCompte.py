@@ -7,9 +7,19 @@ from sqlalchemy import text
 from controller.DatReport import DatReport 
 from controller.DbGet import DbGet
 from controller.Operation import Operation
+<<<<<<< HEAD
 from controller.OperationEsri import OperationEsri
 from controller.DavReport import DavReport
 from controller.EprReport import EprReport
+=======
+from controller.OperatioDav import OperatioDav
+from controller.Esri import Esri
+from controller.OperationEsri import OperationEsri
+from controller.OperationEsris import OperationEsris
+from controller.DavReport import DavReport
+from controller.EprReport import EprReport
+from controller.ChangeMande import ChangeMande
+>>>>>>> master
 from controller.ChangeMandy import ChangeMandy
 from controller.DavUnique import DavUnique
 from controller.decaissement import DecaissementOptimise
@@ -18,11 +28,23 @@ router = APIRouter()
 dat_report = DatReport()
 db_get = DbGet()
 operation = Operation()
+<<<<<<< HEAD
 dav_unique = DavUnique()
 operation_esri = OperationEsri()
 dav_report = DavReport()
 epr_report = EprReport()
 change_mandy = ChangeMandy()
+=======
+operation_dav = OperatioDav()
+dav_unique = DavUnique()
+esri = Esri()
+operation_esri = OperationEsri()
+dav_report = DavReport()
+change_mande = ChangeMande()
+epr_report = EprReport()
+change_mandy = ChangeMandy()
+operation_esris = OperationEsris()
+>>>>>>> master
 decaissement = DecaissementOptimise()
 #INITIALISATION COMPTE
 
@@ -389,4 +411,8 @@ def get_graphe_epr(
 
 
 
+<<<<<<< HEAD
 api_router2 = router
+=======
+api_router = router
+>>>>>>> master

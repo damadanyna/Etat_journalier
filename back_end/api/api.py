@@ -1,6 +1,7 @@
-from fastapi import APIRouter, UploadFile, File,FastAPI, Form, Request,HTTPException,Query
+from fastapi import APIRouter, UploadFile, File,FastAPI,Response,Depends, Form, Request,HTTPException,Query
 from controller.Credits import Credits
 from controller.Credit_outstanding_report import Credit_outstanding_report
+from controller.Users import Users
 from fastapi.responses import StreamingResponse
 from typing import List
 from typing import Optional
@@ -17,6 +18,9 @@ import io
  
 router = APIRouter()
 credits = Credits()
+user= Users()
+credit_outstanding_report = Credit_outstanding_report()
+
 credit_outstanding_report = Credit_outstanding_report()
 
 
@@ -24,6 +28,39 @@ credit_outstanding_report = Credit_outstanding_report()
 @router.get("/credits")
 def get_credits():
     return credits.get_data() 
+
+
+#  ------------  LOGIN  -----------  
+
+
+# --- SIGNUP ---
+@router.post("/signup")
+def signup(username: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
+    return user.signup(username, password, immatricule)
+
+# --- SIGNIN ---
+@router.post("/signin")
+def signin(username: str = Form(...), password: str = Form(...)):
+    return user.signin(username, password)
+
+# --- GET CURRENT USER ---
+def get_user_from_request(request: Request):
+    return user.get_current_user(request)
+
+# --- ROUTE PROTÉGÉE ---
+@router.get("/protected")
+def protected(user_: str = Depends(get_user_from_request)):
+    return user_
+
+# --- LOGOUT ---
+
+@router.post("/logout")
+def logout(response: Response):
+    return user.logout(response)
+
+
+
+
 
 @router.post("/upload_multiple_files")
 async def upload_multiple_files(
@@ -304,8 +341,80 @@ async def get_encours_credits(date: str = Query(...)):  # obligatoire (not None)
     except Exception as e:
         print(f"[ERREUR route get_encours_credits] {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+    
+@router.get("/encours_remboursement")
+async def encours_remboursement(date: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_encours_etat_remboursement(date)
 
- 
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la date donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    
+@router.get("/encours_limit")
+async def encours_limit(limit_type: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_limit(limit_type)
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/history_insert")
+async def history_insert( ): 
+    try:
+        response = credit_outstanding_report.get_history_insert()
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/get_local_ref")
+async def get_local_ref(date: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_local_reference(date)
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_pa_class")
+async def get_pa_class(date: str = Query(...)): 
+    try:
+        response = credit_outstanding_report.get_pa_class(date)
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 api_router = router

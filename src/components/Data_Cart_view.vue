@@ -1,82 +1,142 @@
 <template>
-  <div class=" bg_data mr-4    ">
+  <div class="bg_data">
 
-    
-
-    <div class="flex flex-row justify-end items-center space-x-4">
-        <div class="text-center mr-14"> 
-          <v-btn prepend-icon=" mdi-share-variant" @click="exportToExcel">
-              <span class="text-md">Exporter</span>
-          <template v-slot:prepend>
-              <v-icon color="success"></v-icon>
-          </template>
-          </v-btn> 
+    <div class="flex flex-row   w-full   "> 
+      <div   v-for="(item) in charts" key="item.id" class=" w-full h-full flex justify-between"> 
+         
+        <div   class=" flex flex-col">
+          <doughnut 
+            :key="item.id"
+            :id="item.id"
+            :title="item.title"
+            :data="item.data"
+            :labels="item.labels"
+            :colors="item.colors"
+            :circumference="item.circumference"
+            :heigth="item.heigths"
+          />
         </div> 
-
-        <h3 class=" mr-5 text-xl">Date d'arrêt</h3>
-        <div class="text-center">
-            
-          <v-btn prepend-icon="mdi-calendar-range">
-          <template v-slot:prepend>
-              <v-icon color="success"></v-icon>
-          </template>
-              <span class="text-2xl">2025-02-28</span>
-          </v-btn> 
-        </div> 
-        <!-- <daugnut></daugnut> -->
-    </div>
-
+      </div>
+    </div> 
   </div>
 </template>
-<script setup>   
-// import daugnut from '../doughnut/Dougnut.vue'
-  import { ref, watch } from 'vue'
-  import { usePopupStore } from '../stores' 
-  import * as XLSX from 'xlsx'
+
+<script setup>
+import { onMounted, ref, watch,inject } from 'vue'
+import doughnut from './doughnut/Dougnut.vue'
+import { usePopupStore } from '../stores'
+ 
+const charts = ref([]) 
+const api = inject('api') 
+
+
+// Tableau des dates prédéfinies
+const stat_local_ref  = ref([])
+const stat_PA  = ref([])
+
+// async function selectDate(date) {
   
-  const listes_encours_credits = ref([])
-  const popupStore = usePopupStore()
-  const items = ['2025-02-28','2025-05-30','2025-06-30','2025-07-04',] 
-  const value = ref('2025-02-28')
+//  charts.value = []
+//   selectedDate.value = date
+//   usePopupStore().selected_date.value = date
+//   menu.value = false
+   
 
-  watch(
-    () => popupStore.encours_actual_data,
-    (elt_resp) => {
-      // console.log('ions');
-      listes_encours_credits.value = elt_resp
-      // console.log(elt_resp);
-        
-    },
-    { immediate: true }
-  )
+// }
 
 
-function exportToExcel() {
-  const data = listes_encours_credits.value
+watch(usePopupStore().selected_date, async(data) => {  
+  charts.value = []
+     stat_PA.value = await fetchData(`${api}/api/get_pa_class`,data.value) 
+    updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
+    
+    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`, data.value,'1000px') 
+    updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
+  
+});
 
-  if (!data || data.length === 0) {
-    alert("Aucune donnée à exporter")
-    return
+ 
+
+// history_insert
+async function fetchData(baseUrl, date = null) {
+  try {
+    // Si une date est fournie, on l’ajoute à l’URL
+    const url = date ? `${baseUrl}?date=${date}` : baseUrl
+
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`)
+
+    const data = await response.json()
+    return data.response.data
+  } catch (error) {
+    console.error('❌ Erreur de chargement :', error)
+    return []
   }
-
-  // 1. Créer une feuille à partir des objets JS
-  const worksheet = XLSX.utils.json_to_sheet(data)
-
-  // 2. Créer le classeur contenant cette feuille
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Encours")
-
-  // 3. Sauvegarder sous forme de fichier xlsx
-  XLSX.writeFile(workbook, "encours_credits.xlsx")
 }
+
+function updateSecondChartFromData(dataArray,name, circumference,color = null,height = null) {
+  if (!Array.isArray(dataArray) || dataArray.length === 0) return
+
+  const labels = []
+  const data = []
+  const colors = [] 
+
+  dataArray.forEach((item) => {
+    labels.push(item.initial || 'Inconnu')
+    data.push(item.total || 0)
+    colors.push(generateRandomColor())
+  })
+  var chart_Data= {
+                    id: name,
+                    title: 'Local ref',
+                    data: [25, 25, 25, 25],
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                    colors: ['#eab308', '#3b82f6', '#f43f5e', '#10b981'],
+                    circumference: circumference, 
+                    heigths:'400px' 
+                  }
+  chart_Data.data=data
+  chart_Data.labels=labels
+  chart_Data.colors=color===null?colors: color
+  chart_Data.heigths=color===null?'400px': height 
+  charts.value.push(chart_Data) 
+}
+
+function generateRandomColor() {
+  const letters = '0123456789ABCDEF'
+  let color = '#'
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)]
+  }
+  return color
+}
+
+
+
+
+onMounted(() => {
+  
+
+
+ (async () => {
+    stat_PA.value = await fetchData(`${api}/api/get_pa_class`,'20250731') 
+    updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
+  })();
+
+  
+ (async () => {
+    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`,'20250731','1000px') 
+    updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
+    
+  })();
+})
 
 </script>
 
-
 <style scoped>
-.bg_data{
-    background-color: #00000022;
-    border-radius: 20px ;
-    padding: 10px 20px;
+.bg_data {
+  background-color: #00000022;
+  border-radius: 20px;
+  padding: 10px 20px;
 }
 </style>

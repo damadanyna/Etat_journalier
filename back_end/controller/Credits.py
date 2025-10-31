@@ -800,6 +800,55 @@ class Credits:
                             "sql": "CREATE INDEX IF NOT EXISTS idx_arrangement_customer ON aa_arrangement_mcbc_live_full(customer);"
                         },
                         {
+                            "name": "Créer index INDEX idx_industry_id",
+                            "sql": "CREATE INDEX idx_industry_id ON industry_mcbc_live_full(id);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_arrangement_id ON temp_arrangement_customers",
+                            "sql": "CREATE INDEX idx_arrangement_id ON temp_arrangement_customers (arrangement_id);  "
+                        },
+                        {
+                            "name": "Créer INDEX idx_arrangement_id ON temp_arrangement_customers",
+                            "sql": "CREATE INDEX idx_customer_id ON temp_arrangement_customers (customer_id);"
+                        }, 
+                        
+                        {
+                            "name": "Créer INDEX PK_id ON temp_clients",
+                            "sql": "ALTER TABLE temp_clients ADD PRIMARY KEY (id);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_account_officer ON temp_clients",
+                            "sql": "CREATE INDEX idx_account_officer ON temp_clients (account_officer);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_phone_1 ON temp_clients",
+                            "sql": "CREATE INDEX idx_phone_1 ON temp_clients (phone_1);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_sms_1 ON temp_clients",
+                            "sql": "CREATE INDEX idx_sms_1 ON temp_clients (sms_1);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_industry ON temp_clients",
+                            "sql": "CREATE INDEX idx_industry ON temp_clients (industry);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_gender ON temp_clients",
+                            "sql": "CREATE INDEX idx_gender ON temp_clients (gender);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_salary ON temp_clients",
+                            "sql": "CREATE INDEX idx_salary ON temp_clients (salary);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_sector ON temp_clients",
+                            "sql": "CREATE INDEX idx_sector ON temp_clients (sector);"
+                        },
+                        {
+                            "name": "Créer INDEX idx_target ON temp_clients",
+                            "sql": "CREATE INDEX idx_target ON temp_clients (target);"
+                        },
+                        {
                             "name": "Drop table temporaire - temp_arrangement_customers",
                             "sql": """
                             DROP TABLE IF EXISTS temp_arrangement_customers; 
@@ -829,7 +878,7 @@ class Credits:
                             "name": "Créer table temporaire - temp_clients",
                             "sql": """ 
                               CREATE TABLE temp_clients AS 
-                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,phone_1,sms_1,industry
+                                SELECT id, CONCAT(short_name, ' ', name_1) AS nom_complet, gender,salary,account_officer,phone_1,sms_1,sector,industry,target
                                 FROM customer_mcbc_live_full
                             """
                         },
@@ -889,11 +938,7 @@ class Credits:
                         {
                             "name": "Créer index idx_customer_id sur temp_arrangement_customers",
                             "sql": "CREATE INDEX IF NOT EXISTS idx_customer_id ON temp_arrangement_customers (customer_id);"
-                        },
-                        {
-                            "name": "Créer index idx_client_id sur temp_clients",
-                            "sql": "CREATE INDEX IF NOT EXISTS idx_client_id ON temp_clients (id);"
-                        },
+                        }, 
                         {
                             "name": "Créer index idx_account_id sur temp_accounts",
                             "sql": "CREATE INDEX IF NOT EXISTS idx_account_id ON temp_accounts (id);"
@@ -1206,6 +1251,7 @@ class Credits:
                                     SELECT  arrangement_id, 
                                                 MIN(bill.payment_date) as payment_date 
                                             FROM aa_bill_details_mcbc_live_full  AS bill
+                                            where bill.settle_status = 'UNPAID'
                                             GROUP BY bill.arrangement_id """
                         },
                         {
@@ -1286,22 +1332,90 @@ class Credits:
                             "sql": "ALTER TABLE temp_clients ADD INDEX idx_industy (industry)"
                         },
                         {
+                            "name": """Suppression de la Table temps_code_garantie""",
+                            "sql": """DROP TABLE IF EXISTS temps_code_garantie;"""
+                        },
+                        {
+                            "name": """creation de la Table temps_code_garantie""",
+                            "sql": """CREATE TABLE temps_code_garantie AS
+                                        SELECT  
+                                            arr.id AS arrangement_id, 
+                                            cg.customer,
+                                            cg.collateral_code AS Code_Garantie
+                                        FROM aa_arrangement_mcbc_live_full AS arr
+                                        LEFT JOIN (
+                                            SELECT 
+                                                DISTINCT SUBSTRING(id, 1, LOCATE('.', id) - 1) AS customer_id,
+                                                collateral_code,customer
+                                            FROM collateral_right_mcbc_live_full
+                                        ) AS cg ON cg.customer_id = arr.customer
+                                        WHERE arr.product_line = 'LENDING'
+                                        AND arr.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH');"""
+                        },
+                        {
+                            "name": """Suppression de la Table temp_value_garantie""",
+                            "sql": """DROP table IF EXISTS temp_value_garantie;"""
+                        },
+                        {
+                            "name": """Creation de la Table temp_value_garantie""",
+                            "sql": """CREATE TABLE temp_value_garantie AS
+                                        SELECT  
+                                            arr.id AS arrangement_id, 
+                                            arr.customer, 
+                                            (     
+                                            SELECT 
+                                                SUM(col.nominal_value)
+                                            FROM collateral_mcbc_live_full AS col
+                                            WHERE col.id LIKE CONCAT('%',(
+                                                            SELECT   CONCAT(SUBSTRING(co_coll_id, 1, LOCATE('.', co_coll_id) - 1))
+                                                                FROM em_lo_application_mcbc_live_full AS em
+                                                            LEFT JOIN collateral_right_mcbc_live_full AS coll_r 
+                                                            ON  (LOCATE('.', coll_r.id) > 0 
+                                                                AND SUBSTRING(coll_r.id, 1, LOCATE('.', coll_r.id) - 1) LIKE CONCAT(SUBSTRING(em.co_coll_id, 1, LOCATE('.', em.co_coll_id) - 1), '%')) 
+                                                            WHERE em.arrangement_id = arr.id limit 1
+                                                        ), '%')
+                                            AND col.collateral_type in  ('100','200','300','400')
+                                            ) AS Valeur_garantie
+                                        FROM aa_arrangement_mcbc_live_full AS arr WHERE arr.product_line = 'LENDING' AND arr.arr_status IN ('CURRENT', 'EXPIRED')"""
+                        },
+                        {
+                            "name": """Mise à jour de la table temp_value_garantie""",
+                            "sql": """ALTER TABLE temp_value_garantie ADD PRIMARY KEY (arrangement_id)"""
+                        },
+                        {
+                            "name": """Indexiation de la Table temp_value_garantie""",
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_arr_id ON temp_value_garantie (arrangement_id);"""
+                        },
+                        {
+                            "name": """indexiation de la Colonne  Valeur_garantie """,
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_garantie ON temp_value_garantie (Valeur_garantie);"""
+                        },
+                        {
+                            "name": """indexiation de la Colonne  idx_temp_val_customer """,
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_customer ON temp_value_garantie (customer);"""
+                        },
+                        {
+                            "name": """indexiation de la Colonne  idx_temp_val_arr_id""",
+                            "sql": """CREATE INDEX IF NOT EXISTS idx_temp_val_arr_id ON temp_value_garantie (arrangement_id)"""
+                        },  
+                        {
                             "name": """Suppression de la Table encours_credit_{current_date} """,
                             "sql": """DROP TABLE IF EXISTS encours_credit_{current_date}"""
-                        },
+                        }, 
                         {
                             "name":"""Creation de la Table  encours_credit_{current_date} """,
                             "sql": """ 
                             CREATE TABLE encours_credit_{current_date} AS
-                                    SELECT 
-                                                arrangement.id,
+                                    SELECT  
                                                 arrangement.co_code AS Agence,
-                                                arrangement.customer AS identification_client,
-                                                arrangement.customer,
+                                                arrangement.customer AS identification_client, 
                                                 arrangement.id AS Numero_pret,
                                                 tmp_CLT.nom_complet AS Nom_client,
                                                 arrangement.linked_appl_id AS linked_appl_id,
-                                                COALESCE(arrangement.orig_contract_date, arrangement.start_date) AS Date_pret, 
+                                                CASE
+                                                    WHEN arrangement.orig_contract_date IS NULL OR TRIM(arrangement.orig_contract_date) = '' THEN arrangement.start_date
+                                                    ELSE arrangement.orig_contract_date
+                                                END AS Date_pret, 
                                                 tmp_int.Date_fin_pret AS Date_fin_pret,
                                                 arrangement.product AS Produits,
                                                 tmp_amnt.amount AS Amount,
@@ -1314,14 +1428,19 @@ class Credits:
                                                     eb_cont.open_balance, 
                                                     eb_cont.credit_mvmt, 
                                                     eb_cont.debit_mvmt
-                                                ) AS Capital_,
+                                                ) AS capital_,
                                                 calculate_total_interet_echus(cont_bal.type_sysdate,cont_bal.open_balance,'|') as Total_interet_echus,
                                                 '' as "OD Pen",
                                                 tmp_od_pen.OD_PEN as "OD & PEN",  
-                                                tmp_CLT.gender AS Genre, 
-                                                industry.description AS Secteur_d_activité,
-                                                tmp_CLT.industry AS CODE,
-                                                arrangement.arr_status
+                                                tmp_CLT.gender AS Genre,  
+                                                tmp_CLT.salary AS Chiffre_Affaire, 
+                                                industry.description AS Secteur_d_activité,     
+                                                tmp_CLT.industry AS Secteur_d_activité_code,
+                                                tmp_CLT.account_officer AS Agent_de_gestion,
+                                                code_gar.Code_Garantie as Code_Garantie,
+                                                val_gar.Valeur_garantie as Valeur_garantie,
+                                                arrangement.arr_status, 
+                                                SUBSTRING_INDEX(SUBSTRING_INDEX(industry.local_ref, '|', 7), '|', -1) as local_refs
                                             FROM aa_arrangement_mcbc_live_full AS arrangement
                                             INNER JOIN eb_cont_bal_mcbc_live_full as eb_cont
                                                 ON eb_cont.id = arrangement.linked_appl_id
@@ -1341,10 +1460,13 @@ class Credits:
                                                 ON tmp_CLT.id = get_customer(arrangement.customer) 
                                             LEFT JOIN industry_mcbc_live_full AS industry 
                                                 ON industry.id = tmp_CLT.industry
+                                            LEFT JOIN temp_value_garantie AS val_gar 
+                                                ON val_gar.arrangement_id = arrangement.id
+                                            LEFT JOIN temps_code_garantie AS code_gar 
+                                                ON code_gar.arrangement_id = arrangement.id
                                             WHERE arrangement.product_line = 'LENDING' 
-                                                AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH','CLOSE')
-                                                -- AND NOT (tmp_od_pen.OD_PEN  = 0.0 AND (arrangement.arr_status = 'EXPIRED' OR arrangement.arr_status = 'CLOSE'))
-                                                -- HAVING NOT (Capital_ = '0.00|0.00|0.00' AND (tmp_od_pen.OD_PEN='0.00' OR tmp_od_pen.OD_PEN =''))   
+                                                AND arrangement.arr_status IN ('CURRENT', 'EXPIRED', 'AUTH') ;
+  
                             """
                         }, 
                         {
@@ -1368,9 +1490,7 @@ class Credits:
                                 BEGIN
                                     DECLARE done INT DEFAULT FALSE;
                                     DECLARE tbl_name VARCHAR(255);
-                                    DECLARE sql_query TEXT;
-
-                                    -- curseur pour toutes les tables qui commencent par encours_credit_
+                                    DECLARE sql_query TEXT; 
                                     DECLARE cur CURSOR FOR
                                         SELECT table_name
                                         FROM information_schema.tables
@@ -1378,9 +1498,7 @@ class Credits:
                                         AND table_name LIKE 'encours_credit_%';
 
                                     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-                                    -- table temporaire pour stocker les résultats
-                                    -- DROP  TABLE IF EXISTS tmp_capital_sums;
+ 
                                     DROP  TABLE IF EXISTS total_capital_encours_credit;
                                     CREATE  TABLE total_capital_encours_credit (
                                         table_name VARCHAR(255),
@@ -1394,24 +1512,21 @@ class Credits:
                                         IF done THEN
                                             LEAVE read_loop;
                                         END IF;
-
-                                        -- construire la requête dynamique pour cette table
+ 
                                         SET @sql_query = CONCAT(
                                             'INSERT INTO total_capital_encours_credit ',
                                             'SELECT ''', tbl_name, ''' AS table_name, ',
-                                            'SUM(ABS(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(Capital_, ''|'', 3), ''|'', -1) AS DECIMAL(20,6)))) ',
+                                            'SUM(ABS(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(capital_, ''|'', 3), ''|'', -1) AS DECIMAL(20,6)))) ',
                                             'FROM ', tbl_name
                                         );
-
-                                        -- préparer et exécuter
+ 
                                         PREPARE stmt FROM @sql_query;
                                         EXECUTE stmt;
                                         DEALLOCATE PREPARE stmt;
                                     END LOOP;
 
                                     CLOSE cur;
-
-                                    -- afficher les résultats
+ 
                                     SELECT * FROM total_capital_encours_credit;
                                 END ;
                                 """
@@ -1420,14 +1535,272 @@ class Credits:
                             "name": """ appelle du fonction calculate_capital_sums """,
                             "sql": """CALL calculate_capital_sums();"""
                         }, 
+                        {
+                            "name": """ Suppréssion de la fonciton split_value IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS split_value;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton split_value IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION split_value(str TEXT, pos INT)
+                                RETURNS TEXT
+                                DETERMINISTIC
+                                BEGIN
+                                    RETURN SUBSTRING_INDEX(SUBSTRING_INDEX(str, '|', pos + 1), '|', -1);
+                                END;"""
+                        }, 
+                        {
+                            "name": """ Suppréssion de la fonciton get_principal_int IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_principal_int;"""
+                        }, 
+                        {
+                            "name": """ Création de la fonciton get_principal_int IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION get_principal_int(property_str TEXT, or_prop_amount TEXT, os_prop_amount TEXT)
+                                    RETURNS DECIMAL(20, 2)
+                                    DETERMINISTIC
+                                    BEGIN
+                                        DECLARE i INT DEFAULT 0;
+                                        DECLARE entry TEXT;
+                                        DECLARE total DECIMAL(20, 2) DEFAULT 0;
+                                        DECLARE len INT;
+                                        DECLARE or_val TEXT;
+                                        DECLARE os_val TEXT;
+
+                                        -- Compter le nombre d'éléments séparés par '|'
+                                        SET len = LENGTH(property_str) - LENGTH(REPLACE(property_str, '|', '')) + 1;
+
+                                        WHILE i < len DO
+                                            SET entry = split_value(property_str, i);
+
+                                            IF entry = 'PRINCIPALINT' THEN
+                                                SET or_val = split_value(or_prop_amount, i);
+                                                SET os_val = split_value(os_prop_amount, i);
+
+                                                IF or_val IS NULL OR TRIM(or_val) = '' THEN
+                                                    SET or_val = '0.0';
+                                                END IF;
+
+                                                IF os_val IS NULL OR TRIM(os_val) = '' THEN
+                                                    SET os_val = '0.0';
+                                                END IF;
+
+                                                SET total = total
+                                                    + CAST(or_val AS DECIMAL(20,2))
+                                                    + CAST(os_val AS DECIMAL(20,2));
+                                            END IF;
+
+                                            SET i = i + 1;
+                                        END WHILE;
+
+                                        RETURN CASE WHEN total < 0 THEN -total ELSE total END;
+                                    END"""
+                        }, 
+                        {
+                            "name": """ Suppréssion de la fonciton get_penality_int IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_penality_int;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton get_penality_int IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION get_penality_int(property_str TEXT, or_prop_amount TEXT, os_prop_amount TEXT)
+                                        RETURNS DECIMAL(20, 2)
+                                        DETERMINISTIC
+                                        BEGIN
+                                            DECLARE i INT DEFAULT 0;
+                                            DECLARE entry TEXT;
+                                            DECLARE total DECIMAL(20, 2) DEFAULT 0;
+                                            DECLARE len INT;
+                                            DECLARE or_val TEXT;
+                                            DECLARE os_val TEXT;
+
+                                            -- Nombre d'éléments séparés par '|'
+                                            SET len = LENGTH(property_str) - LENGTH(REPLACE(property_str, '|', '')) + 1;
+
+                                            WHILE i < len DO
+                                                SET entry = split_value(property_str, i);
+
+                                                IF entry = 'PENALTYINT' THEN
+                                                    SET or_val = split_value(or_prop_amount, i);
+                                                    SET os_val = split_value(os_prop_amount, i);
+
+                                                    IF or_val IS NULL OR TRIM(or_val) = '' THEN
+                                                        SET or_val = '0.0';
+                                                    END IF;
+
+                                                    IF os_val IS NULL OR TRIM(os_val) = '' THEN
+                                                        SET os_val = '0.0';
+                                                    END IF;
+
+                                                    SET total = total
+                                                        + CAST(or_val AS DECIMAL(20,2))
+                                                        + CAST(os_val AS DECIMAL(20,2));
+                                                END IF;
+
+                                                SET i = i + 1;
+                                            END WHILE;
+
+                                            RETURN CASE WHEN total < 0 THEN -total ELSE total END;
+                                        END;"""
+                        },  
+                        {
+                            "name": """ Suppréssion de la fonciton get_capital_amount IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_capital_amount;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton get_capital_amount IF NOT EXISTS """,
+                            "sql": """CREATE FUNCTION get_capital_amount(property_str TEXT, or_prop_amount TEXT, os_prop_amount TEXT)
+                                        RETURNS DECIMAL(20, 2)
+                                        DETERMINISTIC
+                                        BEGIN
+                                            DECLARE i INT DEFAULT 0;
+                                            DECLARE entry TEXT;
+                                            DECLARE total_or DECIMAL(20, 2) DEFAULT 0;
+                                            DECLARE total_os DECIMAL(20, 2) DEFAULT 0;
+                                            DECLARE len INT;
+                                            DECLARE or_val TEXT;
+                                            DECLARE os_val TEXT;
+
+                                            -- Compter le nombre d'éléments
+                                            SET len = LENGTH(property_str) - LENGTH(REPLACE(property_str, '|', '')) + 1;
+
+                                            WHILE i < len DO
+                                                SET entry = split_value(property_str, i);
+
+                                                IF entry = 'ACCOUNT' THEN
+                                                    SET or_val = split_value(or_prop_amount, i);
+                                                    SET os_val = split_value(os_prop_amount, i);
+
+                                                    IF or_val IS NULL OR TRIM(or_val) = '' THEN
+                                                        SET or_val = '0.0';
+                                                    END IF;
+
+                                                    IF os_val IS NULL OR TRIM(os_val) = '' THEN
+                                                        SET os_val = '0.0';
+                                                    END IF;
+
+                                                    SET total_or = total_or + CAST(or_val AS DECIMAL(20,2));
+                                                    SET total_os = total_os + CAST(os_val AS DECIMAL(20,2));
+                                                END IF;
+
+                                                SET i = i + 1;
+                                            END WHILE;
+
+                                            RETURN CASE 
+                                                WHEN (total_or - total_os) < 0 THEN -(total_or - total_os)
+                                                ELSE (total_or - total_os)
+                                            END;
+                                        END;"""
+                        },  
+                        {
+                            "name": """ Suppréssion de la fonciton get_total_amount IF EXISTS """,
+                            "sql": """DROP FUNCTION IF EXISTS get_total_amount;"""
+                        },  
+                        {
+                            "name": """ Création de la fonciton get_total_amount IF EXISTS """,
+                            "sql": """CREATE FUNCTION get_total_amount(capital DECIMAL(20,2), principal_int DECIMAL(20,2), penality_int DECIMAL(20,2))
+                                        RETURNS DECIMAL(20,2)
+                                        DETERMINISTIC
+                                        BEGIN
+                                            RETURN IFNULL(capital, 0) + IFNULL(principal_int, 0) + IFNULL(penality_int, 0);
+                                        END;"""
+                        },   
+                        {
+                            "name": """ Suppression de la table temp_etat_remb IF EXISTS """,
+                            "sql": """DROP TABLE IF EXISTS temp_etat_remb"""
+                        },   
+                        {
+                            "name": """ Création de la table temp_etat_remb IF EXISTS """,
+                            "sql": """create    TABLE IF NOT EXISTS temp_etat_remb AS
+                                            SELECT 
+                                                            account.opening_date as Date_pret,  
+                                                            arrangement.product,
+                                                            arrangement.co_code,
+                                                            bill_detail.arrangement_id,
+                                                            arrangement.linked_appl_id AS linked_appl_id,
+                                                            client.nom_complet as Nom_client,
+                                                            arrangement.customer,
+                                                            echeance.echeance,
+                                                            bill_detail.payment_date as date_echeance,
+                                                            CASE 
+                                                                WHEN LOCATE('|',  bill_detail.set_st_chg_dt) > 0 
+                                                                THEN SUBSTRING_INDEX( bill_detail.set_st_chg_dt, '|', 1) 
+                                                                ELSE  bill_detail.set_st_chg_dt 
+                                                            END AS payment_date, 
+                                                            get_capital_amount(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount) as capital,
+                                                            get_principal_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount) as principal_int,
+                                                            get_penality_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount) as penality_int, 
+                                                            get_total_amount(
+                                                                    get_capital_amount(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount),
+                                                                    get_principal_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount),
+                                                                    get_penality_int(bill_detail.property,bill_detail.or_prop_amount,bill_detail.os_prop_amount)
+                                                                ) AS total,
+                                                            bill_detail.property,
+                                                            bill_detail.or_prop_amount,
+                                                            bill_detail.os_prop_amount
+                                                        FROM aa_bill_details_mcbc_live_full as bill_detail
+                                                        INNER JOIN aa_arrangement_mcbc_live_full as arrangement 
+                                                                ON arrangement.id = bill_detail.arrangement_id
+                                                        LEFT JOIN account_mcbc_live_full as account
+                                                                ON `account`.id= arrangement.linked_appl_id
+                                                        LEFT JOIN temp_arrangement_customers as temp_arr
+                                                                ON temp_arr.arrangement_id=arrangement.id
+                                                        LEFT JOIN temp_clients as client   
+                                                                ON client.id=temp_arr.customer_id
+                                                        LEFT JOIN temp_echeances as echeance 
+                                                                ON echeance.arrangement_id=temp_arr.arrangement_id
+                                                        LEFT JOIN temp_balances as balance 
+                                                                ON balance.id=arrangement.linked_appl_id 
+                                                        WHERE    (bill_detail.property NOT LIKE '%DISBURSEMENTFEE%' 
+                                                                OR bill_detail.property NOT LIKE '%NEWARRANGEMENTFEE%')
+                                                                AND CAST(SUBSTRING_INDEX(bill_detail.bill_date, '|', 1) AS UNSIGNED) > '20250101'
+                                                                AND bill_detail.os_prop_amount >= 0
+                                                                AND arrangement.product NOT LIKE '%.DAT%' 
+                                                                AND opening_date is NOT NULL 
+                                                                HAVING total!=0 ;"""
+                        },    
+                        {
+                            "name": """ Suppression de la TABLE etat_remboursement IF EXISTS """,
+                            "sql": """DROP TABLE IF EXISTS etat_remboursement"""
+                        },    
+                        {
+                            "name": """ Création de la TABLE etat_remboursement IF EXISTS """,
+                            "sql": """CREATE TABLE IF NOT EXISTS etat_remboursement AS
+                                        SELECT
+                                        arrangement_id,
+                                        Date_pret,
+                                        product,
+                                        co_code,
+                                        linked_appl_id,
+                                        Nom_client,
+                                        customer,
+                                        echeance,
+                                        date_echeance,
+                                        payment_date,
+                                        Capital AS Capital,
+                                        principal_int  AS principal_int,
+                                        penality_int AS penality_int,
+                                        SUM(TOTAL) AS TOTAL
+                                        FROM temp_etat_remb   GROUP BY arrangement_id;"""
+                        }, 
+                        {
+                            "name": """ Suppréssion de la fonction split_by_pipe si elle existe  """,
+                            "sql": """ DROP FUNCTION IF EXISTS split_by_pipe;"""
+                        }, 
+                        {
+                            "name": """ Création de la fonction split_by_pipe si elle existe  """,
+                            "sql": """ CREATE FUNCTION split_by_pipe(input TEXT, pos INT) RETURNS TEXT
+                                        DETERMINISTIC
+                                        BEGIN
+                                        DECLARE result TEXT;
+                                        SET result = TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(input, '|', pos), '|', -1));
+                                        RETURN result;
+                                        END """
+                        }, 
+                        {
+                            "name": """ finalisation """,
+                            "sql": """  select count(*) from history_insert;"""
+                        }, 
                     ]
-
-                # Exemple d’utilisation :
-                # sql = steps[23]["sql"].format(current_date="20250611")
-
-
-            print("------------------------------------ icii ----------------------------------")
-
+ 
+ 
            
             cursor.execute("DELETE FROM init_status")
             requets_len=len(steps)
