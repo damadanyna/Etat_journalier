@@ -1,6 +1,5 @@
-<!-- src/components/dat/Resumer.vue -->
 <template>
-  Bilan
+  
   <v-card v-if="resume" class="mb-4 pa-4" outlined>
     <v-row>
       <v-col cols="12" md="3">
@@ -24,7 +23,6 @@ import { ref, watch,inject } from "vue"
 import axios from "axios"
 const api = inject('api')
 
-// Props venant de dat.vue
 const props = defineProps({
   tableName: {
     type: String,

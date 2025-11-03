@@ -286,5 +286,6 @@ watch(() => popupStore.selected_date, (newDate) => {
   max-height: 90vh;
   overflow-y: auto;
   padding-bottom: 20px;
+  padding: 0 10px; 
 }
 </style>
