@@ -5,7 +5,7 @@
       <v-col cols="12" md="4">
         <v-select
           v-model="x"
-          :items="fields"
+          :items="fieldsX"
           label="Axe X"
           outlined
           dense
@@ -15,7 +15,7 @@
       <v-col cols="12" md="4">
         <v-select
           v-model="y"
-          :items="fields"
+          :items="fieldsY"
           label="Axe Y"
           outlined
           dense
@@ -72,7 +72,8 @@ const api = inject('api')
 
 
 // Champs disponibles pour X et Y
-const fields = ["Agence", "code_client", "Produits", "montant_capital", "montant_pay_total"]
+const fieldsY = [ "montant_capital", "montant_pay_total"]
+const fieldsX = ["Agence", "code_client", "Produits"]
 
 const x = ref(localStorage.getItem("x") || null)
 const y = ref(localStorage.getItem("y") ||null)
