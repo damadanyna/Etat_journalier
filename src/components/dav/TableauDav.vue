@@ -11,18 +11,15 @@
       />
     </div>
 
-    <!-- 📊 Zone défilable -->
-    <div class="table-content">
+    <!-- 📊 Conteneur principal du tableau -->
+    <div class="table-main">
       <v-data-table
         :headers="headers"
-        :items="items"
-        :items-per-page="itemsPerPage"
-        :page.sync="page"
+        :items="paginatedItems"
         class="elevation-1 fixed-header-table"
         :search="search"
         dense
         fixed-header
-        height="100%"
         hide-default-footer
       >
         <template v-slot:no-data>
@@ -51,10 +48,7 @@ import axios from "axios"
 import * as XLSX from "xlsx"
 
 const props = defineProps({
-  tableName: {
-    type: String,
-    required: true
-  }
+  tableName: { type: String, required: true }
 })
 
 const headers = ref([])
@@ -66,6 +60,12 @@ const itemsPerPage = ref(20)
 const pageCount = computed(() =>
   Math.ceil(items.value.length / itemsPerPage.value)
 )
+
+const paginatedItems = computed(() => {
+  const start = (page.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return items.value.slice(start, end)
+})
 
 const fetchTableData = async (tableName) => {
   if (!tableName) {
@@ -86,72 +86,41 @@ const fetchTableData = async (tableName) => {
   }
 }
 
-const exportToExcel = () => {
-  if (!items.value.length) {
-    alert("Aucune donnée à exporter")
-    return
-  }
-  const dataToExport = items.value.map(row => {
-    const exportedRow = {}
-    headers.value.forEach(header => {
-      exportedRow[header.title] = row[header.key] || ""
-    })
-    return exportedRow
-  })
-  const wb = XLSX.utils.book_new()
-  const ws = XLSX.utils.json_to_sheet(dataToExport)
-  XLSX.utils.book_append_sheet(wb, ws, "DAV Data")
-  XLSX.writeFile(wb, `dav_${props.tableName}.xlsx`)
-}
-
-const handleExportEvent = (event) => {
-  if (event.detail.type === "DAV") exportToExcel()
-}
-
-onMounted(() => {
-  window.addEventListener("export-dav-data", handleExportEvent)
-})
-onUnmounted(() => {
-  window.removeEventListener("export-dav-data", handleExportEvent)
-})
-
-watch(() => props.tableName, fetchTableData, { immediate: true })
+onMounted(() => fetchTableData(props.tableName))
+watch(() => props.tableName, fetchTableData)
 </script>
 
 <style scoped>
 .table-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* 🔹 Prend toute la hauteur visible */
+  height: 100vh; /* Toute la fenêtre visible */
   width: 100%;
-  overflow: hidden; /* Évite le scroll global */
+  overflow: hidden; /* Pas de scroll global */
 }
 
 .table-search-bar {
   flex: 0 0 auto;
-  position: sticky;
-  top: 0;
-  z-index: 30;
   padding: 8px;
-  border-bottom: 1px solid #333;
   background-color: #1e1e1e;
+  border-bottom: 1px solid #333;
+  z-index: 10;
 }
 
-.table-content {
+.table-main {
   flex: 1 1 auto;
-  overflow-y: auto; /* 🔹 Seule cette partie défile */
+  overflow-y: auto;
   background-color: #121212;
 }
 
 .table-pagination {
   flex: 0 0 auto;
-  position: sticky;
-  bottom: 0;
   background-color: #1e1e1e;
   border-top: 1px solid #333;
   display: flex;
   justify-content: center;
   padding: 8px 0;
+  z-index: 10;
 }
 
 .fixed-header-table ::v-deep(th) {
@@ -159,9 +128,9 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
   top: 0;
   background: linear-gradient(180deg, #1e1e1e 0%, #2a2a2a 100%);
   font-weight: 600;
-  text-transform: uppercase;    
+  text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #444; 
+  border-bottom: 2px solid #444;
   border-right: 1px solid #333;
   padding: 10px 12px;
   z-index: 15;
@@ -175,7 +144,7 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
 }
 
 .fixed-header-table ::v-deep(tr:hover td) {
-  cursor: pointer;
   background-color: #2a2a2a;
+  cursor: pointer;
 }
 </style>

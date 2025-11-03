@@ -189,8 +189,7 @@ def listeDta():
 
 @router.get("/dat/{table_name}")
 def get_dat_table(table_name: str):
-    """ tablea de dat selectionner
-    """
+   
     try:
         data = dat_report.getDat(table_name)
         return {"table": table_name, **data}
@@ -318,6 +317,30 @@ def get_dav_resume(table_name: str):
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
     
 
+@router.get("/resume/all/{type_table}")
+def get_all_resume(type_table: str):
+    try:
+        summaries = dav_report.getAllResumeDav(type_table)
+        if not summaries:
+            return JSONResponse(status_code=404, content={"error": f"Aucune table trouvée pour le type {type_table}"})
+        return summaries
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
+    
+    
+@router.get("/resume/global/{type_table}")
+def getTotalResumer(type_table: str):
+    try:
+        summary = dav_report.getTotalResumer(type_table)
+        if not summary:
+            return JSONResponse(status_code=404, content={"error": f"Aucune donnée trouvée pour le type '{type_table}'"})
+        return summary
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
 @router.get("/davGraphe/{table_name}")
 def get_graphe_dav(
