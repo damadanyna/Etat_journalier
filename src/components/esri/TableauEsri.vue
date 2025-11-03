@@ -20,7 +20,7 @@
         :search="search"
         dense
         fixed-header
-        height="500px"
+        height="600px"
       >
         <template v-slot:footer>
           <v-pagination
@@ -78,11 +78,12 @@ watch(
 
 <style scoped>
 .table-wrapper {
-  display: flex;
+   display: flex;
   flex-direction: column;
-  height: 600px;
   width: 100%;
-  background-color: transparent;
+  overflow: hidden;
+  max-width: 100%;
+  height: 900px;
 }
 
 /* 🔍 Barre de recherche fixée */

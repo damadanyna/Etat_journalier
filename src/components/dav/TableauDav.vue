@@ -103,7 +103,6 @@ watch(() => props.tableName, fetchTableData)
 .table-search-bar {
   flex: 0 0 auto;
   padding: 8px;
-  background-color: #1e1e1e;
   border-bottom: 1px solid #333;
   z-index: 10;
 }
@@ -111,7 +110,6 @@ watch(() => props.tableName, fetchTableData)
 .table-main {
   flex: 1 1 auto;
   overflow-y: auto;
-  background-color: #121212;
 }
 
 .fixed-header-table ::v-deep(th) {
@@ -135,7 +133,6 @@ watch(() => props.tableName, fetchTableData)
 }
 
 .fixed-header-table ::v-deep(tr:hover td) {
-  background-color: #2a2a2a;
   cursor: pointer;
 }
 </style>

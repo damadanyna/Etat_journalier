@@ -79,11 +79,12 @@ watch(
 
 <style scoped>
 .table-wrapper {
-  display: flex;
+   display: flex;
   flex-direction: column;
-  height: 600px;
   width: 100%;
-  background-color: transparent;
+  overflow: hidden;
+  max-width: 100%;
+  height: 900px;
 }
 
 .table-search-bar {

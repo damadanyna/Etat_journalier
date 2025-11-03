@@ -136,7 +136,7 @@ fetchData(selectedType.value)
   margin: 0;          /* plus de centrage automatique */
   padding: 16px;      /* garde un peu de padding interne */
   box-sizing: border-box;
-  background-color: #040404; /* couleur de fond légère */
+  background-color:#040404; /* couleur de fond légère */
 }
 .chart-container {
   width: 100%;
