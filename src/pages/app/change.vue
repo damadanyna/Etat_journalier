@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, computed,onMounted, onUnmounted } from "vue"
+import { ref, computed,onMounted, onUnmounted ,inject} from "vue"
 import axios from "axios"
 import * as XLSX from "xlsx"
 import { watch } from "vue"
@@ -98,6 +98,8 @@ const etatRows = ref([])
 const etatColumns = ref([])
 const allocationRows = ref([])
 const allocationColumns = ref([])
+
+const api = inject('api') 
 
 const hasData = computed(() =>
   syntheseRows.value.length > 0 ||
@@ -131,7 +133,7 @@ const fetchChangeData = async () => {
 
   try {
     const res = await axios.post(
-      `http://127.0.0.1:8000/api/change/generate_report`,
+      `${api}/api/change/generate_report`,
       null,
       {
         params: {

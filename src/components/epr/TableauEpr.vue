@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue"
+import { ref, watch, computed, inject } from "vue"
 import axios from "axios"
 
 // ✅ Props : table sélectionnée
@@ -54,20 +54,18 @@ const props = defineProps({
     required: true
   }
 })
+const api = inject('api') 
 
-// 🧩 États réactifs
 const headers = ref([])
 const items = ref([])
 const search = ref("")
 const page = ref(1)
 const itemsPerPage = ref(20)
 
-// 📄 Pagination
 const pageCount = computed(() =>
   Math.ceil(items.value.length / itemsPerPage.value)
 )
 
-// 📥 Charger les données
 const fetchTableData = async (tableName) => {
   if (!tableName) {
     items.value = []
@@ -75,7 +73,7 @@ const fetchTableData = async (tableName) => {
     return
   }
   try {
-    const res = await axios.get(`http://127.0.0.1:8000/api/epr/${tableName}`)
+    const res = await axios.get(`${api}/api/epr/${tableName}`)
     console.log("Réponse API:", res.data)
 
     items.value = res.data.data || []

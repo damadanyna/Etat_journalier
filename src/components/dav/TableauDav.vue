@@ -44,12 +44,13 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from "vue"
+import { ref, watch, computed, onMounted, inject } from "vue"
 import axios from "axios"
 
 const props = defineProps({
   tableName: { type: String, required: true }
 })
+const api = inject('api') 
 
 const headers = ref([])
 const items = ref([])
@@ -74,7 +75,7 @@ const fetchTableData = async (tableName) => {
     return
   }
   try {
-    const res = await axios.get(`http://127.0.0.1:8000/api/dav/${tableName}`)
+    const res = await axios.get(`${api}/api/dav/${tableName}`)
     items.value = res.data.data || []
     headers.value = (res.data.columns || []).map(col => ({
       title: col,

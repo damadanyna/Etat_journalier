@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue"
+import { ref, watch, computed,inject } from "vue"
 import axios from "axios"
 
 // 🧩 Props : nom de table venant de dat.vue
@@ -54,6 +54,7 @@ const props = defineProps({
     required: true
   }
 })
+const api = inject('api') 
 
 const headers = ref([])
 const items = ref([])
@@ -74,7 +75,7 @@ const fetchTableData = async (tableName) => {
     return
   }
   try {
-    const res = await axios.get(`http://127.0.0.1:8000/api/dat/${tableName}`)
+    const res = await axios.get(`${api}/api/dat/${tableName}`)
     items.value = res.data.data || []
     headers.value = (res.data.columns || []).map(col => ({
       title: col,

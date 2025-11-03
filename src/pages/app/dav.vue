@@ -111,7 +111,7 @@
   </v-container>
 </template>
 <script setup>
-import { ref, onMounted, watch, onUnmounted , computed} from "vue"
+import { ref, onMounted, watch, onUnmounted , computed, inject} from "vue"
 import axios from "axios"
 import * as XLSX from "xlsx"
 import { usePopupStore } from '@/stores'
@@ -142,6 +142,8 @@ const selectedTable =  ref(localStorage.getItem("selectedTable") || null)
 const activeTab = ref(0)
 const displayComponent = ref("tableau")
 const router = useRouter()
+
+const api = inject('api') 
 
 //verifier le status
 const isInitialized = computed(() => {
@@ -193,7 +195,7 @@ const exportToExcel = async (type) => {
   }
 
   try {
-    const res = await axios.get(`http://127.0.0.1:8000/api/${config.apiEndpoint}/${selectedTable.value}`)
+    const res = await axios.get(`${api}/api/${config.apiEndpoint}/${selectedTable.value}`)
     const data = res.data.data || []
     const columns = res.data.columns || []
 

@@ -37,7 +37,7 @@ const fetchResume = async (tableName) => {
   if (!tableName) return
   console.log("📋 TableName utilisé pour résumé :", tableName)
   try {
-    const res = await axios.get(`http://127.0.0.1:8000/api/dat/${tableName}/resume`)
+    const res = await axios.get(`${api}/api/dat/${tableName}/resume`)
     resume.value = res.data
   } catch (err) {
     console.error("Erreur lors du chargement du résumé:", err)

@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue"
+import { ref, watch,inject } from "vue"
 import axios from "axios"
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js"
 import { Bar } from "vue-chartjs"
@@ -68,6 +68,8 @@ const props = defineProps({
     required: true
   }
 })
+
+const api = inject('api') 
 
 // Champs disponibles pour X et Y
 const fields = ["Agence", "code_client", "Produits", "solde", "Credit", "Debit"]
@@ -90,7 +92,7 @@ const fetchData = async () => {
   if (!props.tableName || !x.value || !y.value) return
   try {
     const res = await axios.get(
-      `http://127.0.0.1:8000/api/davGraphe/${props.tableName}`,
+      `${api}/api/davGraphe/${props.tableName}`,
       { params: { x: x.value, y: y.value } }
     )
 

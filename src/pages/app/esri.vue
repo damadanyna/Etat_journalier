@@ -58,7 +58,7 @@
 
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue"
+import { ref, onMounted, onUnmounted,inject } from "vue"
 import axios from "axios"
 import * as XLSX from "xlsx"
 import TablesEsri from "@/components/esri/TableauEsri.vue"
@@ -72,6 +72,8 @@ const message = ref("")
 const columns = ref([])
 const rows = ref([])
 const tableEsriRef = ref(null)
+const api = inject('api') 
+
 
 const fetchEsriData = async () => {
   if (!dateDebut.value || !dateFin.value) {
@@ -86,7 +88,7 @@ const fetchEsriData = async () => {
 
   try {
     const res = await axios.post(
-      `http://127.0.0.1:8000/api/esri/create_esri_precompute`,
+      `${api}/api/esri/create_esri_precompute`,
       null,
       {
         params: {
