@@ -100,15 +100,15 @@
           </template>
           <v-list>
             <v-list-item @click="exportDAT">
-              <template #prepend><v-icon color="primary">mdi-table</v-icon></template>
+              <template #prepend><v-icon color="success">mdi-table</v-icon></template>
               <v-list-item-title style="font-size: 15px;">DAT</v-list-item-title>
             </v-list-item>
             <v-list-item @click="exportDAV">
-              <template #prepend><v-icon color="primary">mdi-chart-bar</v-icon></template>
+              <template #prepend><v-icon color="success">mdi-chart-bar</v-icon></template>
               <v-list-item-title style="font-size: 15px;">DAV</v-list-item-title>
             </v-list-item>
             <v-list-item @click="exportEPR">
-              <template #prepend><v-icon color="primary">mdi-chart-line</v-icon></template>
+              <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
               <v-list-item-title style="font-size: 15px;">EPR</v-list-item-title>
             </v-list-item>
           </v-list>
@@ -179,7 +179,7 @@ const isCompte = computed(() => route.path === '/app/dav')
 
 const toolbarTitle = computed(() => {
   if (isEsriPage.value) return 'ESRI'
-  if (isChangePage.value) return 'CHANGE'
+  if (isChangePage.value) return 'Change'
   if (isCompte.value) return 'Encours Compte'
   return 'Encours des crédits'
 })
