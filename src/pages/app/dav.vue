@@ -16,6 +16,7 @@
       </v-btn>
     </div>
 <div v-else>
+  <ResumeGlobalGraphe />
     <!-- Résumé conditionnel selon l'onglet -->
     <ResumerDat v-if="selectedTable && activeTab === 0" :tableName="selectedTable" />
     <ResumerDav v-if="selectedTable && activeTab === 1" :tableName="selectedTable" />
@@ -132,6 +133,8 @@ import DashboardDav from "@/components/dav/DavGraphe.vue"
 import ResumerEpr from "@/components/epr/resumerEpr.vue"
 import TableauEpr from "@/components/epr/TableauEpr.vue"
 import EprGraphe from "@/components/epr/EprGraphe.vue"
+
+import ResumeGlobalGraphe from "@/components/dav/ResulerGlobalGraphe.vue"
 
 
 const history = ref([])
