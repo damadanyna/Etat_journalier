@@ -116,7 +116,7 @@ watch(() => props.tableName, fetchTableData)
 .fixed-header-table ::v-deep(th) {
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, #1e1e1e 0%, #2a2a2a 100%);
+  background: linear-gradient(180deg, #1e1e1e 0%, #2d2d2d 100%); /* ✅ Fond différent et contrasté */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -127,13 +127,20 @@ watch(() => props.tableName, fetchTableData)
   white-space: nowrap;
 }
 
+/* ✅ Lignes du tableau avec fond légèrement différent */
 .fixed-header-table ::v-deep(td) {
+  background-color: #181818; /* différence nette avec les headers */
+  color: #dcdcdc;
   border-bottom: 1px solid #333;
   padding: 8px 12px;
   font-size: 14px;
+  transition: background-color 0.2s ease;
 }
 
+/* ✅ Effet au survol pour mieux distinguer la ligne active */
 .fixed-header-table ::v-deep(tr:hover td) {
+  background-color: #2a2a2a;
   cursor: pointer;
 }
+
 </style>
