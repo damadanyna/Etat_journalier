@@ -15,13 +15,24 @@
     <div class="table-main">
       <v-data-table
         :headers="headers"
-        :items="paginatedItems"
+        :items="items"
+        :items-per-page="itemsPerPage"
+        :page.sync="page"
         class="elevation-1 fixed-header-table"
         :search="search"
         dense
         fixed-header
-        hide-default-footer
-      >
+        height="700px">
+        <!-- ✅ Pagination à l’intérieur du tableau -->
+        <template v-slot:footer>
+          <v-pagination
+            v-model="page"
+            :length="pageCount"
+            circle
+            class="my-2"
+          />
+        </template>
+
         <template v-slot:no-data>
           <v-alert type="info" border="left" color="blue" dark>
             Aucune donnée trouvée
@@ -29,23 +40,12 @@
         </template>
       </v-data-table>
     </div>
-
-    <!-- 📄 Pagination toujours visible -->
-    <div class="table-pagination">
-      <v-pagination
-        v-model="page"
-        :length="pageCount"
-        circle
-        class="my-2"
-      />
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onUnmounted } from "vue"
+import { ref, watch, computed, onMounted } from "vue"
 import axios from "axios"
-import * as XLSX from "xlsx"
 
 const props = defineProps({
   tableName: { type: String, required: true }
@@ -94,9 +94,10 @@ watch(() => props.tableName, fetchTableData)
 .table-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Toute la fenêtre visible */
   width: 100%;
-  overflow: hidden; /* Pas de scroll global */
+  overflow: hidden;
+  max-width: 100%;
+  height: 900px;
 }
 
 .table-search-bar {
@@ -111,16 +112,6 @@ watch(() => props.tableName, fetchTableData)
   flex: 1 1 auto;
   overflow-y: auto;
   background-color: #121212;
-}
-
-.table-pagination {
-  flex: 0 0 auto;
-  background-color: #1e1e1e;
-  border-top: 1px solid #333;
-  display: flex;
-  justify-content: center;
-  padding: 8px 0;
-  z-index: 10;
 }
 
 .fixed-header-table ::v-deep(th) {

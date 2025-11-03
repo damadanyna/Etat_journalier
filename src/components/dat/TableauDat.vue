@@ -22,7 +22,7 @@
         :search="search"
         dense
         fixed-header
-        height="500px"
+        height="700px"
       >
         <template v-slot:footer>
           <v-pagination
@@ -94,9 +94,10 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
 .table-wrapper {
   display: flex;
   flex-direction: column;
-  height: 600px;
+  height: 900px;
   width: 100%;
   background-color: transparent;
+  
 }
 
 /* 🔍 Barre de recherche fixée */
