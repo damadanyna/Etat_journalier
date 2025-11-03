@@ -30,24 +30,25 @@
 
     <!-- Boutons Tableau/Dashboard -->
     <v-row class="mb-4">
-      <v-col cols="12" md="6">
-        <v-btn
-          color="primary"
-          class="mr-2"
-          @click="displayComponent = 'tableau'"
-          :outlined="displayComponent !== 'tableau'"
-        >
-          Tableau
-        </v-btn>
-        <v-btn
-          color="primary"
-          @click="displayComponent = 'dashboard'"
-          :outlined="displayComponent !== 'dashboard'"
-        >
-          Dashboard
-        </v-btn>
-      </v-col>
-    </v-row>
+        <v-col cols="12" md="6">
+          <v-btn
+            color="primary"
+            class="mr-2"
+            :variant="displayComponent === 'tableau' ? 'flat' : 'outlined'"
+            @click="displayComponent = 'tableau'"
+          >
+            Tableau
+          </v-btn>
+
+          <v-btn
+            color="primary"
+            :variant="displayComponent === 'dashboard' ? 'flat' : 'outlined'"
+            @click="displayComponent = 'dashboard'"
+          >
+            Dashboard
+          </v-btn>
+        </v-col>
+      </v-row>
 
     <!-- Contenu des onglets -->
     <v-window v-model="activeTab">
@@ -289,5 +290,8 @@ watch(() => popupStore.selected_date, (newDate) => {
   overflow-y: auto;
   padding-bottom: 20px;
   padding: 0 10px; 
+}
+.unified-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge (basé sur Chromium) */
 }
 </style>

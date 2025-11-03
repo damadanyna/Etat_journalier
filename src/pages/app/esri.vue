@@ -205,4 +205,7 @@ onUnmounted(() => {
   overflow-y: auto;
   padding-bottom: 20px;
 }
+.esri-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge (basé sur Chromium) */
+}
 </style>

@@ -265,4 +265,7 @@ watch(
   overflow-y: auto;
   padding-bottom: 20px;
 }
+.change-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge (basé sur Chromium) */
+}
 </style>
