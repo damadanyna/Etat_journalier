@@ -47,7 +47,6 @@
 import { ref, watch, computed,inject } from "vue"
 import axios from "axios"
 
-// 🧩 Props : nom de table venant de dat.vue
 const props = defineProps({
   tableName: {
     type: String,
@@ -62,12 +61,10 @@ const search = ref("")
 const page = ref(1)
 const itemsPerPage = ref(20)
 
-// Pagination dynamique
 const pageCount = computed(() =>
   Math.ceil(items.value.length / itemsPerPage.value)
 )
 
-// 🔁 Chargement des données via API
 const fetchTableData = async (tableName) => {
   if (!tableName) {
     items.value = []
@@ -87,7 +84,6 @@ const fetchTableData = async (tableName) => {
   }
 }
 
-// 🧠 Recharger quand tableName change
 watch(() => props.tableName, fetchTableData, { immediate: true })
 </script>
 
@@ -101,7 +97,6 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
   
 }
 
-/* 🔍 Barre de recherche fixée */
 .table-search-bar {
   position: sticky;
   top: 0;
@@ -110,13 +105,11 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
   border-bottom: 1px solid #333;
 }
 
-/* 📊 Conteneur scrollable */
 .table-scroll {
   flex: 1;
   overflow-y: auto;
 }
 
-/* 📌 En-tête du tableau fixe et stylé */
 .fixed-header-table ::v-deep(.v-data-table__wrapper) {
   overflow-y: auto;
   max-height: 500px;
@@ -125,7 +118,7 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
 .fixed-header-table ::v-deep(th) {
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, #1e1e1e 0%, #2a2a2a 100%);
+  background: linear-gradient(180deg, #1e1e1e 0%, #2d2d2d 100%); 
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -136,18 +129,17 @@ watch(() => props.tableName, fetchTableData, { immediate: true })
   white-space: nowrap;
 }
 
-
-/* 🩶 Style des cellules */
 .fixed-header-table ::v-deep(td) {
+  background-color: #181818; /* différence nette avec les headers */
+  color: #dcdcdc;
   border-bottom: 1px solid #333;
   padding: 8px 12px;
   font-size: 14px;
+  transition: background-color 0.2s ease;
 }
 
-/* 🌗 Alternance des lignes */
-
-/* 💡 Effet hover sur une ligne */
 .fixed-header-table ::v-deep(tr:hover td) {
+  background-color: #2a2a2a;
   cursor: pointer;
 }
 </style>

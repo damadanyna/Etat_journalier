@@ -1,6 +1,5 @@
 <template>
   <div class="table-container">
-    <!-- 🔍 Barre de recherche fixée -->
     <div class="table-search-bar">
       <v-text-field
         v-model="search"
@@ -11,7 +10,6 @@
       />
     </div>
 
-    <!-- 📊 Conteneur principal du tableau -->
     <div class="table-main">
       <v-data-table
         :headers="headers"
@@ -23,7 +21,6 @@
         dense
         fixed-header
         height="700px">
-        <!-- ✅ Pagination à l’intérieur du tableau -->
         <template v-slot:footer>
           <v-pagination
             v-model="page"
@@ -142,5 +139,7 @@ watch(() => props.tableName, fetchTableData)
   background-color: #2a2a2a;
   cursor: pointer;
 }
-
+.table-scroll::-webkit-scrollbar {
+  display: none; 
+}
 </style>

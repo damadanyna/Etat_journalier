@@ -107,9 +107,9 @@ def create_esri_precompute( date_debut: str = Query(...), date_fin: str = Query(
         if limit and (date_debut > limit or date_fin > limit):
             raise Exception(f"Les données apres le {limit} ne sont pas encore disponible.")
        
-        result_df,columns = operation_esri.process_esri_data_fast(date_debut, date_fin)
+        result_df,columns ,bilan= operation_esri.process_esri_data_fast(date_debut, date_fin)
 
-        if  result_df.empty:
+        if  result_df.empty and bilan.empty:
             return JSONResponse(
                 content={
                     "status": "error",
@@ -128,6 +128,7 @@ def create_esri_precompute( date_debut: str = Query(...), date_fin: str = Query(
                 
                 "columns": columns,
                 "rows": data_json,
+                "bilan": bilan.to_dict(orient="records"),
                 "count": len(data_json)
             },
             status_code=200

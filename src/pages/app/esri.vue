@@ -46,6 +46,20 @@
     >
       {{ message }}
     </v-alert>
+    <v-card v-if="status === 'success' && bilan.length" class="mt-4 pa-4" outlined>
+      <v-list>
+        <v-list-item
+          v-for="(item, index) in bilan"
+          :key="index"
+        >
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ item.Type }} : {{ item['Total Montant'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-card>
 
     <TablesEsri
       v-if="status === 'success' && rows.length"
@@ -73,7 +87,7 @@ const columns = ref([])
 const rows = ref([])
 const tableEsriRef = ref(null)
 const api = inject('api') 
-
+const bilan = ref([])
 
 const fetchEsriData = async () => {
   if (!dateDebut.value || !dateFin.value) {
@@ -111,6 +125,7 @@ const fetchEsriData = async () => {
     message.value = data.message
     columns.value = data.columns || []
     rows.value = data.rows || []
+    bilan.value = data.bilan || []
 
    localStorage.setItem(
   "esriData",

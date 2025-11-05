@@ -292,6 +292,6 @@ watch(() => popupStore.selected_date, (newDate) => {
   padding: 0 10px; 
 }
 .unified-container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge (basé sur Chromium) */
+  display: none; 
 }
 </style>

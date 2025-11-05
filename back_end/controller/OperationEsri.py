@@ -218,10 +218,18 @@ class OperationEsri:
             
             final_columns = [col for col in desired_order if col in extracted_df.columns]
             result_df = extracted_df[final_columns]
+            result_df["Montant"] = pd.to_numeric(result_df["Montant"], errors="coerce")
 
+# Puis faire la somme par type
+            somme_par_type = (
+                result_df.groupby("Type")["Montant"]
+                .sum()
+                .reset_index()
+                .rename(columns={"Montant": "Total Montant"})
+            )
             
             print(f"[INFO] Données ESRI traitées avec succès entre {date_debut} et {date_fin} ({len(result_df)} lignes) ✅")
-            return result_df,final_columns
+            return result_df,final_columns, somme_par_type
 
         except Exception as e:
             print(f"[ERREUR] process_esri_data_fast : {e}")

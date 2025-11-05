@@ -1,6 +1,5 @@
 <template>
   <div class="table-wrapper">
-    <!-- 🔍 Barre de recherche -->
     <div class="table-search-bar">
       <v-text-field
         v-model="search"
@@ -11,7 +10,6 @@
       />
     </div>
 
-    <!-- 📋 En-tête fixe + contenu scrollable -->
     <div class="table-scroll">
       <v-data-table
         :headers="headers"
@@ -47,7 +45,6 @@
 import { ref, watch, computed, inject } from "vue"
 import axios from "axios"
 
-// ✅ Props : table sélectionnée
 const props = defineProps({
   tableName: {
     type: String,
@@ -87,7 +84,6 @@ const fetchTableData = async (tableName) => {
   }
 }
 
-// 🔄 Recharger quand la table change
 watch(
   () => props.tableName,
   (newVal) => fetchTableData(newVal),
@@ -104,7 +100,6 @@ watch(
   background-color: transparent;
 }
 
-/* 🔍 Barre de recherche fixée */
 .table-search-bar {
   position: sticky;
   top: 0;
@@ -113,23 +108,20 @@ watch(
   border-bottom: 1px solid #333;
 }
 
-/* 📊 Tableau avec scroll vertical */
 .table-scroll {
   flex: 1;
   overflow-y: auto;
 }
 
-/* 📌 En-tête du tableau fixe + design amélioré */
 .fixed-header-table ::v-deep(.v-data-table__wrapper) {
   overflow-y: auto;
   max-height: 500px;
 }
 
-/* 🎨 Style des entêtes */
 .fixed-header-table ::v-deep(th) {
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, #1e1e1e 0%, #2d2d2d 100%); /* ✅ Fond différent et contrasté */
+  background: linear-gradient(180deg, #1e1e1e 0%, #2d2d2d 100%); 
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -140,7 +132,6 @@ watch(
   white-space: nowrap;
 }
 
-/* ✅ Lignes du tableau avec fond légèrement différent */
 .fixed-header-table ::v-deep(td) {
   background-color: #181818; /* différence nette avec les headers */
   color: #dcdcdc;
@@ -150,10 +141,11 @@ watch(
   transition: background-color 0.2s ease;
 }
 
-/* ✅ Effet au survol pour mieux distinguer la ligne active */
 .fixed-header-table ::v-deep(tr:hover td) {
   background-color: #2a2a2a;
   cursor: pointer;
 }
-
+.table-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
 </style>
