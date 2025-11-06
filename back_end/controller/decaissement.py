@@ -265,12 +265,10 @@ CREATE FUNCTION calcul_montant_capital(
             """
             
             with self.db.connect() as conn:
-                # Supprimer la table si elle existe
                 drop_query = f"DROP TABLE IF EXISTS {table_name}"
                 conn.execute(text(drop_query))
                 conn.commit()
                 
-                # Créer la nouvelle table
                 conn.execute(text(query))
                 conn.commit()
             
@@ -282,26 +280,21 @@ CREATE FUNCTION calcul_montant_capital(
             return False
 
     def generate_decaissement_report(self, date_limite: str):
-        """Génère le rapport complet de décaissement"""
         try:
-            # Créer les fonctions
             if not self.create_capital_function():
                 return False
                 
             if not self.create_frais_dossier_function():
                 return False
             
-            # Créer les index
             if not self.create_indexes():
                 print("[ATTENTION] Problème avec les index, continuation...")
                         
-            # Créer la table finale
             table_name = self.create_decaissement_table(date_limite)
             
             if not table_name:
                 return False
             
-            # Fonction pour supprimer les doublons dans les noms
             def remove_duplicate_name(name):
                 if pd.isnull(name):
                     return name
@@ -311,22 +304,17 @@ CREATE FUNCTION calcul_montant_capital(
                     return ' '.join(words[:half])
                 return name
 
-            # Vérifier et traiter les doublons avec pandas
             with self.db.connect() as conn:
-                # Charger les données dans un DataFrame pandas
                 df_query = f"SELECT * FROM {table_name}"
                 df = pd.read_sql(df_query, conn)
                 
-                # Afficher le nombre initial d'enregistrements
                 initial_count = len(df)
                 print(f"[INFO] Nombre initial d'enregistrements : {initial_count}")
                 
-                # Vérifier les doublons avant traitement
                 duplicates_before = df.duplicated(subset=['Numero_compte']).sum()
                 if duplicates_before > 0:
                     print(f"[INFO] {duplicates_before} doublons détectés dans Numero_compte avant traitement")
                 
-                # Appliquer le nettoyage seulement aux clients Morale (categorie != 'Particulier')
                 if 'categorie' in df.columns and 'Nom_compte' in df.columns:
                     df.loc[df['categorie'] != 'Particulier', 'Nom_compte'] = (
                         df.loc[df['categorie'] != 'Particulier', 'Nom_compte']
@@ -350,15 +338,12 @@ CREATE FUNCTION calcul_montant_capital(
                 else:
                     print(f"[ATTENTION] {duplicates_after} doublons restants après traitement")
                 
-                # Recréer la table avec les données nettoyées
-                # Supprimer l'ancienne table
+                
                 conn.execute(text(f"DROP TABLE IF EXISTS {table_name}"))
                 
-                # Créer une nouvelle table avec les données nettoyées
                 df.to_sql(table_name, conn, index=False, if_exists='replace')
                 conn.commit()
                 
-                # Compter les enregistrements finaux dans la base de données
                 count_query = f"SELECT COUNT(*) FROM {table_name}"
                 result = conn.execute(text(count_query))
                 db_count = result.fetchone()[0]

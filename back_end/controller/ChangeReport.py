@@ -11,9 +11,7 @@ class ChangeReport:
     from sqlalchemy import text
 
     def verifTable(self, date_value: str):
-        """
-        Vérifie si les tables etat_<date>, allocation_devise_<date> et synthese_<date> existent.
-        """
+        
         etat_table = f"etat_{date_value}"
         allocation_table = f"allocation_devise_{date_value}"
         synthese_table = f"synthese_{date_value}"
