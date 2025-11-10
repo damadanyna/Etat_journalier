@@ -146,6 +146,6 @@ watch(
   cursor: pointer;
 }
 .table-scroll::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+  display: none; 
 }
 </style>
