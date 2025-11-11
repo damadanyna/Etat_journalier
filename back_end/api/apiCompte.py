@@ -7,13 +7,9 @@ from sqlalchemy import text
 from controller.DatReport import DatReport 
 from controller.DbGet import DbGet
 from controller.Operation import Operation
-from controller.OperatioDav import OperatioDav
-from controller.Esri import Esri
 from controller.OperationEsri import OperationEsri
-from controller.OperationEsris import OperationEsris
 from controller.DavReport import DavReport
 from controller.EprReport import EprReport
-from controller.ChangeMande import ChangeMande
 from controller.ChangeMandy import ChangeMandy
 from controller.DavUnique import DavUnique
 from controller.decaissement import DecaissementOptimise
@@ -22,21 +18,37 @@ router = APIRouter()
 dat_report = DatReport()
 db_get = DbGet()
 operation = Operation()
-operation_dav = OperatioDav()
 dav_unique = DavUnique()
-esri = Esri()
 operation_esri = OperationEsri()
 dav_report = DavReport()
-change_mande = ChangeMande()
 epr_report = EprReport()
 change_mandy = ChangeMandy()
-operation_esris = OperationEsris()
 decaissement = DecaissementOptimise()
 #INITIALISATION COMPTE
 
 @router.post("/compte/compte_init/{name}")
 def initialize(name:str):
     try:
+        createStatus = dav_unique.add_status_columns()
+        if not createStatus:
+            raise Exception("Erreur lors de l'ajout des colonnes de statut")
+        
+        createIndexGeneral = db_get.create_indexes()
+        if not createIndexGeneral:
+            raise Exception("Erreur lors de la création des index généraux")
+        
+        createIndex = dav_unique.create_index()
+        if not createIndex:
+            raise Exception("Erreur lors de la création des index")
+        
+        createTempClients = dav_unique.create_temp_client()
+        if not createTempClients:
+            raise Exception("erreur Creation table temp client")
+        
+        createFunctions = dav_unique.create_funct()
+        if not createFunctions:
+            raise Exception("Erreur lors de la création des fonctions")
+        
         if dav_unique.verifie_statu(name):
             return JSONResponse(
                 status_code=200,
@@ -56,12 +68,6 @@ def initialize(name:str):
         
         operation.calculeAmtCap(table_name_dat)
         db_get.traitement_dat(table_name_dat)
-        
-        
-        dav_unique.add_status_columns()
-        dav_unique.create_temp_client()
-        dav_unique.create_index()
-        dav_unique.create_funct()
         dav_unique.update_status(name)
 
         return JSONResponse(content={
@@ -75,7 +81,8 @@ def initialize(name:str):
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
     
-    
+
+#teste decaissement
 @router.post("/compte/decaissement/{name}")
 def create_decaissement(date_limit:str):
     try:
@@ -100,9 +107,9 @@ def create_esri_precompute( date_debut: str = Query(...), date_fin: str = Query(
         if limit and (date_debut > limit or date_fin > limit):
             raise Exception(f"Les données apres le {limit} ne sont pas encore disponible.")
        
-        result_df,columns = operation_esri.process_esri_data_fast(date_debut, date_fin)
+        result_df,columns ,bilan= operation_esri.process_esri_data_fast(date_debut, date_fin)
 
-        if  result_df.empty:
+        if  result_df.empty and bilan.empty:
             return JSONResponse(
                 content={
                     "status": "error",
@@ -121,6 +128,7 @@ def create_esri_precompute( date_debut: str = Query(...), date_fin: str = Query(
                 
                 "columns": columns,
                 "rows": data_json,
+                "bilan": bilan.to_dict(orient="records"),
                 "count": len(data_json)
             },
             status_code=200
@@ -182,8 +190,7 @@ def listeDta():
 
 @router.get("/dat/{table_name}")
 def get_dat_table(table_name: str):
-    """ tablea de dat selectionner
-    """
+   
     try:
         data = dat_report.getDat(table_name)
         return {"table": table_name, **data}
@@ -311,6 +318,30 @@ def get_dav_resume(table_name: str):
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
     
 
+@router.get("/resume/all/{type_table}")
+def get_all_resume(type_table: str):
+    try:
+        summaries = dav_report.getAllResumeDav(type_table)
+        if not summaries:
+            return JSONResponse(status_code=404, content={"error": f"Aucune table trouvée pour le type {type_table}"})
+        return summaries
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
+    
+    
+@router.get("/resume/global/{type_table}")
+def getTotalResumer(type_table: str):
+    try:
+        summary = dav_report.getTotalResumer(type_table)
+        if not summary:
+            return JSONResponse(status_code=404, content={"error": f"Aucune donnée trouvée pour le type '{type_table}'"})
+        return summary
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
 @router.get("/davGraphe/{table_name}")
 def get_graphe_dav(
@@ -397,4 +428,4 @@ def get_graphe_epr(
 
 
 
-api_router = router
+api_router2 = router

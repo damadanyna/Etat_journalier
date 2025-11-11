@@ -1,26 +1,58 @@
 <template>
-  <v-toolbar color=" " class="bg-transparent" title="Encours des crédits">
+  <v-toolbar color=" " class="bg-transparent" :title="toolbarTitle">
     <!-- Badge date -->
 
       <div class="flex flex-row justify-end items-center space-x-4 mx-4" >
         <h3 class="mr-5 text-xl">Date d'arrêt</h3>
 
         <v-menu
-          v-model="menu"
-          close-on-content-click
-          offset-y
-          max-width="200"
-          min-width="200"
-        >
-          <template #activator="{ props }">
-            <v-btn v-bind="props" prepend-icon="mdi-calendar-range" variant="outlined">
-              <template #prepend>
-                <v-icon color="success" />
-              </template>
-              <span class="text-2xl">{{ selectedDate }}</span>
-            </v-btn>
-          </template>
+        v-if="isCompte"
+        v-model="menu"
+        close-on-content-click
+        offset-y
+        max-width="200"
+        min-width="200"
+      >
+        <template #activator="{ props }">
+          <v-btn v-bind="props" prepend-icon="mdi-calendar-range" variant="outlined">
+            <template #prepend>
+              <v-icon color="success" />
+            </template>
+            <span class="text-2xl">{{ selectedDate }}</span>
+          </v-btn>
+        </template>
+        <v-list style="max-height: 200px; overflow-y: auto;">
+          <v-list-item
+            v-for="date in filteredHistoryDates"
+            :key="date.label"
+            @click="() => selectDate(date.label, date.stat_compte)"
+            role="button"
+          >
+            <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
+              <v-icon v-if="date.stat_compte !== 1 " class=" mr-2 text-red-700">mdi-database-alert</v-icon> 
+              <v-icon v-else color="success" class=" mr-2">mdi-database-check</v-icon> 
+              <v-list-item-title>{{ date.label }}</v-list-item-title>
+            </div>
+          </v-list-item>
+        </v-list>
+      </v-menu>
 
+        <v-menu
+        v-else
+        v-model="menu"
+        close-on-content-click
+        offset-y
+        max-width="200"
+        min-width="200"
+      >
+        <template #activator="{ props }">
+          <v-btn v-bind="props" prepend-icon="mdi-calendar-range" variant="outlined">
+            <template #prepend>
+              <v-icon color="success" />
+            </template>
+            <span class="text-2xl">{{ selectedDate }}</span>
+          </v-btn>
+        </template>
         <v-list style="max-height: 200px; overflow-y: auto;">
           <v-list-item
             v-for="date in historyDates"
@@ -28,16 +60,14 @@
             @click="() => selectDate(date.label)"
             role="button"
           >
-
-          <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
-            
-            <v-icon v-if="date.stat_of !== 'init'"   class=" mr-2 text-red-700">mdi-database-alert</v-icon> 
-            <v-icon v-else color="success" class=" mr-2">mdi-database-check</v-icon> 
-            <v-list-item-title>{{ date.label }}</v-list-item-title>
-          </div>
+            <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
+              <v-icon v-if="date.stat_of !== 'init'" class=" mr-2 text-red-700">mdi-database-alert</v-icon> 
+              <v-icon v-else color="success" class=" mr-2">mdi-database-check</v-icon> 
+              <v-list-item-title>{{ date.label }}</v-list-item-title>
+            </div>
           </v-list-item>
         </v-list>
-        </v-menu>
+      </v-menu>
       </div>
     <!-- <div class="flex items-center gap-1 green_transparent mr-2 px-5 rounded-md">
       <v-icon icon="mdi-database" />
@@ -47,8 +77,45 @@
       <span v-else>Récupération ...</span>
     </div> -->
 
-    <!-- ✅ Bouton menu d'exportation -->
-    <v-menu offset-y  >
+
+    <!-- Menu change et esri export -->
+    <v-btn 
+      v-if="isEsriPage || isChangePage" 
+      @click="handleExport" 
+      prepend-icon="mdi-share-variant"
+      :loading="exporting"
+    >
+      <template #prepend><v-icon color="success"></v-icon></template>
+      <span class="text-md">Exporter</span>
+    </v-btn>
+
+    <!-- Menu export dav, dat, epr -->
+
+    <v-menu v-else-if="isCompte" offset-y>
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" prepend-icon="mdi-share-variant">
+              <template #prepend><v-icon color="success"></v-icon></template>
+              <span class="text-md">Exporter</span>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="exportDAT">
+              <template #prepend><v-icon color="success">mdi-table</v-icon></template>
+              <v-list-item-title style="font-size: 15px;">DAT</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="exportDAV">
+              <template #prepend><v-icon color="success">mdi-chart-bar</v-icon></template>
+              <v-list-item-title style="font-size: 15px;">DAV</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="exportEPR">
+              <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
+              <v-list-item-title style="font-size: 15px;">EPR</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+    <!-- Menu menu d'exportation -->
+    <v-menu v-else offset-y  >
       <template v-slot:activator="{ props }" style=" margin: 0px 15px;">
         <v-btn v-bind="props" prepend-icon="mdi-share-variant">
           <template #prepend><v-icon color="success"></v-icon></template>
@@ -90,17 +157,83 @@
 
 <script setup>
 import user_btn_profil from './user_btn_profil.vue'
-import { ref, watch, onMounted,inject } from 'vue'
+import { ref, watch, onMounted,inject,computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { usePopupStore } from '../stores'
 import * as XLSX from 'xlsx'
 
 
+const route = useRoute()
 const api = inject('api') 
 const selectedDate = ref('Chargement en cours...')
 const menu = ref(false)
 const popupStore = usePopupStore()
+const exporting = ref(false)
 
 const historyDates  = ref([])
+
+
+const isEsriPage = computed(() => route.path === '/app/esri')
+const isChangePage = computed(() => route.path === '/app/change')
+const isCompte = computed(() => route.path === '/app/dav')
+
+const toolbarTitle = computed(() => {
+  if (isEsriPage.value) return 'ESRI'
+  if (isChangePage.value) return 'Change'
+  if (isCompte.value) return 'Encours Compte'
+  return 'Encours des crédits'
+})
+
+
+const handleExport = () => {
+  if (isEsriPage.value) {
+    exportEsriData()
+  } else if (isChangePage.value) {
+    exportChangeData()
+  }
+}
+
+
+const exportEsriData = async () => {
+  exporting.value = true
+  try {
+    window.dispatchEvent(new CustomEvent('export-esri-data'))
+  } catch (error) {
+    console.error('Erreur export ESRI:', error)
+  } finally {
+    exporting.value = false
+  }
+}
+
+const exportChangeData = async () => {
+  exporting.value = true
+  try {
+    window.dispatchEvent(new CustomEvent('export-change-data'))
+  } catch (error) {
+    console.error('Erreur export change:', error)
+  } finally {
+    exporting.value = false
+  }
+}
+
+
+const exportDAT = () => {
+  exporting.value = true
+  console.log('Export DAT déclenché')
+  window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'DAT' } }))
+}
+
+const exportDAV = () => {
+  exporting.value = true
+  console.log('Export DAV déclenché')
+  window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'DAV' } }))
+}
+
+const exportEPR = () => {
+  exporting.value = true
+  console.log('Export EPR déclenché')
+  window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'EPR' } }))
+}
 
 // 🗓️ Importation de la date
 const date_last_import_file = ref('')
@@ -121,6 +254,13 @@ const get_last_import_file = async () => {
     console.error("❌ Erreur :", error)
   }
 }
+
+
+
+const filteredHistoryDates = computed(() => {
+  return historyDates.value
+})
+
 
 const formatDateString = (rawDate) => {
   if (!/^\d{8}$/.test(rawDate)) return null
@@ -194,13 +334,17 @@ async function fetchData(baseUrl, date = null) {
   }
 }
 
-async function selectDate(date) {
+async function selectDate(date,stat_compte) {
   
   selectedDate.value = date
-  usePopupStore().selected_date.value = date
+  popupStore.selected_date = date
+  popupStore.selected_date_stat_compte = stat_compte
+  usePopupStore().selected_date = date
   menu.value = false
    
-
+ if (isCompte.value) {
+    window.dispatchEvent(new CustomEvent('table-date-selected', { detail: { date, stat_compte } }))
+  }
 }
 
 

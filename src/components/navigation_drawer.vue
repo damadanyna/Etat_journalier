@@ -42,7 +42,11 @@ const popupStore=usePopupStore()
 
 const list_menu = [
   { icon: 'mdi-home-city', title: 'Crédits', to: '/app/credits', access:'all' },
-  { icon: 'mdi-account', title: 'My Account', to: '/app/another', access:'all' },
+  { icon: 'mdi-bank', title: 'My Account', to: '/app/dav', access:'all' },
+  
+  { icon: 'mdi-account', title: 'ESRI', to: '/app/esri' },
+  { icon: 'mdi-swap-horizontal', title: 'CHANGE', to: '/app/change' },
+
   { icon: 'mdi-file-table-box-multiple-outline', title: 'Mes Fichier', to: '/app/file_manager', access:popupStore.user_access.access }, 
 ]
 

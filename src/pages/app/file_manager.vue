@@ -186,7 +186,7 @@ const load_database = async (refresh, files, folder,date_string) => {
 
   var index_table=0;
   try {
-    const response = await fetch(`${api}/api/create_multiple_table`, {
+    const response = await fetch('http://192.168.1.212:8000/api/create_multiple_table', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -291,7 +291,7 @@ const uploadFile = async (folder_name) => {
   formData.append('app', app_type.value);
   formData.append('folder_name', folder_name);
   try {
-    const response = await fetch(`${api}/api/upload_multiple_files`, {
+    const response = await fetch('http://192.168.1.212:8000/api/upload_multiple_files', {
       method: 'POST',
       body: formData,
     });
@@ -387,7 +387,7 @@ const showFiles = async () => {
         app:app_type.value
       }
     });
-    // console.log(response.data.files);
+    console.log(response.data.files);
     list_file.value = normalizeTree(response.data.files);// Affichage des fichiers reçus
   } catch (error) {
     console.error("Erreur lors de la récupération des fichiers:", error); // Gestion des erreurs

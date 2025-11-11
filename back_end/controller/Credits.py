@@ -428,7 +428,11 @@ class Credits:
             `label` VARCHAR(255) NOT NULL PRIMARY KEY,
             `stat_of` VARCHAR(100),
             `used` TINYINT(1) DEFAULT 0,
-            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            `dav_status` Boolean DEFAULT FALSE,
+            `dat_status` Boolean DEFAULT FALSE,
+            `epr_status`  Boolean DEFAULT FALSE,
+            `stat_compte` Boolean DEFAULT FALSE
         );
         """
         conn.execute(text(create_query))
@@ -1757,12 +1761,12 @@ class Credits:
                                                                 HAVING total!=0 ;"""
                         },    
                         {
-                            "name": """ Suppression de la TABLE etat_remboursement IF EXISTS """,
-                            "sql": """DROP TABLE IF EXISTS etat_remboursement"""
+                            "name": """ Suppression de la TABLE etat_remboursement_{current_date} IF EXISTS """,
+                            "sql": """DROP TABLE IF EXISTS etat_remboursement_{current_date}"""
                         },    
                         {
-                            "name": """ Création de la TABLE etat_remboursement IF EXISTS """,
-                            "sql": """CREATE TABLE IF NOT EXISTS etat_remboursement AS
+                            "name": """ Création de la TABLE etat_remboursement_{current_date} IF EXISTS """,
+                            "sql": """CREATE TABLE IF NOT EXISTS etat_remboursement_{current_date} AS
                                         SELECT
                                         arrangement_id,
                                         Date_pret,
