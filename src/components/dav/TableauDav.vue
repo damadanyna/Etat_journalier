@@ -31,7 +31,7 @@
         </template>
 
         <template v-slot:no-data>
-          <v-alert type="info" border="left" color="blue" dark>
+          <v-alert type="info" border="left" color="green" dark>
             Aucune donnée trouvée
           </v-alert>
         </template>

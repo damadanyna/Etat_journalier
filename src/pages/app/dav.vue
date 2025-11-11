@@ -103,7 +103,7 @@
       v-if="!selectedTable"
       type="info"
       border="left"
-      color="blue"
+      color="green"
       dark
       class="mb-4"
     >

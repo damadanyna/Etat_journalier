@@ -43,7 +43,7 @@
       v-else
       type="info"
       border="left"
-      color="blue"
+      color="green"
       dark
       class="mt-4"
     >
