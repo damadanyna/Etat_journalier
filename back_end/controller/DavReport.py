@@ -116,8 +116,8 @@ class DavReport:
             conn = self.db.connect()
 
             type_table = type_table.lower().strip()
-            if type_table not in ["dav", "dat", "epr"]:
-                raise ValueError("Type de table invalide. Valeurs possibles : 'dav', 'dat', 'epr'")
+            if type_table not in ["dav", "dat", "epr", "decaissement"]:
+                raise ValueError("Type de table invalide. Valeurs possibles : 'dav', 'dat', 'epr', 'decaissement'.")
 
             tables_query = text(f"SHOW TABLES LIKE '{type_table}_%'")
             tables_result = conn.execute(tables_query).fetchall()
@@ -161,8 +161,16 @@ class DavReport:
                                 SUM(Credit) AS total_credit_epr
                             FROM `{table_name_vrai}`
                         """)
-
+                    elif type_table == "decaissement":
+                        query = text(f"""
+                            SELECT 
+                                COUNT(DISTINCT code_client) AS nb_clients,
+                                 SUM(montant_capital) AS total_montant_capital,
+                                 SUM(frais_de_dossier) AS total_frais_de_dossier
+                            FROM `{table_name_vrai}`
+                        """)
                     result = conn.execute(query).fetchone()
+                    
                     if not result:
                         continue
 
@@ -191,6 +199,14 @@ class DavReport:
                             "total_montant_epr": float(result[1] or 0),
                             "total_debit_epr": float(result[2] or 0),
                             "total_credit_epr": float(result[3] or 0)
+                        }
+                    elif type_table == "decaissement":
+                        summary = {
+                            "table_name": table_name_vrai,
+                            "nb_clients": int(result[0] or 0),
+                            "total_montant_capital": float(result[1] or 0),
+                            "total_frais_de_dossier": float(result[2] or 0)
+                            
                         }
 
                     all_summaries.append(summary)
@@ -246,9 +262,16 @@ class DavReport:
                 "total_debit_epr": sum(item.get("total_debit_epr", 0.0) for item in all_summaries),
                 "total_credit_epr": sum(item.get("total_credit_epr", 0.0) for item in all_summaries),
             }
+        elif type_table == "decaissement":
+            total_resumer = {
+                "type": "decaissement",
+                "nb_clients_total": sum(item.get("nb_clients", 0) for item in all_summaries),
+                "total_montant_capital": sum(item.get("total_montant_capital", 0.0) for item in all_summaries),
+                "total_frais_de_dossier": sum(item.get("total_frais_de_dossier", 0.0) for item in all_summaries),
+            }
 
         else:
-            raise ValueError("Type de table invalide. Utiliser 'dav', 'dat' ou 'epr'.")
+            raise ValueError("Type de table invalide. Utiliser 'dav', 'dat' ou 'epr', 'decaissement'.")
 
         return total_resumer
 
