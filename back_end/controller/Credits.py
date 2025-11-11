@@ -428,7 +428,11 @@ class Credits:
             `label` VARCHAR(255) NOT NULL PRIMARY KEY,
             `stat_of` VARCHAR(100),
             `used` TINYINT(1) DEFAULT 0,
-            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            `dav_status` Boolean DEFAULT FALSE,
+            `dat_status` Boolean DEFAULT FALSE,
+            `epr_status`  Boolean DEFAULT FALSE,
+            `stat_compte` Boolean DEFAULT FALSE
         );
         """
         conn.execute(text(create_query))
