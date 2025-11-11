@@ -12,6 +12,7 @@ from controller.DavReport import DavReport
 from controller.EprReport import EprReport
 from controller.ChangeMandy import ChangeMandy
 from controller.DavUnique import DavUnique
+from controller.decaissementReport import decaissementReport
 from controller.decaissement import DecaissementOptimise
 
 router = APIRouter()
@@ -24,6 +25,7 @@ dav_report = DavReport()
 epr_report = EprReport()
 change_mandy = ChangeMandy()
 decaissement = DecaissementOptimise()
+decaissement_report = decaissementReport()
 #INITIALISATION COMPTE
 
 @router.post("/compte/compte_init/{name}")
@@ -426,6 +428,20 @@ def get_graphe_epr(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
+#***************decaissement//***********
+def listeDecaissement():
+   
+    try:
+        listeDecaissement = decaissement.getListeDecaissement()
+        if not listeDecaissement:
+            raise Exception("Aucune table Decaissement trouvée")
+        
+        return {"tables": listeDecaissement}
+    
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
 
 api_router2 = router
