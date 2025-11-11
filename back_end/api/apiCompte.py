@@ -429,10 +429,11 @@ def get_graphe_epr(
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
 #***************decaissement//***********
+@router.get("/decaissement/liste_decaissement")
 def listeDecaissement():
    
     try:
-        listeDecaissement = decaissement.getListeDecaissement()
+        listeDecaissement = decaissement_report.getListeDecaissement()
         if not listeDecaissement:
             raise Exception("Aucune table Decaissement trouvée")
         
@@ -443,5 +444,36 @@ def listeDecaissement():
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
+@router.get("/decaissement/{table_name}")
+def get_decaissement_table(table_name: str):
+    try:
+        data = decaissement_report.getDecaissement(table_name)
+        return {"table": table_name, **data}
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
+@router.get("/decaissement/{table_name}/resume")
+def get_decaissement_resume(table_name: str):
+
+    try:
+        summary = decaissement_report.getResumeDecaissement(table_name)
+        if not summary:
+            return JSONResponse(status_code=404, content={"error": "Résumé introuvable ou table vide"})
+
+        safe_summary = {
+            
+            "table_name": table_name,
+            "nb_clients": int(summary.get("nb_clients") or 0),
+            "total_montant_capital": float(summary.get("total_montant_capital") or 0),
+            "total_frai_de_dossier": float(summary.get("total_frai_de_dossier") or 0)
+        }
+
+        return safe_summary
+
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 api_router2 = router

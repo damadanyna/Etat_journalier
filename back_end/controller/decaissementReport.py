@@ -83,32 +83,33 @@ class decaissementReport:
 
             query = text(f"""
                 SELECT 
+                   
                     COUNT(DISTINCT code_client) AS nb_clients,
                     SUM(montant_capital) AS total_montant_capital,
-                    SUM(frai_de_dossier) AS total_frai_de_dossier,
+                    SUM(frais_de_dossier) AS total_frais_de_dossier
                 FROM `{table_name_vrai}`
             """)
-            result = conn.execute(query)
+            result = conn.execute(query).fetchone()
 
-            row = result.fetchone()
-            return {
-                "total_decaissements": row['total_decaissements'],
-                "total_montant_decaisse": float(row['total_montant_decaisse']) if row['total_montant_decaisse'] is not None else 0.0
-            }
+            columns =  result.keys() if hasattr(result, "keys") else [
+                
+                 "nb_clients", "total_montant_capital", "total_frais_de_dossier"
+            ]
+            
+            summary = {col: result[idx] for idx, col in enumerate(columns)} if result else {}
+
+            return summary
 
         except Exception as e:
-            print(f"[ERREUR] getResumeDecaissement : {e}")
-            return {
-                "total_decaissements": 0,
-                "total_montant_decaisse": 0.0
-            }
+            print(f"[ERREUR] getResumeDav : {e}")
+            return None
         finally:
             if conn:
                 try:
                     conn.close()
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture connexion (getResumeDecaissement) : {close_err}")
-                    
+    
                     
     def get_grapheDec(self, x: str, y: str, table_name:str):
         table_name_vrai = f"decaissement_{table_name}"
