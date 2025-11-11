@@ -467,7 +467,7 @@ def get_decaissement_resume(table_name: str):
             "table_name": table_name,
             "nb_clients": int(summary.get("nb_clients") or 0),
             "total_montant_capital": float(summary.get("total_montant_capital") or 0),
-            "total_frai_de_dossier": float(summary.get("total_frai_de_dossier") or 0)
+            "total_frais_de_dossier": float(summary.get("total_frais_de_dossier") or 0)
         }
 
         return safe_summary
@@ -476,4 +476,22 @@ def get_decaissement_resume(table_name: str):
         return JSONResponse(status_code=400, content={"error": str(ve)})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
+    
+    
+@router.get("/decaissementGraphe/{table_name}")   
+def get_graphe_decaissement(
+    table_name: str,
+    x: str = Query(..., description="Colonne X (ex: client, agence, produit, numero_compte)"),
+    y: str = Query(..., description="Colonne Y (ex: kill, agence, produit, numero_compte)")
+):
+
+    try:
+        data = decaissement_report.get_grapheDec(x, y, table_name)
+        
+        return data
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
+    
 api_router2 = router

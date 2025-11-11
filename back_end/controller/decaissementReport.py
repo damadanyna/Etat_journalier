@@ -72,6 +72,7 @@ class decaissementReport:
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture connexion (getDecaissement) : {close_err}")
                     
+                    
     def getResumeDecaissement(self, table_name: str):
         table_name_vrai = f"decaissement_{table_name}"
         if not table_name_vrai or not table_name_vrai.startswith("decaissement_"):

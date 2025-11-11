@@ -111,6 +111,10 @@
               <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
               <v-list-item-title style="font-size: 15px;">EPR</v-list-item-title>
             </v-list-item>
+            <v-list-item @click="exportDECAISSEMENT">
+              <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
+              <v-list-item-title style="font-size: 15px;">DECAISSEMENT</v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
 
@@ -233,6 +237,11 @@ const exportEPR = () => {
   exporting.value = true
   console.log('Export EPR déclenché')
   window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'EPR' } }))
+}
+const exportDECAISSEMENT = () => {
+  exporting.value = true
+  console.log('Export decaissement déclenché')
+  window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'DECAISSEMENT' } }))
 }
 
 // 🗓️ Importation de la date
