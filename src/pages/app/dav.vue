@@ -32,7 +32,7 @@
     <v-row class="mb-4">
         <v-col cols="12" md="6">
           <v-btn
-            color="primary"
+            color="success"
             class="mr-2"
             :variant="displayComponent === 'tableau' ? 'flat' : 'outlined'"
             @click="displayComponent = 'tableau'"
@@ -41,7 +41,7 @@
           </v-btn>
 
           <v-btn
-            color="primary"
+            color="success"
             :variant="displayComponent === 'dashboard' ? 'flat' : 'outlined'"
             @click="displayComponent = 'dashboard'"
           >
