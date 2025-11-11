@@ -306,9 +306,11 @@ class Credit_outstanding_report:
             # ✅ Extrait AAAAMM pour LIKE
             date_prefix = date[:6] + '%'
 
-            query = text("""
+
+            table_name = f"etat_remboursement_{date}"
+            query = text(f"""
                 SELECT *
-                FROM etat_remboursement
+                FROM `{table_name}`
                 WHERE payment_date LIKE :date_prefix
                 ORDER BY payment_date;
             """)

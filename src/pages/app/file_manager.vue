@@ -387,7 +387,7 @@ const showFiles = async () => {
         app:app_type.value
       }
     });
-    // console.log(response.data.files);
+    console.log(response.data.files);
     list_file.value = normalizeTree(response.data.files);// Affichage des fichiers reçus
   } catch (error) {
     console.error("Erreur lors de la récupération des fichiers:", error); // Gestion des erreurs

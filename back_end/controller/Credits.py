@@ -1757,12 +1757,12 @@ class Credits:
                                                                 HAVING total!=0 ;"""
                         },    
                         {
-                            "name": """ Suppression de la TABLE etat_remboursement IF EXISTS """,
-                            "sql": """DROP TABLE IF EXISTS etat_remboursement"""
+                            "name": """ Suppression de la TABLE etat_remboursement_{current_date} IF EXISTS """,
+                            "sql": """DROP TABLE IF EXISTS etat_remboursement_{current_date}"""
                         },    
                         {
-                            "name": """ Création de la TABLE etat_remboursement IF EXISTS """,
-                            "sql": """CREATE TABLE IF NOT EXISTS etat_remboursement AS
+                            "name": """ Création de la TABLE etat_remboursement_{current_date} IF EXISTS """,
+                            "sql": """CREATE TABLE IF NOT EXISTS etat_remboursement_{current_date} AS
                                         SELECT
                                         arrangement_id,
                                         Date_pret,
