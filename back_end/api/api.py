@@ -11,7 +11,8 @@ import json
 import time
 import asyncio 
 import io  
-   
+from controller.DavUnique import DavUnique
+dav_unique = DavUnique()   
  
  
  
@@ -41,8 +42,19 @@ def signup(username: str = Form(...), password: str = Form(...), immatricule: st
 # --- SIGNIN ---
 @router.post("/signin")
 def signin(username: str = Form(...), password: str = Form(...)):
-    return user.signin(username, password)
+    result = user.signin(username, password)
 
+    # Si connexion réussie, on ajoute les colonnes manquantes
+    try:
+        success = dav_unique.add_status_columns()
+        if success:
+            print("[INFO] Vérification des colonnes de status terminée ✅")
+        else:
+            print("[WARN] Échec de la vérification/ajout des colonnes ⚠️")
+    except Exception as e:
+        print(f"[ERREUR] lors de la vérification des colonnes : {e}")
+
+    return result
 # --- GET CURRENT USER ---
 def get_user_from_request(request: Request):
     return user.get_current_user(request)
