@@ -162,18 +162,13 @@ async function fetchData(url, listRef, storeKey) {
   }
 }
 
- 
 
- 
-
-watch(() => popupStore.selected_date, (val) => {   
-  
+watch(() => popupStore.selected_date, (val) => { 
   tabs.value[0].liste=[] 
   tabs.value[1].liste=[]  
   fetchData(`${api}/api/get_encours_credits?date=${val}`, listes.encours, 'encours_actual_data');
   fetchData(`${api}/api/encours_remboursement?date=${val}`, listes.remboursement, 'remboursement_actual_data');
 });
-
 
 onMounted(() => {
   const date = '20250919';
