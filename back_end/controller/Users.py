@@ -4,12 +4,12 @@ from fastapi import HTTPException, Response,Request
 from sqlalchemy import text 
 import os
 from db.db  import DB 
-from jose import jwt, JWTError 
+from jose import jwt,JWTError 
  
 
 SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 360
 
 class Users: 
     def __init__(self):
