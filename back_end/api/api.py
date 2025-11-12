@@ -71,9 +71,6 @@ def logout(response: Response):
     return user.logout(response)
 
 
-
-
-
 @router.post("/upload_multiple_files")
 async def upload_multiple_files(
     files: List[UploadFile] = File(...),
