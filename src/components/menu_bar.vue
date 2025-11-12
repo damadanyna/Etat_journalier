@@ -57,7 +57,7 @@
           <v-list-item
             v-for="date in historyDates"
             :key="date.label"
-            @click="() => selectDate(date.label)"
+               @click="() => selectDateStatOf(date.label, date.stat_of)"
             role="button"
           >
             <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
@@ -110,6 +110,10 @@
             <v-list-item @click="exportEPR">
               <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
               <v-list-item-title style="font-size: 15px;">EPR</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="exportDECAISSEMENT">
+              <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
+              <v-list-item-title style="font-size: 15px;">DECAISSEMENT</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>
@@ -234,6 +238,11 @@ const exportEPR = () => {
   console.log('Export EPR déclenché')
   window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'EPR' } }))
 }
+const exportDECAISSEMENT = () => {
+  exporting.value = true
+  console.log('Export decaissement déclenché')
+  window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'DECAISSEMENT' } }))
+}
 
 // 🗓️ Importation de la date
 const date_last_import_file = ref('')
@@ -345,6 +354,20 @@ async function selectDate(date,stat_compte) {
  if (isCompte.value) {
     window.dispatchEvent(new CustomEvent('table-date-selected', { detail: { date, stat_compte } }))
   }
+}
+
+// 📅 Sélection date stat_of
+async function selectDateStatOf(date, stat_of) {
+  selectedDate.value = date
+
+  popupStore.selected_date = date
+  popupStore.selected_date_stat_of = stat_of
+
+  menu.value = false
+
+  window.dispatchEvent(new CustomEvent('table-date-stat-of-selected', {
+    detail: { date, stat_of }
+  }))
 }
 
 

@@ -12,6 +12,7 @@ from controller.DavReport import DavReport
 from controller.EprReport import EprReport
 from controller.ChangeMandy import ChangeMandy
 from controller.DavUnique import DavUnique
+from controller.decaissementReport import decaissementReport
 from controller.decaissement import DecaissementOptimise
 
 router = APIRouter()
@@ -24,6 +25,7 @@ dav_report = DavReport()
 epr_report = EprReport()
 change_mandy = ChangeMandy()
 decaissement = DecaissementOptimise()
+decaissement_report = decaissementReport()
 #INITIALISATION COMPTE
 
 @router.post("/compte/compte_init/{name}")
@@ -62,9 +64,11 @@ def initialize(name:str):
         table_name_dat = db_get.create_tableDatPreCompute(name)
         table_name_dav = dav_unique.create_table_dav(name)
         table_name_epr = dav_unique.create_table_epr(name)
+        table_name_dec = decaissement.generate_decaissement_report(name)        
+
         
-        if not table_name_dat or not table_name_dav or not table_name_epr:
-            raise Exception("Erreur lors de la création des tables DAT, DAV et EPR")
+        if not table_name_dat or not table_name_dav or not table_name_epr or not table_name_dec:
+            raise Exception("Erreur lors de la création des tables DAT, DAV et EPR et Decaissement")
         
         operation.calculeAmtCap(table_name_dat)
         db_get.traitement_dat(table_name_dat)
@@ -75,7 +79,8 @@ def initialize(name:str):
                     "message": f"Table créée et nettoyée et calculer : {table_name_dav} et {table_name_epr} et {table_name_dat}✅",
                     "table_name_dav": table_name_dav,
                     "table_name_epr": table_name_epr,
-                    "table_name_dat": table_name_dat   
+                    "table_name_dat": table_name_dat,
+                    "table_name_dec": table_name_dec  
         })
         
     except Exception as e:
@@ -426,6 +431,70 @@ def get_graphe_epr(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
+#***************decaissement//***********
+@router.get("/decaissement/liste_decaissement")
+def listeDecaissement():
+   
+    try:
+        listeDecaissement = decaissement_report.getListeDecaissement()
+        if not listeDecaissement:
+            raise Exception("Aucune table Decaissement trouvée")
+        
+        return {"tables": listeDecaissement}
+    
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
+@router.get("/decaissement/{table_name}")
+def get_decaissement_table(table_name: str):
+    try:
+        data = decaissement_report.getDecaissement(table_name)
+        return {"table": table_name, **data}
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
+@router.get("/decaissement/{table_name}/resume")
+def get_decaissement_resume(table_name: str):
+
+    try:
+        summary = decaissement_report.getResumeDecaissement(table_name)
+        if not summary:
+            return JSONResponse(status_code=404, content={"error": "Résumé introuvable ou table vide"})
+
+        safe_summary = {
+            
+            "table_name": table_name,
+            "nb_clients": int(summary.get("nb_clients") or 0),
+            "total_montant_capital": float(summary.get("total_montant_capital") or 0),
+            "total_frais_de_dossier": float(summary.get("total_frais_de_dossier") or 0)
+        }
+
+        return safe_summary
+
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
+    
+    
+@router.get("/decaissementGraphe/{table_name}")   
+def get_graphe_decaissement(
+    table_name: str,
+    x: str = Query(..., description="Colonne X (ex: client, agence, produit, numero_compte)"),
+    y: str = Query(..., description="Colonne Y (ex: kill, agence, produit, numero_compte)")
+):
+
+    try:
+        data = decaissement_report.get_grapheDec(x, y, table_name)
+        
+        return data
+    except ValueError as ve:
+        return JSONResponse(status_code=400, content={"error": str(ve)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
+    
 api_router2 = router

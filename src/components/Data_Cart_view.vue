@@ -119,13 +119,13 @@ onMounted(() => {
 
 
  (async () => {
-    stat_PA.value = await fetchData(`${api}/api/get_pa_class`,'20251028') 
+    stat_PA.value = await fetchData(`${api}/api/get_pa_class`,'20250918') 
     updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
   })();
 
   
  (async () => {
-    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`,'20251028','1000px') 
+    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`,'20250918','1000px') 
     updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
     
   })();
