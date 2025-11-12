@@ -4,7 +4,7 @@
       <v-col cols="12" md="4">
         <v-select
           v-model="selectedType"
-          :items="['dat', 'dav', 'epr']"
+          :items="['dat', 'dav', 'epr','decaissement']"
           label="Type de table"
           outlined
           dense
@@ -45,6 +45,7 @@ import {
   LinearScale,
 } from "chart.js"
 import { Line } from "vue-chartjs"
+import Decaissement from "../../pages/app/decaissement.vue"
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
 
@@ -106,6 +107,12 @@ const fetchData = async (type) => {
         { label: "Montant Total EPR", data: data.map(d => d.total_montant_epr || 0), borderColor: "#10B981" },
         { label: "Total Débit EPR", data: data.map(d => d.total_debit_epr || 0), borderColor: "#F59E0B" },
         { label: "Total Crédit EPR", data: data.map(d => d.total_credit_epr || 0), borderColor: "#EF4444" },
+      ]
+    }
+    if (type === "decaissement") {
+      datasets = [
+        { label: "Montant capital", data: data.map(d => d.total_montant_capital || 0), borderColor: "#10B981" },
+        { label: "Frais de dossier", data: data.map(d => d.total_frais_de_dossier || 0), borderColor: "#F59E0B" },
       ]
     }
 

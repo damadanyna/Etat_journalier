@@ -3,7 +3,7 @@
     <h3>Chargement ...</h3>
 </div> -->
 
-<div  v-if="selected_date?.stat_of==null ||   selected_date?.stat_of=='' || selected_date?.stat_of=='NULL'">
+<div v-if="selected_date?.stat_of && selected_date?.stat_of != 'NULL'">
   <v-btn @click="runAllSteps()"
           class="me-2 text-none ml-10 text-white"
           color="#00DF76"
@@ -139,7 +139,7 @@ watch(
   () => popupStore.selected_date,
   (elt_resp) => {
     selected_date.value = elt_resp;
-    // console.log('[watch] selected_date =', elt_resp);
+     console.log('[watch] selected_date =', elt_resp);
   },
   { immediate: true }
 );
@@ -187,7 +187,7 @@ const runStep = (index) => {
     // steps.value[index].status = 'running'
     var index=null
     const str_date = selected_date.value.label; // ta variable dynamique
-    // console.log('str_date',str_date);
+     console.log('str_date',str_date);
     
     const evtSource = new EventSource(`${api}/api/run_encours?str_date=${encodeURIComponent(str_date)}`);
     evtSource.onmessage = (event) => {

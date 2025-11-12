@@ -111,6 +111,10 @@
               <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
               <v-list-item-title style="font-size: 15px;">EPR</v-list-item-title>
             </v-list-item>
+            <v-list-item @click="exportDECAISSEMENT">
+              <template #prepend><v-icon color="success">mdi-chart-line</v-icon></template>
+              <v-list-item-title style="font-size: 15px;">DECAISSEMENT</v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
 
@@ -234,6 +238,11 @@ const exportEPR = () => {
   console.log('Export EPR déclenché')
   window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'EPR' } }))
 }
+const exportDECAISSEMENT = () => {
+  exporting.value = true
+  console.log('Export decaissement déclenché')
+  window.dispatchEvent(new CustomEvent('export-dav-data', { detail: { type: 'DECAISSEMENT' } }))
+}
 
 // 🗓️ Importation de la date
 const date_last_import_file = ref('')
@@ -335,9 +344,10 @@ async function fetchData(baseUrl, date = null) {
 }
 
 async function selectDate(date,stat_compte) {
+  console.log(date);
   
   selectedDate.value = date
-  popupStore.selected_date = date
+   popupStore.selected_date = date
   popupStore.selected_date_stat_compte = stat_compte
   usePopupStore().selected_date = date
   menu.value = false

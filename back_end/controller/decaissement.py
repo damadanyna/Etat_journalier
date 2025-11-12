@@ -162,11 +162,11 @@ CREATE FUNCTION calcul_montant_capital(
 
     def create_indexes(self):
         indexes = [
-            "CREATE INDEX IF NOT EXISTS idx_arrangement_id ON aa_arrangement_mcbc_live_full (id(255))",
-            "CREATE INDEX IF NOT EXISTS idx_arrangement_customer ON aa_arrangement_mcbc_live_full (customer(255))",
-            "CREATE INDEX IF NOT EXISTS idx_arrangement_linked_appl ON aa_arrangement_mcbc_live_full (linked_appl_id(255))",
+            "CREATE INDEX IF NOT EXISTS idx_arrangement_id ON aa_arrangement_mcbc_live_full (id)",
+            "CREATE INDEX IF NOT EXISTS idx_arrangement_customer ON aa_arrangement_mcbc_live_full (customer(100))",
+            "CREATE INDEX IF NOT EXISTS idx_arrangement_linked_appl ON aa_arrangement_mcbc_live_full (linked_appl_id(100))",
             "CREATE INDEX IF NOT EXISTS idx_account_opening_date ON account_mcbc_live_full (opening_date)",
-            "CREATE INDEX IF NOT EXISTS idx_em_arrangement ON em_lo_application_mcbc_live_full (arrangement_id(255))",
+            "CREATE INDEX IF NOT EXISTS idx_em_arrangement ON em_lo_application_mcbc_live_full (arrangement_id(100))",
             "CREATE INDEX IF NOT EXISTS idx_charge_id_prefix ON aa_arr_charge_mcbc_live_full (id)",
             "CREATE INDEX IF NOT EXISTS idx_charge_rate ON aa_arr_charge_mcbc_live_full (charge_rate)"
 
@@ -196,16 +196,7 @@ CREATE FUNCTION calcul_montant_capital(
                     SUBSTRING_INDEX(arr.customer, '|', 1) AS code_client,
                     arr.linked_appl_id AS Numero_compte,
                     acc_det.id as Numero_pret,
-                    CASE 
-                        WHEN cust.sector != 1000 AND cust.nom_complet IS NOT NULL THEN
-                            CASE 
-                                WHEN cust.nom_complet LIKE '% % %' THEN 
-                                    SUBSTRING_INDEX(cust.nom_complet, ' ', 
-                                        (LENGTH(cust.nom_complet) - LENGTH(REPLACE(cust.nom_complet, ' ', '')) + 1) DIV 2)
-                                ELSE cust.nom_complet
-                            END
-                        ELSE cust.nom_complet
-                    END AS Nom_compte,
+                    cust.nom_complet AS Nom_compte,
                     cust.industry AS Secteur_Activite,
                     cust.gender AS Titre,
                     acc.opening_date AS date_decaissement,  
