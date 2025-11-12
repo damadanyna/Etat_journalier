@@ -39,13 +39,15 @@ def initialize(name:str):
         if not createIndexGeneral:
             raise Exception("Erreur lors de la création des index généraux")
         
+        createTempClients = dav_unique.create_temp_client()
+        if not createTempClients:
+            raise Exception("erreur Creation table temp client")
+        
         createIndex = dav_unique.create_index()
         if not createIndex:
             raise Exception("Erreur lors de la création des index")
         
-        createTempClients = dav_unique.create_temp_client()
-        if not createTempClients:
-            raise Exception("erreur Creation table temp client")
+        
         
         createFunctions = dav_unique.create_funct()
         if not createFunctions:
@@ -64,10 +66,10 @@ def initialize(name:str):
         table_name_dat = db_get.create_tableDatPreCompute(name)
         table_name_dav = dav_unique.create_table_dav(name)
         table_name_epr = dav_unique.create_table_epr(name)
-        table_name_dec = decaissement.generate_decaissement_report(name)        
+        # table_name_dec = decaissement.generate_decaissement_report(name)        
 
         
-        if not table_name_dat or not table_name_dav or not table_name_epr or not table_name_dec:
+        if not table_name_dat or not table_name_dav or not table_name_epr :
             raise Exception("Erreur lors de la création des tables DAT, DAV et EPR et Decaissement")
         
         operation.calculeAmtCap(table_name_dat)
@@ -79,8 +81,8 @@ def initialize(name:str):
                     "message": f"Table créée et nettoyée et calculer : {table_name_dav} et {table_name_epr} et {table_name_dat}✅",
                     "table_name_dav": table_name_dav,
                     "table_name_epr": table_name_epr,
-                    "table_name_dat": table_name_dat,
-                    "table_name_dec": table_name_dec  
+                    "table_name_dat": table_name_dat
+                    # "table_name_dec": table_name_dec  
         })
         
     except Exception as e:
