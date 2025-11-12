@@ -57,7 +57,7 @@
           <v-list-item
             v-for="date in historyDates"
             :key="date.label"
-            @click="() => selectDate(date.label)"
+  @click="() => selectDateStatOf(date.label, date.stat_of)"
             role="button"
           >
             <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
@@ -355,6 +355,22 @@ async function selectDate(date,stat_compte) {
     window.dispatchEvent(new CustomEvent('table-date-selected', { detail: { date, stat_compte } }))
   }
 }
+async function selectDateStatOf(date, stat_of) {
+  selectedDate.value = date
+
+  // 🔹 Met à jour le store Pinia
+  popupStore.selected_date = date
+  popupStore.selected_date_stat_of = stat_of
+
+  // 🔹 Ferme le menu
+  menu.value = false
+
+  // 🔹 Émet un événement global
+  window.dispatchEvent(new CustomEvent('table-date-stat-of-selected', {
+    detail: { date, stat_of }
+  }))
+}
+
 
 
 watch(historyDates, (val) => {
