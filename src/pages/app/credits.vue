@@ -3,7 +3,7 @@
     <h3>Chargement ...</h3>
 </div> -->
 
-<div  v-if="selected_date?.stat_of==null ||   selected_date?.stat_of=='' || selected_date?.stat_of=='NULL'">
+<div v-if="!popupStore.selected_date_stat_of || popupStore.selected_date_stat_of === 'NULL'">
   <v-btn @click="runAllSteps()"
           class="me-2 text-none ml-10 text-white"
           color="#00DF76"
@@ -102,7 +102,7 @@
 </template>
 
 <script setup> 
-import { ref, watch,inject } from 'vue' 
+import { ref, watch,inject,onMounted,onUnmounted } from 'vue' 
 import { usePopupStore } from '../../stores'
 import sparkLineVue from '../../components/sparkLines/sparkLineVue.vue';
 import Data_viewer from '../../components/Data_Cart_view.vue';
@@ -143,6 +143,15 @@ watch(
   },
   { immediate: true }
 );
+const handleDateStatOfSelection = (event) => {
+  const { date, stat_of } = event.detail
+  selected_date.value = { label: date, stat_of }
+  popupStore.selected_date = date
+  popupStore.selected_date_stat_of = stat_of
+
+  console.log("📅 Date sélectionnée (stat_of):", date)
+  console.log("📊 Statut stat_of:", stat_of)
+}
 
  
 
@@ -299,7 +308,13 @@ const getSubtitle = (status) => {
 }
 
  
- 
+ onMounted(() => {
+  window.addEventListener('table-date-stat-of-selected', handleDateStatOfSelection)
+})
+onUnmounted(() => {
+  window.removeEventListener('table-date-stat-of-selected', handleDateStatOfSelection)
+})
+
  
 </script>
 
