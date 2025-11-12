@@ -344,10 +344,9 @@ async function fetchData(baseUrl, date = null) {
 }
 
 async function selectDate(date,stat_compte) {
-  console.log(date);
   
   selectedDate.value = date
-   popupStore.selected_date = date
+  popupStore.selected_date = date
   popupStore.selected_date_stat_compte = stat_compte
   usePopupStore().selected_date = date
   menu.value = false
