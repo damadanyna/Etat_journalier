@@ -57,7 +57,7 @@
           <v-list-item
             v-for="date in historyDates"
             :key="date.label"
-               @click="() => selectDateStatOf(date.label, date.stat_of)"
+            @click="() => selectDate(date.label)"
             role="button"
           >
             <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''">
@@ -161,7 +161,7 @@
 
 <script setup>
 import user_btn_profil from './user_btn_profil.vue'
-import { ref, watch, onMounted,inject,computed, popScopeId } from 'vue'
+import { ref, watch, onMounted,inject,computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePopupStore } from '../stores'
 import * as XLSX from 'xlsx'
@@ -344,6 +344,7 @@ async function fetchData(baseUrl, date = null) {
 }
 
 async function selectDate(date,stat_compte) {
+  
   selectedDate.value = date
   popupStore.selected_date = date
   popupStore.selected_date_stat_compte = stat_compte
@@ -353,19 +354,6 @@ async function selectDate(date,stat_compte) {
  if (isCompte.value) {
     window.dispatchEvent(new CustomEvent('table-date-selected', { detail: { date, stat_compte } }))
   }
-}
-
-// 📅 Sélection date stat_of
-async function selectDateStatOf(date, stat_of) {
- 
-  
-  selectedDate.value = date
-  usePopupStore().selected_date = date
-  usePopupStore().selected_date_stat_of = stat_of 
-  menu.value = false 
-  window.dispatchEvent(new CustomEvent('table-date-stat-of-selected', {
-    detail: { date, stat_of }
-  }))
 }
 
 
