@@ -62,6 +62,8 @@ const headersBase = [
   { title: '#', value: 'index', sortable: false },
 ];
 
+
+const popupStore = usePopupStore()
 const headers = {
   encours: [
     ...headersBase, 
@@ -142,8 +144,6 @@ const tabs = ref([
 ]);
 
 async function fetchData(url, listRef, storeKey) { 
-   
-  
   usePopupStore()[storeKey]=[]
   try { 
     const response = await fetch(url);
@@ -164,26 +164,23 @@ async function fetchData(url, listRef, storeKey) {
 
  
 
-watch(usePopupStore().selected_date, (val) => {  
+ 
+
+watch(() => popupStore.selected_date, (val) => {   
+  
   tabs.value[0].liste=[] 
   tabs.value[1].liste=[]  
-
-
-  fetchData(`${api}/api/get_encours_credits?date=${val.value}`, listes.encours, 'encours_actual_data');
-  fetchData(`${api}/api/encours_remboursement?date=${val.value}`, listes.remboursement, 'remboursement_actual_data');
-  
-  
-
+  fetchData(`${api}/api/get_encours_credits?date=${val}`, listes.encours, 'encours_actual_data');
+  fetchData(`${api}/api/encours_remboursement?date=${val}`, listes.remboursement, 'remboursement_actual_data');
 });
 
 
 onMounted(() => {
-  
-  // const date = '20250829';
-  // fetchData(`${api}/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
-  // fetchData(`${api}/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
-  // fetchData(`${api}/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');
-  // fetchData(`${api}/api/encours_limit?limit_type=2900`, listes.caution, 'limit_caution_actual_data');
+  const date = '20250919';
+  fetchData(`${api}/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
+  fetchData(`${api}/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
+  fetchData(`${api}/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');
+  fetchData(`${api}/api/encours_limit?limit_type=2900`, listes.caution, 'limit_caution_actual_data');
 });
 </script>
 <style scoped>

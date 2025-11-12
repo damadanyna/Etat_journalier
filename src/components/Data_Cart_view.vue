@@ -34,26 +34,39 @@ const api = inject('api')
 const stat_local_ref  = ref([])
 const stat_PA  = ref([])
 
-// async function selectDate(date) {
-  
-//  charts.value = []
-//   selectedDate.value = date
-//   usePopupStore().selected_date.value = date
-//   menu.value = false
-   
+ 
 
-// }
+const popupStore = usePopupStore()
+
+watch(
+  () => popupStore.selected_date,   // 👉 fonction getter réactive
+  async (data) => {
+    charts.value = []
+    stat_PA.value = await fetchData(`${api}/api/get_pa_class`, data)
+    updateSecondChartFromData(
+      stat_PA.value,
+      'theard_chart',
+      "180",
+      ['#FF0031', '#FF00FF', '#00FFFF', '#00c62b', '#ffffff'],
+      '300px'
+    )
+
+    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`, data, '1000px')
+    updateSecondChartFromData(stat_local_ref.value, 'second_chart', "360")
+  }
+)
+ 
 
 
-watch(usePopupStore().selected_date, async(data) => {  
-  charts.value = []
-     stat_PA.value = await fetchData(`${api}/api/get_pa_class`,data.value) 
-    updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
+// watch(usePopupStore().selected_date, async(data) => {  
+//   charts.value = []
+//      stat_PA.value = await fetchData(`${api}/api/get_pa_class`,data.value) 
+//     updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
     
-    stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`, data.value,'1000px') 
-    updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
+//     stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`, data.value,'1000px') 
+//     updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
   
-});
+// });
 
  
 
@@ -120,13 +133,13 @@ onMounted(() => {
 
  (async () => {
     stat_PA.value = await fetchData(`${api}/api/get_pa_class`,'20250918') 
-    updateSecondChartFromData(stat_PA.value,'theard_chart',180,['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
+    updateSecondChartFromData(stat_PA.value,'theard_chart',"180",['#FF0031',  '#FF00FF','#00FFFF','#00c62b','#ffffff'], '300px') 
   })();
 
   
  (async () => {
     stat_local_ref.value = await fetchData(`${api}/api/get_local_ref`,'20250918','1000px') 
-    updateSecondChartFromData(stat_local_ref.value,'second_chart',360)
+    updateSecondChartFromData(stat_local_ref.value,'second_chart',"360")
     
   })();
 })

@@ -13,7 +13,7 @@ import {  ref, computed,watch,inject  } from 'vue'
 
 const api = inject('api') 
 const props = defineProps({
-  selected_date: Object
+  selected_date: ""
 }) 
 const capitalSums = ref([])
 const loading = ref(true)
