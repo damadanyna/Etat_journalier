@@ -1,7 +1,5 @@
-<!-- filepath: d:\Etat_journalier\src\components\sessions\userId.vue -->
 <template>
   <div v-if="user" class="user-details-container">
-    <!-- En-tête avec bouton retour -->
     <div class="header-section">
       <v-btn 
         @click="$emit('back')" 
@@ -13,14 +11,12 @@
         Retour à la liste
       </v-btn>
       <h1 class="text-h4 font-weight-bold primary--text">
-        👤 Profil Utilisateur
+         Profil Utilisateur
       </h1>
     </div>
 
-    <!-- Carte principale des informations -->
     <v-card elevation="4" class="rounded-xl user-card">
       <v-card-text>
-        <!-- En-tête de la carte -->
         <div class="user-header">
           <v-avatar color="primary" size="64" class="user-avatar">
             <span class="text-h5 white--text">
@@ -52,11 +48,9 @@
           </div>
         </div>
 
-        <!-- Informations utilisateur -->
         <v-divider class="my-6"></v-divider>
         
         <v-row>
-          <!-- Colonne informations de base -->
           <v-col cols="12" md="6">
             <h3 class="text-h6 mb-4 section-title">
               <v-icon color="primary" class="mr-2">mdi-account-details</v-icon>
@@ -90,7 +84,6 @@
             </v-list>
           </v-col>
 
-          <!-- Colonne informations du compte -->
           <v-col cols="12" md="6">
             <h3 class="text-h6 mb-4 section-title">
               <v-icon color="primary" class="mr-2">mdi-account-cog</v-icon>
@@ -125,7 +118,6 @@
           </v-col>
         </v-row>
 
-        <!-- Actions -->
         <v-divider class="my-6"></v-divider>
         
         <div class="actions-section">
@@ -169,7 +161,6 @@
     </v-card>
   </div>
 
-  <!-- Loading state -->
   <div v-else class="loading-container">
     <v-progress-circular
       indeterminate
@@ -224,7 +215,6 @@ const validateUser = async () => {
   }
 }
 
-// Fonction pour formater les dates
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -236,7 +226,6 @@ const formatDate = (dateString) => {
   })
 }
 
-// Fonction pour les couleurs des privilèges
 const getPrivilegeColor = (priv) => {
   switch (priv?.toLowerCase()) {
     case 'admin': return 'red'
@@ -292,7 +281,7 @@ watch(() => props.userId, fetchUser)
 .section-title {
   display: flex;
   align-items: center;
-  color: #2c3e50;
+  color: #1960a8;
   border-bottom: 2px solid #e0e0e0;
   padding-bottom: 8px;
 }
@@ -312,7 +301,6 @@ watch(() => props.userId, fetchUser)
 
 .text-value {
   font-size: 1rem !important;
-  color: #2c3e50 !important;
   font-weight: 500;
 }
 

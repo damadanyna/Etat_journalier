@@ -189,8 +189,8 @@ class Users:
                 ORDER BY created_at DESC
             """)
             result = conn.execute(query)
-            users = [dict(row._mapping) for row in result]  # conversion en liste de dictionnaires
-
+            users = [dict(row._mapping) for row in result] 
+            
             return {"users": users}
 
         except Exception as e:

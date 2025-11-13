@@ -1,4 +1,3 @@
-<!-- filepath: d:\Etat_journalier\src\components\sessions\users.vue -->
 <template>
   <div>
     <h2 class="text-h5 mb-4">👥 Liste des utilisateurs</h2>
@@ -53,7 +52,6 @@ defineProps({
   users: Array
 })
 
-// Configuration des colonnes (déclarée dans le template)
 const headers = [
   { title: 'ID', key: 'id', align: 'center', width: '80px' },
   { title: 'Nom d\'utilisateur', key: 'username' },
@@ -62,7 +60,6 @@ const headers = [
   { title: 'Statut', key: 'validate_status', align: 'center' }
 ]
 
-// Fonction pour les couleurs des privilèges
 function getPrivilegeColor(priv) {
   switch (priv?.toLowerCase()) {
     case 'admin': return 'red-lighten-1'
@@ -90,7 +87,6 @@ function getPrivilegeColor(priv) {
 
 h2 {
   font-weight: 600;
-  color: #2b2b2b;
 }
 
 :deep(.v-chip) {

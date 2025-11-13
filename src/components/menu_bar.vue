@@ -180,11 +180,12 @@ const historyDates  = ref([])
 const isEsriPage = computed(() => route.path === '/app/esri')
 const isChangePage = computed(() => route.path === '/app/change')
 const isCompte = computed(() => route.path === '/app/dav')
-
+const isSession = computed(() => route.path === '/app/session')
 const toolbarTitle = computed(() => {
   if (isEsriPage.value) return 'ESRI'
   if (isChangePage.value) return 'Change'
   if (isCompte.value) return 'Encours Compte'
+  if (isSession.value) return 'Gestion des utilisateurs'
   return 'Encours des crédits'
 })
 
