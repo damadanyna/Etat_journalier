@@ -279,10 +279,17 @@ const handleDateSelection = (event) => {
   console.log("📅 Table sélectionnée - Initialisée:", isInitialized.value)
 
 }
+
 onMounted(() => {
+  // Synchronise la sélection au chargement
+  const savedTable = localStorage.getItem("selectedTable")
+  if (savedTable) {
+    selectedTable.value = savedTable
+    popupStore.selected_date = savedTable
+  }
   window.addEventListener('export-dav-data', handleExportEvent)
-  window.addEventListener('table-date-selected', handleDateSelection) //  ecouteur date selection
-  fetchTables() 
+  window.addEventListener('table-date-selected', handleDateSelection)
+  fetchTables()
 })
 
 onUnmounted(() => {
@@ -299,6 +306,14 @@ const fetchTables = async () => {
   }
 }
 
+watch(selectedTable, (newVal) => {
+  if (newVal) {
+    console.log("Table persistée :", localStorage.getItem("selectedTable"))
+    localStorage.setItem("selectedTable", newVal)
+    popupStore.selected_date = newVal
+  }
+})
+
 watch(() => popupStore.selected_date, (newDate) => {
     console.log(" Store updated - selected_date:", newDate)
 
@@ -306,6 +321,8 @@ watch(() => popupStore.selected_date, (newDate) => {
     selectedTable.value = newDate
     localStorage.setItem("selectedTable", newDate)
     console.log("📅 Table sélectionnée via store:", selectedTable.value)
+        console.log("Nom de la table utilisée :", selectedTable.value, typeof selectedTable.value)
+
   }
 }, { immediate: true })
 

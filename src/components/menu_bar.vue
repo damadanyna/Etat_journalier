@@ -348,7 +348,8 @@ async function selectDate(date,stat_compte) {
   selectedDate.value = date
   popupStore.selected_date = date
   popupStore.selected_date_stat_compte = stat_compte
-  usePopupStore().selected_date = date
+  localStorage.setItem("selectedTable", date) // <-- Ajout ici
+
   menu.value = false
    
  if (isCompte.value) {
@@ -374,9 +375,22 @@ async function selectDateStatOf(date, stat_of) {
 
 
 watch(historyDates, (val) => {
-  if (Array.isArray(val) && val.length > 0) { 
-    selectedDate.value = val[0].label
-    console.log("📅 Date sélectionnée automatiquement :", selectedDate.value)
+  if (Array.isArray(val) && val.length > 0) {
+    // Trie les dates du plus récent au plus ancien
+    const sorted = [...val].sort((a, b) => b.label.localeCompare(a.label))
+    const lastDate = sorted[0].label
+    const lastStatCompte = sorted[0].stat_compte
+
+    selectedDate.value = lastDate
+    popupStore.selected_date = lastDate
+    popupStore.selected_date_stat_compte = lastStatCompte
+    localStorage.setItem("selectedTable", lastDate)
+
+    // Émet l'événement pour synchroniser la sélection
+    if (isCompte.value) {
+      window.dispatchEvent(new CustomEvent('table-date-selected', { detail: { date: lastDate, stat_compte: lastStatCompte } }))
+    }
+    console.log("📅 Dernière date sélectionnée automatiquement :", lastDate)
   }
 }, { immediate: true })
 </script>
