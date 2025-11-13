@@ -78,9 +78,8 @@ const initializeTable = async () => {
   }, 500)
   try {
     const res = await axios.post(
-      `http://127.0.0.1:8000/api/compte/compte_init/${selectedHistory.value.label}`,
-      {},
-      { timeout: 990000 } // 120 secondes
+      `http://127.0.0.1:8000/api/compte/compte_init/${selectedHistory.value.label}`
+       // 120 secondes
     )
 
     if (res.data.status === "success") {
