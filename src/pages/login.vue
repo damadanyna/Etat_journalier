@@ -73,6 +73,7 @@ const handleSubmit = async () => {
         // ✅ Stocker le token dans le localStorage
         if (data.access_token) {
           localStorage.setItem("access_token", data.access_token);
+          localStorage.setItem("privilege", data.privilege);
           location.replace('/app/credits')
           // alert(`Bienvenue ${data.user.username} !`);
         } else {

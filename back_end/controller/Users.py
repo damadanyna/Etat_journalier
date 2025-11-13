@@ -25,10 +25,22 @@ class Users:
                     password VARCHAR(255) NOT NULL,
                     immatricule VARCHAR(50) NOT NULL,
                     privillege VARCHAR(50) NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    validate_at TIMESTAMP NULL ,
+                    validate_by VARCHAR(255) NULL,
+                    validate_status BOOLEAN DEFAULT FALSE
                 )
             """
-            conn.execute(text(query))  # exécute la création
+            conn.execute(text(query))
+            alter_queries = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS validate_at TIMESTAMP NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS validate_by VARCHAR(255) NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS validate_status BOOLEAN DEFAULT FALSE"
+    ]
+            for q in alter_queries:
+                conn.execute(text(q))
+                
+                # exécute la création
             conn.commit()  # commit pour que ça soit pris en compte
             print("[INFO] Table 'users' créée ou déjà existante")
         except Exception as e:
@@ -91,6 +103,9 @@ class Users:
             # Vérifier le mot de passe
             if not bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
                 raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+            # Vérifier si l'utilisateur est validé
+            if not user["validate_status"]:
+                raise HTTPException(status_code=403, detail="Compte en attente de validation par un administrateur")
 
             # Générer le JWT
             token_data = {
@@ -104,7 +119,8 @@ class Users:
                 "message": "Connexion réussie",
                 "access_token": token,
                 "token_type": "bearer",
-                "user": {"username": username}
+                "user": {"username": username},
+                "privilege": user["privillege"]
             }
 
         except HTTPException as http_err:
@@ -117,8 +133,96 @@ class Users:
                 conn.close()
 
     
+    def validate_user(self, request: Request, username: str):
+        conn = None
+        try:
+            current_user = self.get_current_user(request)
+            admin_name = current_user.get("username")
+
+            if current_user.get("privillege") not in ["admin", "superadmin"]:
+                raise HTTPException(status_code=403, detail="Accès refusé : privilège insuffisant")
+
+            conn = self.db.connect()
+            query = text("""
+                UPDATE users
+                SET validate_status = TRUE,
+                    validate_by = :admin_name,
+                    validate_at = NOW()
+                WHERE username = :username
+            """)
+            result = conn.execute(query, {
+                "username": username,
+                "admin_name": admin_name
+            })
+            conn.commit()
+
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+            return {"message": f"Utilisateur {username} validé avec succès par {admin_name}"}
+
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            if conn:
+                conn.close()
+
+
     
-    
+    def getListeUser(self):
+        conn = None
+        try:
+            conn = self.db.connect()
+            query = text("""
+                SELECT 
+                    id,
+                    username,
+                    immatricule,
+                    privillege,
+                    validate_status,
+                    validate_by,
+                    validate_at,
+                    created_at
+                FROM users
+                ORDER BY created_at DESC
+            """)
+            result = conn.execute(query)
+            users = [dict(row._mapping) for row in result]  # conversion en liste de dictionnaires
+
+            return {"users": users}
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des utilisateurs : {e}")
+        finally:
+            if conn:
+                conn.close()
+                
+                
+    def getUserById(self,user_id: int ):
+        conn = None
+        try:
+            conn = self.db.connect()
+            query = text("""
+                SELECT id, username, immatricule, privillege, created_at, validate_by, validate_at,validate_status
+                FROM users
+                WHERE id = :user_id
+            """)
+            result = conn.execute(query, {"user_id": user_id}).fetchone()
+
+            if not result:
+                raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+            user_data = dict(result._mapping)
+
+            return {"user": user_data}
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            if conn:
+                conn.close()
 
     def get_current_user(self, request: Request):
         auth_header = request.headers.get("Authorization")
