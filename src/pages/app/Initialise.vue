@@ -37,6 +37,16 @@
         </v-alert>
       </v-col>
     </v-row>
+
+    <v-progress-linear
+      v-if="loading"
+      :value="progress"
+      color="primary"
+      height="8"
+      striped
+      indeterminate
+      class="mb-4"
+    />
   </v-container>
 </template>
 
@@ -49,6 +59,7 @@ const selectedHistory = ref(null)
 const loading = ref(false)
 const message = ref("")
 const messageType = ref("info")
+const progress = ref(0)
 
 const historyRef = ref(null)
 
@@ -61,9 +72,15 @@ const initializeTable = async () => {
   if (!selectedHistory.value) return
 
   loading.value = true
+  progress.value = 0
+  const interval = setInterval(() => {
+    if (progress.value < 90) progress.value += 5
+  }, 500)
   try {
     const res = await axios.post(
-      `http://127.0.0.1:8000/api/compte/compte_init/${selectedHistory.value.label}`
+      `http://127.0.0.1:8000/api/compte/compte_init/${selectedHistory.value.label}`,
+      {},
+      { timeout: 990000 } // 120 secondes
     )
 
     if (res.data.status === "success") {
@@ -89,6 +106,7 @@ const initializeTable = async () => {
     message.value = "Erreur de connexion au serveur ⚠️"
     messageType.value = "error"
   } finally {
+    clearInterval(interval)
     loading.value = false
    }
 }
