@@ -251,7 +251,7 @@ CREATE FUNCTION calcul_montant_capital(
                     arr.product_line = 'LENDING'
                     AND arr.arr_status IN ('AUTH', 'CURRENT')
                     AND acc.opening_date >= '20241125'
-                    AND em.proc_status = 'DISBURSED' limit 100; 
+                    AND em.proc_status = 'DISBURSED'; 
                 
             """
             
