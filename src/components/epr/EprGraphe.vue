@@ -53,13 +53,14 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue"
+import { ref, watch,inject } from "vue"
 import axios from "axios"
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js"
 import { Bar } from "vue-chartjs"
 
 // Enregistrement des éléments Chart.js
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
+const api = inject('api') 
 
 // Props venant de dat.vue
 const props = defineProps({
@@ -91,7 +92,7 @@ const fetchData = async () => {
   if (!props.tableName || !x.value || !y.value) return
   try {
     const res = await axios.get(
-      `http://127.0.0.1:8000/api/eprGraphe/${props.tableName}`,
+      `${api}/api/eprGraphe/${props.tableName}`,
       { params: { x: x.value, y: y.value } }
     )
 

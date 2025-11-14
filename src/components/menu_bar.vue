@@ -165,6 +165,7 @@ import { ref, watch, onMounted,inject,computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePopupStore } from '../stores'
 import * as XLSX from 'xlsx'
+import { useRouter } from 'vue-router'
 
 
 const route = useRoute()
@@ -173,6 +174,7 @@ const selectedDate = ref('Chargement en cours...')
 const menu = ref(false)
 const popupStore = usePopupStore()
 const exporting = ref(false)
+const router = useRouter()
 
 const historyDates  = ref([])
 
@@ -181,11 +183,16 @@ const isEsriPage = computed(() => route.path === '/app/esri')
 const isChangePage = computed(() => route.path === '/app/change')
 const isCompte = computed(() => route.path === '/app/dav')
 const isSession = computed(() => route.path === '/app/session')
+const isInitialise = computed(() => route.path === '/app/Initialise')
+
+
 const toolbarTitle = computed(() => {
   if (isEsriPage.value) return 'ESRI'
   if (isChangePage.value) return 'Change'
   if (isCompte.value) return 'Encours Compte'
   if (isSession.value) return 'Gestion des utilisateurs'
+  if (isInitialise.value) return 'Initialisation Compte'
+
   return 'Encours des crédits'
 })
 
@@ -354,9 +361,13 @@ async function selectDate(date,stat_compte) {
   menu.value = false
    
  if (isCompte.value) {
-    window.dispatchEvent(new CustomEvent('table-date-selected', { detail: { date, stat_compte } }))
+    if (stat_compte === 0) {
+      router.push({ name: 'Initialise', query: { label: date } })
+    } else {
+      window.dispatchEvent(new CustomEvent('table-date-selected', { detail: { date, stat_compte } }))
+    }
   }
-}
+}  
 async function selectDateStatOf(date, stat_of) {
   selectedDate.value = date
 

@@ -1,60 +1,70 @@
+<!-- Intitialise.vue (style amélioré, script intact) -->
 <template>
-  <v-container class="unified-container" fluid>
-    <!-- Liste des history_insert -->
-    <HistorySelected ref="historyRef" @select="onSelectHistory" />
+<v-container class="init-container" fluid>
+<HistorySelected ref="historyRef" @select="onSelectHistory" />
 
-    <v-row class="mt-6" v-if="selectedHistory">
-      <v-col cols="12" class="text-center">
-        <h3>Table sélectionnée : {{ selectedHistory.label }}</h3>
 
-        <!-- Si non initialisé -->
-        <v-btn
-          v-if="!selectedHistory.stat_compte"
-          color="primary"
-          class="mt-4"
-          @click="initializeTable"
-          :loading="loading"
-        >
-          Initialiser                         
-        </v-btn>
+<v-row class="mt-10 fade-in" v-if="selectedHistory">
+<v-col cols="12" class="text-center">
+<h3 class="title-selected">Table sélectionnée : {{ selectedHistory.label }}</h3>
 
-        <v-alert
-          v-else
-          type="success"
-          border="start"
-          class="mt-4"
-        >
-          Déjà initialisé
-        </v-alert>
 
-        <v-alert
-          v-if="message"
-          :type="messageType"
-          border="start"
-          class="mt-4"
-        >
-          {{ message }}
-        </v-alert>
-      </v-col>
-    </v-row>
+<v-btn
+v-if="!selectedHistory.stat_compte"
+color="primary"
+class="mt-6 action-button"
+@click="initializeTable"
+:loading="loading"
+>
+Initialiser
+</v-btn>
 
-    <v-progress-linear
-      v-if="loading"
-      :value="progress"
-      color="primary"
-      height="8"
-      striped
-      indeterminate
-      class="mb-4"
-    />
-  </v-container>
+
+<v-alert
+v-else
+type="success"
+border="start"
+class="mt-6 nice-alert"
+>
+Déjà initialisé
+</v-alert>
+
+
+<v-alert
+v-if="message"
+:type="messageType"
+border="start"
+class="mt-4 nice-alert"
+>
+{{ message }}
+</v-alert>
+</v-col>
+</v-row>
+
+
+<v-progress-linear
+v-if="loading"
+:value="progress"
+color="primary"
+height="10"
+rounded
+striped
+indeterminate
+class="progress-bar"
+/>
+</v-container>
 </template>
 
+
+
 <script setup>
-import { ref } from "vue"
+import { ref ,inject} from "vue"
 import axios from "axios"
 import HistorySelected from "@/components/dat/HistorySelected.vue"
+import { onMounted } from "vue"
+import { useRoute } from "vue-router"
 
+const route = useRoute()
 const selectedHistory = ref(null)
 const loading = ref(false)
 const message = ref("")
@@ -62,6 +72,7 @@ const messageType = ref("info")
 const progress = ref(0)
 
 const historyRef = ref(null)
+const api = inject('api') 
 
 const onSelectHistory = (item) => {
   selectedHistory.value = item
@@ -78,7 +89,7 @@ const initializeTable = async () => {
   }, 500)
   try {
     const res = await axios.post(
-      `http://127.0.0.1:8000/api/compte/compte_init/${selectedHistory.value.label}`
+      `${api}/api/compte/compte_init/${selectedHistory.value.label}`
     )
 
     if (res.data.status === "success") {
@@ -108,7 +119,15 @@ const initializeTable = async () => {
     loading.value = false
    }
 }
-
+onMounted(async () => {
+  await historyRef.value.fetchHistory()
+  // Récupère la date depuis la query ou localStorage
+  const label = route.query.label || localStorage.getItem("selectedTable")
+  if (label) {
+    const found = historyRef.value.history.find(h => h.label === label)
+    if (found) selectedHistory.value = found
+  }
+})
 </script>
 
 <style scoped>

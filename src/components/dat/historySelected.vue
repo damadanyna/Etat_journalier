@@ -31,8 +31,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, inject,onMounted } from "vue"
 import axios from "axios"
+const api = inject('api') 
 
 const history = ref([])
 
@@ -40,11 +41,12 @@ const statusKeys = [
   { key: "dat_status", label: "DAT" },
   { key: "dav_status", label: "DAV" },
   { key: "epr_status", label: "EPR" },
+  { key: "dec_status", label: "DEC" },
 ]
 
 const fetchHistory = async () => {
   try {
-    const res = await axios.get("http://127.0.0.1:8000/api/history/liste")
+    const res = await axios.get(`${api}/api/history/liste`)
     history.value = res.data.history || []
   } catch (err) {
     console.error("Erreur lors du chargement de l'history_insert:", err)

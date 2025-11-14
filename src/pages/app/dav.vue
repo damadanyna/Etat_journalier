@@ -299,7 +299,7 @@ onUnmounted(() => {
 
 const fetchTables = async () => {
   try {
-    const res = await axios.get("http://127.0.0.1:8000/api/history/liste")
+    const res = await axios.get(`${api}/api/history/liste`)
     history.value = res.data.history || []
   } catch (err) {
     console.error("Erreur lors du chargement de l'history:", err)
@@ -335,8 +335,5 @@ watch(() => popupStore.selected_date, (newDate) => {
   overflow-y: auto;
   padding-bottom: 20px;
   padding: 0 10px; 
-}
-.unified-container::-webkit-scrollbar {
-  display: none; 
 }
 </style>

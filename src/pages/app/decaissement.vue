@@ -137,6 +137,7 @@ import { usePopupStore } from '@/stores'
 const popupStore = usePopupStore()
 import { useRouter } from 'vue-router'
 
+const api = inject('api') 
 
 // Composants DAT
 import ResumerDat from "@/components/dat/ResumerDat.vue"
@@ -167,7 +168,6 @@ const activeTab = ref(0)
 const displayComponent = ref("tableau")
 const router = useRouter()
 
-const api = inject('api') 
 
 //verifier le status
 const isInitialized = computed(() => {
@@ -292,7 +292,7 @@ onUnmounted(() => {
 
 const fetchTables = async () => {
   try {
-    const res = await axios.get("http://127.0.0.1:8000/api/history/liste")
+    const res = await axios.get(`${api}/api/history/liste`)
     history.value = res.data.history || []
   } catch (err) {
     console.error("Erreur lors du chargement de l'history:", err)

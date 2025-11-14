@@ -37,6 +37,9 @@ class DavUnique:
             if 'epr_status' not in existing_columns:
                 columns_to_add.append("ADD COLUMN epr_status BOOLEAN DEFAULT FALSE")
                 
+            if 'dec_status' not in existing_columns:
+                columns_to_add.append("ADD COLUMN dec_status BOOLEAN DEFAULT FALSE")
+                
             if 'stat_compte' not in existing_columns:
                 columns_to_add.append("ADD COLUMN stat_compte BOOLEAN DEFAULT FALSE")
             
@@ -359,7 +362,7 @@ class DavUnique:
                 LEFT JOIN account_mcbc_live_full acc ON acc.id = arr.linked_appl_id
                 WHERE arr.product_line = 'ACCOUNTS'
                     AND arr.arr_status IN ('AUTH', 'CURRENT','PENDING.CLOSURE')
-                    AND arr.product_group = 'DV.SP.MG' ;
+                    AND arr.product_group = 'DV.SP.MG';
             """
             
             with self.db.connect() as conn:
@@ -483,6 +486,7 @@ class DavUnique:
                         SET dat_status = TRUE,
                             dav_status = TRUE,
                             epr_status = TRUE,
+                            dec_status = TRUE,
                             stat_compte = TRUE
                         WHERE label = '{name}';
                 """

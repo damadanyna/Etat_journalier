@@ -82,7 +82,7 @@ def initialize(name:str):
                     "table_name_dav": table_name_dav,
                     "table_name_epr": table_name_epr,
                     "table_name_dat": table_name_dat,
-                    "table_name_dec": table_name_dec.get("table_name") if isinstance(table_name_dec, dict) else table_name_dec,
+                     "table_name_dec": table_name_dec.get("table_name") if isinstance(table_name_dec, dict) else table_name_dec,
         })
         
     except Exception as e:
