@@ -1,6 +1,7 @@
 <!-- filepath: d:\Etat_journalier\src\pages\app\session.vue -->
 
 <template>
+   <v-container class="unified-container" fluid>
   <div>
     <UsersComponent
       v-if="!selectedUserId"
@@ -13,6 +14,7 @@
       @back="selectedUserId = null"
     />
   </div>
+  </v-container>
 </template>
 
 <script setup>
@@ -43,3 +45,15 @@ const handleSelectUser = (id) => {
 
 onMounted(fetchUsers)
 </script>
+
+<style scoped>
+.unified-container {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding-bottom: 20px;
+  padding: 0 10px; 
+}
+.unified-container::-webkit-scrollbar {
+  display: none; 
+}
+</style>

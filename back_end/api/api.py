@@ -67,15 +67,44 @@ def protected(user_: str = Depends(get_user_from_request)):
 @router.post("/validate_user")
 def validate_user(
     request: Request,
-    username: str = Form(...)
+    username: str = Form(...),
+    role: str = Form(...),
+    admin_password: str = Form(...)
 ):
     current_user = user.get_current_user(request)
 
     if current_user.get("privillege") not in ["admin", "superadmin"]:
         raise HTTPException(status_code=403, detail="Accès refusé")
     
-    return user.validate_user(request, username)
+    return user.validate_user(request, username,role,admin_password)
 
+
+@router.post("/block_user")
+def block_user(
+    request: Request,
+    username: str = Form(...),
+    admin_password: str = Form(...)
+):
+    
+    current_user = user.get_current_user(request)
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    
+    return user.block_user(request, username, admin_password)
+
+
+@router.post("/update_user_role")
+def update_user_role(
+    request: Request,
+    username: str = Form(...),
+    role: str = Form(...),
+    admin_password: str = Form(...)
+):
+    current_user = user.get_current_user(request)
+
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    return user.update_user_role(request, username, role, admin_password)
 
 @router.get("/users")
 def get_users(request: Request):

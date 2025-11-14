@@ -15,6 +15,8 @@
       </h1>
     </div>
 
+
+
     <v-card elevation="4" class="rounded-xl user-card">
       <v-card-text>
         <div class="user-header">
@@ -35,15 +37,16 @@
                 {{ user.privillege }}
               </v-chip>
               <v-chip 
-                :color="user.validate_status ? 'green' : 'orange'" 
+                :color="user.block_status ? 'red' : (user.validate_status ? 'green' : 'orange')" 
                 variant="flat"
                 size="small"
               >
                 <v-icon start small>
-                  {{ user.validate_status ? 'mdi-check-circle' : 'mdi-clock-outline' }}
+                  {{ user.block_status ? 'mdi-block-helper' : (user.validate_status ? 'mdi-check-circle' : 'mdi-clock-outline') }}
                 </v-icon>
-                {{ user.validate_status ? 'Compte validé' : 'En attente' }}
+                {{ user.block_status ? 'Utilisateur bloqué' : (user.validate_status ? 'Compte validé' : 'En attente') }}
               </v-chip>
+
             </div>
           </div>
         </div>
@@ -123,14 +126,128 @@
         <div class="actions-section">
           <v-btn
             v-if="!user.validate_status && !loading"
-            @click="validateUser"
+            @click="showDialog = true"
             color="success"
             size="large"
             class="validate-btn"
           >
-            <v-icon start>mdi-check-circle</v-icon>
-            Valider cet utilisateur
-          </v-btn>
+
+            <v-icon start>mdi-block-helper</v-icon>
+        {{ user.block_status ? "Debloquer" : "Valider" }} l'utilisateur
+      </v-btn>
+          
+          <!-- MODALE DE VALIDATION -->
+          <v-dialog v-model="showDialog" max-width="450">
+            <v-card>
+              <v-card-title class="text-h6">
+                Confirmation {{ user.block_status ? "Deblockage" : "Validation" }} 
+              </v-card-title>
+
+              <v-card-text>
+                <p><strong>Utilisateur :</strong> {{ user.username }}</p>
+
+                <v-select
+                  v-model="selectedRole"
+                  :items="['user', 'admin']"
+                  label="Attribuer un rôle"
+                  variant="outlined"
+                />
+
+                <v-text-field
+                  v-model="adminPassword"
+                  type="password"
+                  label="Mot de passe administrateur"
+                  variant="outlined"
+                />
+              </v-card-text>
+
+              <v-card-actions>
+                <v-btn variant="text" @click="showDialog = false">Annuler</v-btn>
+                <v-btn color="primary" @click="confirmValidation">Confirmer</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
+      <!-- BOUTON BLOQUER/DEBLOQUER -->
+      <v-btn
+        v-if="user.validate_status && !loading"
+        color="error"
+        size="large"
+        class="block-user-btn mt-4"
+        @click="showBlockDialog = true"
+      >
+        <v-icon start>mdi-block-helper</v-icon>
+        {{ user.block_status ? "Débloquer" : "Bloquer" }} l'utilisateur
+      </v-btn>
+
+      <!-- MODALE BLOQUER/DEBLOQUER -->
+      <v-dialog v-model="showBlockDialog" max-width="450">
+        <v-card>
+          <v-card-title class="text-h6">
+            {{ user.block_status ? "Débloquer" : "Bloquer" }} l'utilisateur
+          </v-card-title>
+
+          <v-card-text>
+            <p><strong>Utilisateur :</strong> {{ user.username }}</p>
+            <v-text-field
+              v-model="adminPassword"
+              type="password"
+              label="Mot de passe administrateur"
+              variant="outlined"
+            />
+          </v-card-text>
+
+          <v-card-actions>
+            <v-btn variant="text" @click="showBlockDialog = false">Annuler</v-btn>
+            <v-btn color="primary" @click="confirmBlockUser">Confirmer</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+          <!-- BOUTON MODIFIER ROLE -->
+      <v-btn
+        v-if="user.validate_status && !loading"
+        color="warning"
+        size="large"
+        class="modify-role-btn mt-4"
+        @click="showRoleDialog = true"
+      >
+        <v-icon start>mdi-account-edit</v-icon>
+        Modifier le rôle
+      </v-btn>
+
+      <!-- MODALE DE MODIFICATION ROLE -->
+      <v-dialog v-model="showRoleDialog" max-width="450">
+        <v-card>
+          <v-card-title class="text-h6">
+            Modification du rôle
+          </v-card-title>
+
+          <v-card-text>
+            <p><strong>Utilisateur :</strong> {{ user.username }}</p>
+
+            <v-select
+              v-model="newRole"
+              :items="['user', 'admin', 'superadmin']"
+              label="Choisir un rôle"
+              variant="outlined"
+            />
+
+            <v-text-field
+              v-model="adminPassword"
+              type="password"
+              label="Mot de passe administrateur"
+              variant="outlined"
+            />
+          </v-card-text>
+
+          <v-card-actions>
+            <v-btn variant="text" @click="showRoleDialog = false">Annuler</v-btn>
+            <v-btn color="primary" @click="confirmRoleChange">Confirmer</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
 
           <v-progress-circular
             v-if="loading"
@@ -184,7 +301,6 @@ const user = ref(null)
 const loading = ref(false)
 const successMsg = ref('')
 const errorMsg = ref('')
-
 const fetchUser = async () => {
   try {
     const response = await axios.get(`${api}/api/user/${props.userId}`, {
@@ -210,6 +326,95 @@ const validateUser = async () => {
     await fetchUser()
   } catch (e) {
     errorMsg.value = "Erreur lors de la validation"
+  } finally {
+    loading.value = false
+  }
+}
+
+const showDialog = ref(false)
+const selectedRole = ref('user')
+const adminPassword = ref('')
+
+
+
+const confirmValidation = async () => {
+  loading.value = true
+  showDialog.value = false
+  errorMsg.value = ''
+  successMsg.value = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('username', user.value.username)
+    formData.append('role', selectedRole.value)
+    formData.append('admin_password', adminPassword.value)
+
+    const response = await axios.post(`${api}/api/validate_user`, formData, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+    })
+
+    successMsg.value = `Utilisateur validé avec le rôle "${selectedRole.value}"`
+
+    await fetchUser()
+
+  } catch (e) {
+    errorMsg.value = "Erreur : Mot de passe incorrect ou privilège insuffisant"
+  } finally {
+    loading.value = false
+  }
+}
+
+const showRoleDialog = ref(false)
+const newRole = ref(user.value?.privillege || 'user')
+
+const confirmRoleChange = async () => {
+  loading.value = true
+  showRoleDialog.value = false
+  errorMsg.value = ''
+  successMsg.value = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('username', user.value.username)
+    formData.append('role', newRole.value)
+    formData.append('admin_password', adminPassword.value)
+
+    const response = await axios.post(`${api}/api/update_user_role`, formData, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+    })
+
+    successMsg.value = `Rôle modifié avec succès en "${newRole.value}"`
+    await fetchUser()
+
+  } catch (e) {
+    errorMsg.value = "Erreur : Mot de passe incorrect ou privilège insuffisant"
+  } finally {
+    loading.value = false
+  }
+}
+
+
+const showBlockDialog = ref(false)
+
+const confirmBlockUser = async () => {
+  loading.value = true
+  showBlockDialog.value = false
+  errorMsg.value = ''
+  successMsg.value = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('username', user.value.username)
+    formData.append('admin_password', adminPassword.value)
+
+    const response = await axios.post(`${api}/api/block_user`, formData, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+    })
+
+    successMsg.value = response.data.message
+    await fetchUser()
+  } catch (e) {
+    errorMsg.value = "Erreur : Mot de passe incorrect ou privilège insuffisant"
   } finally {
     loading.value = false
   }
@@ -249,15 +454,30 @@ watch(() => props.userId, fetchUser)
 .header-section {
   margin-bottom: 30px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .back-btn {
-  margin-bottom: 20px;
+  align-self: flex-start;
+  margin-bottom: 10px;
+  transition: transform 0.2s;
+}
+
+.back-btn:hover {
+  transform: translateX(-3px);
 }
 
 .user-card {
   margin-top: 20px;
   overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.user-card:hover {
+  box-shadow: 0px 8px 24px rgba(0,0,0,0.15);
 }
 
 .user-header {
@@ -265,6 +485,15 @@ watch(() => props.userId, fetchUser)
   align-items: center;
   gap: 20px;
   padding: 20px 0;
+}
+
+.user-avatar {
+  font-weight: bold;
+  font-size: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-transform: uppercase;
 }
 
 .user-title {
@@ -284,6 +513,7 @@ watch(() => props.userId, fetchUser)
   color: #1960a8;
   border-bottom: 2px solid #e0e0e0;
   padding-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .info-list {
@@ -292,7 +522,8 @@ watch(() => props.userId, fetchUser)
 
 .info-list :deep(.v-list-item) {
   border-radius: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  transition: background-color 0.2s;
 }
 
 .info-list :deep(.v-list-item:hover) {
@@ -307,10 +538,25 @@ watch(() => props.userId, fetchUser)
 .actions-section {
   text-align: center;
   padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
 }
 
-.validate-btn {
-  min-width: 200px;
+.actions-section v-btn {
+  min-width: 220px;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.actions-section v-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.v-dialog .v-card {
+  border-radius: 16px;
 }
 
 .loading-container {
@@ -328,13 +574,28 @@ watch(() => props.userId, fetchUser)
     padding: 10px;
   }
   
+  .header-section {
+    text-align: center;
+    align-items: center;
+  }
+
+  .back-btn {
+    align-self: center;
+  }
+  
   .user-header {
     flex-direction: column;
     text-align: center;
+    gap: 16px;
   }
   
   .user-badges {
     justify-content: center;
   }
+
+  .actions-section {
+    gap: 16px;
+  }
 }
+
 </style>

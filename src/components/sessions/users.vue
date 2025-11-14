@@ -14,16 +14,16 @@
           @click:row="(event, { item }) => $emit('select-user', item.id)"
         >
           <template v-slot:item.validate_status="{ item }">
-            <v-chip
-              :color="item.validate_status ? 'green' : 'orange'"
-              variant="flat"
-              size="small"
-            >
-              <v-icon start size="18">
-                {{ item.validate_status ? 'mdi-check-circle' : 'mdi-timer-sand' }}
-              </v-icon>
-              {{ item.validate_status ? 'Validé' : 'En attente' }}
-            </v-chip>
+            <v-chip 
+                :color="item.block_status ? 'red' : (item.validate_status ? 'green' : 'orange')" 
+                variant="flat"
+                size="small"
+              >
+                <v-icon start small>
+                  {{ item.block_status ? 'mdi-block-helper' : (item.validate_status ? 'mdi-check-circle' : 'mdi-clock-outline') }}
+                </v-icon>
+                {{ item.block_status ? 'Utilisateur bloqué' : (item.validate_status ? 'Compte validé' : 'En attente') }}
+              </v-chip>
           </template>
 
           <template v-slot:item.privillege="{ item }">
@@ -38,7 +38,7 @@
 
           <template v-slot:item.id="{ item }">
             <span class="font-weight-bold text-blue-darken-2">
-              #{{ item.id }}
+              {{ item.id }}
             </span>
           </template>
         </v-data-table>
