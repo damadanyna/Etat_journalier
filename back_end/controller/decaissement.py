@@ -188,7 +188,11 @@ CREATE FUNCTION calcul_montant_capital(
     def create_decaissement_table(self, date_limite: str):
         try:
             table_name = f"decaissement_{date_limite}"
-            
+
+            # Calculer le premier et dernier jour du mois de date_limite
+            first_day_of_month = f"{date_limite[:6]}01"
+            last_day_of_month = f"{date_limite[:6]}31"  # MySQL gère bien les dates supérieures au max du mois
+
             query = f"""
                 CREATE TABLE {table_name} AS
                 SELECT
@@ -209,18 +213,16 @@ CREATE FUNCTION calcul_montant_capital(
                         AND id_comp_2 = 'PRINCIPALINT' 
                         LIMIT 1
                     ) AS taux_d_interet,
-                    -- Calcul du montant capital avec la fonction
                     calcul_montant_capital(
                         cb.type_sysdate, 
                         cb.debit_mvmt,  
                         cb.credit_mvmt,  
                         cb.open_balance,
-                        {date_limite}
+                        '{date_limite}'
                     ) AS montant_capital,
                     chg.charge_rate,
-                    -- Calcul des frais de dossier avec la fonction
                     calcul_frais_dossier(
-                        calcul_montant_capital(cb.type_sysdate, cb.debit_mvmt, cb.credit_mvmt, cb.open_balance,{date_limite}),
+                        calcul_montant_capital(cb.type_sysdate, cb.debit_mvmt, cb.credit_mvmt, cb.open_balance,'{date_limite}'),
                         chg.charge_rate
                     ) AS frais_de_dossier,
                     CASE
@@ -250,11 +252,10 @@ CREATE FUNCTION calcul_montant_capital(
                 WHERE 
                     arr.product_line = 'LENDING'
                     AND arr.arr_status IN ('AUTH', 'CURRENT')
-                    AND acc.opening_date >= '20241125'
+                    AND acc.opening_date BETWEEN '{first_day_of_month}' AND '{last_day_of_month}'
                     AND em.proc_status = 'DISBURSED'; 
-                
             """
-            
+
             with self.db.connect() as conn:
                 drop_query = f"DROP TABLE IF EXISTS {table_name}"
                 conn.execute(text(drop_query))
