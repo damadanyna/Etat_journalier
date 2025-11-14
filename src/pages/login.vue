@@ -27,6 +27,7 @@
           <a href="#" v-if="activeTab === 'signIn'" class="forgot">Mot de passe oublier?</a>
           <button type="submit">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
         </form>
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
         <div class="social-login"  v-if="activeTab === 'signIn'">
           <button class="google">G</button>
@@ -51,61 +52,61 @@ const immatricule = ref("")
 const errorMessage = ref("")
 
 const handleSubmit = async () => {    
+  errorMessage.value = "" // réinitialiser l'erreur
   try { 
+    let response, data;
+    
     if (activeTab.value === "signIn") {
-          // ---- Connexion ----
-        const formData = new FormData();
-        formData.append("username", username.value);
-        formData.append("password", password.value);
+      const formData = new FormData();
+      formData.append("username", username.value);
+      formData.append("password", password.value);
 
-        const response = await fetch(`${api}/api/signin`, {
-          method: "POST",
-          body: formData
-        });
+      response = await fetch(`${api}/api/signin`, {
+        method: "POST",
+        body: formData
+      });
 
-        console.log(response);
-        
+      data = await response.json();
 
-        if (!response.ok) throw new Error("Identifiants invalides");
+      if (!response.ok) {
+        throw new Error(data.detail || "Identifiants invalides");
+      }
 
-        const data = await response.json();
-
-        // ✅ Stocker le token dans le localStorage
-        if (data.access_token) {
-          localStorage.setItem("access_token", data.access_token);
-          localStorage.setItem("privilege", data.privilege);
-          location.replace('/app/credits')
-          // alert(`Bienvenue ${data.user.username} !`);
-        } else {
-          console.error("Token manquant dans la réponse");
-        }
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("privilege", data.privilege);
+      location.replace('/app/credits');
 
     } else {
-      // ---- Inscription ----
-        if (password.value !== verif_password.value) {
-          throw new Error("Les mots de passe ne correspondent pas")
-        } 
-        const formData = new FormData()
-        formData.append("username", username.value)
-        formData.append("password", password.value)
-        formData.append("immatricule", immatricule.value)
+      // Inscription
+      if (password.value !== verif_password.value) {
+        throw new Error("Les mots de passe ne correspondent pas");
+      } 
 
-        const response = await fetch(`${api}/api/signup`, {
-            method: "POST",  
-            body:  formData,
-            credentials: "include"
-        })
-      
+      const formData = new FormData();
+      formData.append("username", username.value);
+      formData.append("password", password.value);
+      formData.append("immatricule", immatricule.value);
 
-      if (!response.ok) throw new Error("Erreur lors de l'inscription")
-      const data = await response.json()
-      location.replace('/app/credits')
-      // alert(`Utilisateur ${data.username} inscrit avec succès !`)
+      response = await fetch(`${api}/api/signup`, {
+        method: "POST",  
+        body: formData
+      });
+
+      data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Erreur lors de l'inscription");
+      }
+
+      location.replace('/app/credits');
     }
+
   } catch (err) {
-    errorMessage.value = err.message
+    // Afficher le message d'erreur provenant de l'API ou de JS
+    errorMessage.value = err.message || "Une erreur est survenue";
   }
 }
+
 </script>
 
 
@@ -251,4 +252,11 @@ const handleSubmit = async () => {
 .social-login button:hover {
   background: rgba(255,255,255,0.4);
 }
+.error-message {
+  color: #ff0202;
+  font-weight: 500;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
 </style>

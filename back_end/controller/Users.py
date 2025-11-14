@@ -242,11 +242,9 @@ class Users:
             admin_name = current_user.get("username")
             admin_id = current_user.get("id")
 
-            # Vérifier privilège admin
             if current_user.get("privillege") not in ["admin", "superadmin"]:
                 raise HTTPException(status_code=403, detail="Accès refusé : privilège insuffisant")
 
-            # Vérifier mot de passe admin
             admin_data = self.getUserById(admin_id)["user"]
             if not bcrypt.checkpw(admin_password.encode("utf-8"), admin_data["password"].encode("utf-8")):
                 raise HTTPException(status_code=401, detail="Mot de passe administrateur incorrect")
