@@ -186,7 +186,7 @@ const load_database = async (refresh, files, folder,date_string) => {
 
   var index_table=0;
   try {
-    const response = await fetch('http://192.168.1.212:8000/api/create_multiple_table', {
+    const response = await fetch(`${api}/api/create_multiple_table`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
