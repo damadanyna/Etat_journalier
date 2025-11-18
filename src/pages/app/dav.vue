@@ -17,13 +17,11 @@
     </div>
 <div v-else>
   <ResumeGlobalGraphe />
-    <!-- Résumé conditionnel selon l'onglet -->
     <ResumerDat v-if="selectedTable && activeTab === 0" :tableName="selectedTable" />
     <ResumerDav v-if="selectedTable && activeTab === 1" :tableName="selectedTable" />
     <ResumerEpr v-if="selectedTable && activeTab === 2" :tableName="selectedTable" />
     <ResumerDec v-if="selectedTable && activeTab === 3" :tableName="selectedTable" />
 
-    <!-- Onglets DAT/DAV -->
     <v-tabs v-model="activeTab" class="mb-4">
       <v-tab>DAT</v-tab>
       <v-tab>DAV</v-tab>

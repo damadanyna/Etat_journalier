@@ -291,7 +291,7 @@ const uploadFile = async (folder_name) => {
   formData.append('app', app_type.value);
   formData.append('folder_name', folder_name);
   try {
-    const response = await fetch('http://192.168.1.212:8000/api/upload_multiple_files', {
+    const response = await fetch(`${api}/api/upload_multiple_files`, {
       method: 'POST',
       body: formData,
     });

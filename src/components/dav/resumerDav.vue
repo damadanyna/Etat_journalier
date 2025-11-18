@@ -1,38 +1,76 @@
 <!-- src/components/dat/Resumer.vue -->
 <template>
-  <v-card v-if="resume" class="mb-4 pa-4" outlined>
-    <v-row>
-      
+  <v-card
+    v-if="resume"
+    class="mb-6 pa-6 rounded-xl"
+    elevation="3"
+  >
+    <h3 class="text-h6 mb-4 font-weight-bold">Résumé du tableau</h3>
+
+    <v-row dense>
       <v-col cols="12" md="3">
-        <strong>Nombre de clients :</strong> {{ resume.nb_clients }}
+        <v-card variant="tonal" color="primary" class="pa-3 rounded-lg">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-account-group</v-icon>
+            <div>
+              <div class="text-caption text-primary">Nombre de clients</div>
+              <div class="text-h6 font-weight-bold">{{ resume.nb_clients }}</div>
+            </div>
+          </div>
+        </v-card>
       </v-col>
+
       <v-col cols="12" md="3">
-        <strong>Total montant dav :</strong> {{ resume.total_montant_dav }}
+        <v-card variant="tonal" color="blue" class="pa-3 rounded-lg">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-cash</v-icon>
+            <div>
+              <div class="text-caption text-blue">Total Montant DAV</div>
+              <div class="text-h6 font-weight-bold">{{ resume.total_montant_dav }}</div>
+            </div>
+          </div>
+        </v-card>
       </v-col>
+
       <v-col cols="12" md="3">
-        <strong>Total debit dav :</strong> {{ resume.total_debit_dav }}
+        <v-card variant="tonal" color="red" class="pa-3 rounded-lg">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-arrow-down-bold-circle</v-icon>
+            <div>
+              <div class="text-caption text-red">Total Débit DAV</div>
+              <div class="text-h6 font-weight-bold">{{ resume.total_debit_dav }}</div>
+            </div>
+          </div>
+        </v-card>
       </v-col>
+
       <v-col cols="12" md="3">
-        <strong>Total credit dav :</strong> {{ resume.total_credit_dav }}
+        <v-card variant="tonal" color="green" class="pa-3 rounded-lg">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-arrow-up-bold-circle</v-icon>
+            <div>
+              <div class="text-caption text-green">Total Crédit DAV</div>
+              <div class="text-h6 font-weight-bold">{{ resume.total_credit_dav }}</div>
+            </div>
+          </div>
+        </v-card>
       </v-col>
     </v-row>
   </v-card>
 </template>
 
 <script setup>
-import { ref, watch,inject } from "vue"
+import { ref, watch, inject } from "vue"
 import axios from "axios"
 
-// Props venant de dat.vue
 const props = defineProps({
   tableName: {
     type: String,
     required: true
   }
 })
-const api = inject('api') 
 
-
+const api = inject("api")
 const resume = ref(null)
 
 const fetchResume = async (tableName) => {
@@ -45,12 +83,5 @@ const fetchResume = async (tableName) => {
   }
 }
 
-// Recharger quand tableName change
-watch(
-  () => props.tableName,
-  (newVal) => {
-    fetchResume(newVal)
-  },
-  { immediate: true }
-)
+watch(() => props.tableName, fetchResume, { immediate: true })
 </script>
