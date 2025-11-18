@@ -362,7 +362,7 @@ class DavUnique:
                 LEFT JOIN account_mcbc_live_full acc ON acc.id = arr.linked_appl_id
                 WHERE arr.product_line = 'ACCOUNTS'
                     AND arr.arr_status IN ('AUTH', 'CURRENT','PENDING.CLOSURE')
-                    AND arr.product_group = 'DV.SP.MG';
+                    AND arr.product_group = 'DV.SP.MG' LIMIT 100;
             """
             
             with self.db.connect() as conn:
@@ -453,7 +453,7 @@ class DavUnique:
                 LEFT JOIN account_mcbc_live_full acc ON acc.id = arr.linked_appl_id
                 WHERE arr.product_line = 'ACCOUNTS'
                     AND arr.arr_status IN ('AUTH', 'CURRENT')
-                    AND arr.product_group = 'EPN.SP.MG';
+                    AND arr.product_group = 'EPN.SP.MG' LIMIT 100;
             """
             
             with self.db.connect() as conn:

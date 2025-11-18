@@ -66,7 +66,7 @@ def initialize(name:str):
         table_name_dat = db_get.create_tableDatPreCompute(name)
         table_name_dav = dav_unique.create_table_dav(name)
         table_name_epr = dav_unique.create_table_epr(name)
-        table_name_dec = decaissement.generate_decaissement_report(name)        
+        # table_name_dec = decaissement.generate_decaissement_report(name)        
 
         
         if not table_name_dat or not table_name_dav or not table_name_epr :
@@ -82,7 +82,7 @@ def initialize(name:str):
                     "table_name_dav": table_name_dav,
                     "table_name_epr": table_name_epr,
                     "table_name_dat": table_name_dat,
-                     "table_name_dec": table_name_dec.get("table_name") if isinstance(table_name_dec, dict) else table_name_dec,
+                    #  "table_name_dec": table_name_dec.get("table_name") if isinstance(table_name_dec, dict) else table_name_dec,
         })
         
     except Exception as e:
