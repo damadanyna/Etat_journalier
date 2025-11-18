@@ -350,6 +350,43 @@ def getTotalResumer(type_table: str):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"Erreur serveur: {e}"})
 
+@router.get("/resume/total-produit/{type_table}")
+def get_total_par_produit(
+    type_table: str,
+    agence: str = None,
+    date_debut: str = None,
+    date_fin: str = None,
+    single_date_if_all = None
+):
+    try:
+        total = dav_report.getTotalParProduit(
+            type_table=type_table,
+            agence=agence,
+            date_debut=date_debut,
+            date_fin=date_fin,
+            single_date_if_all=single_date_if_all
+        )
+
+        if not total:
+            return JSONResponse(
+                status_code=404,
+                content={"error": f"Aucune donnée trouvée pour le type {type_table}"}
+            )
+
+        return total
+
+    except ValueError as ve:
+        return JSONResponse(
+            status_code=400,
+            content={"error": str(ve)}
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Erreur serveur: {e}"}
+        )
+
 @router.get("/davGraphe/{table_name}")
 def get_graphe_dav(
     table_name: str,

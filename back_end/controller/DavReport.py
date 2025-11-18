@@ -276,6 +276,138 @@ class DavReport:
         return total_resumer
 
 
+    def getTotalParProduit(self, type_table: str, agence: str = None,
+                       date_debut: str = None, date_fin: str = None,
+                       single_date_if_all: str = "20251028"):
+       
+
+        AGENCES_DISPO = [
+            "MG0010009","MG0010004","MG0010024","MG0010052","MG0010011",
+            "MG0010012","MG0010010","MG0011001","MG0010003","MG0010022",
+            "MG0010053","MG0010013","MG0010041","MG0010023"
+        ]
+
+        type_table = type_table.lower().strip()
+        if type_table not in ["dav", "dat", "epr"]:
+            raise ValueError("Type invalide. Valeurs possibles : 'dav', 'dat', 'epr'.")
+
+        conn = None
+        try:
+            conn = self.db.connect()
+
+            # Récupérer toutes les tables du type
+            tables_query = text(f"SHOW TABLES LIKE '{type_table}_%'")
+            all_tables = [row[0] for row in conn.execute(tables_query).fetchall()]
+            if not all_tables:
+                return []
+
+            results = []
+
+            if agence and agence.lower() == "all":
+                # On prend une seule date
+                table_name = f"{type_table}_{single_date_if_all}"
+                if table_name not in all_tables:
+                    return {"message": f"Aucune table trouvée pour la date {single_date_if_all}"}
+
+                for ag in AGENCES_DISPO:
+                    sql = f"""
+                        SELECT 
+                            COUNT(DISTINCT code_client) AS nb_clients,
+                            SUM(solde) AS total_montant,
+                            SUM(debit) AS total_debit,
+                            SUM(credit) AS total_credit
+                        FROM `{table_name}`
+                        WHERE Agence = :agence
+                    """
+                    result = conn.execute(text(sql), {"agence": ag}).fetchone()
+                    results.append({
+                        "date": single_date_if_all,
+                        "agence": ag,
+                        "nb_clients": int(result[0] or 0),
+                        "total_montant": float(result[1] or 0),
+                        "total_debit": float(result[2] or 0),
+                        "total_credit": float(result[3] or 0)
+                    })
+            else:
+                # Filtrer les tables par plage de dates
+                if date_debut and date_fin:
+                    filtered_tables = [t for t in all_tables if date_debut <= t.replace(f"{type_table}_", "") <= date_fin]
+                else:
+                    filtered_tables = all_tables
+
+                if not filtered_tables:
+                    return []
+
+                for table_name in sorted(filtered_tables):
+                    table_date = table_name.replace(f"{type_table}_", "")
+
+                    # Clause WHERE pour agence spécifique
+                    where = []
+                    params = {}
+                    if agence:
+                        where.append("Agence = :agence")
+                        params["agence"] = agence
+
+                    where_clause = " AND ".join(where)
+                    if where_clause:
+                        where_clause = "WHERE " + where_clause
+
+                    # SQL adaptatif selon le type
+                    if type_table == "dav":
+                        sql = f"""
+                            SELECT 
+                                COUNT(DISTINCT code_client) AS nb_clients,
+                                SUM(solde) AS total_montant,
+                                SUM(debit) AS total_debit,
+                                SUM(credit) AS total_credit
+                            FROM `{table_name}`
+                            {where_clause}
+                        """
+                    elif type_table == "dat":
+                        sql = f"""
+                            SELECT 
+                                COUNT(DISTINCT code_client) AS nb_clients,
+                                SUM(montant_capital) AS total_montant,
+                                SUM(montant_pay_total) AS total_credit
+                            FROM `{table_name}`
+                            {where_clause}
+                        """
+                    elif type_table == "epr":
+                        sql = f"""
+                            SELECT 
+                                COUNT(DISTINCT code_client) AS nb_clients,
+                                SUM(solde) AS total_montant,
+                                SUM(Debit) AS total_debit,
+                                SUM(Credit) AS total_credit
+                            FROM `{table_name}`
+                            {where_clause}
+                        """
+                    result = conn.execute(text(sql), params).fetchone()
+                    if not result:
+                        continue
+
+                    results.append({
+                        "date": table_date,
+                        "nb_clients": int(result[0] or 0),
+                        "total_montant": float(result[1] or 0),
+                        "total_debit": float(result[2] or 0) if len(result) > 2 else 0,
+                        "total_credit": float(result[3] or 0) if len(result) > 3 else 0
+                    })
+
+            return results
+
+        except Exception as e:
+            print(f"[ERREUR] getTotalParProduit : {e}")
+            return {"status": "error", "message": str(e)}
+
+        finally:
+            if conn:
+                conn.close()
+
+
+
+
+
                     
     def get_graphe_dataDav(self, x: str, y: str, table_name:str):
         table_name_vrai = f"dav_{table_name}"

@@ -41,6 +41,8 @@ const list_menu = [
   { icon: 'mdi-home-city', title: 'Crédits', to: '/app/credits', access: 'all' },
   { icon: 'mdi-bank', title: 'My Account', to: '/app/dav', access: 'all' },
   { icon: 'mdi-account', title: 'ESRI', to: '/app/esri', access: 'all' },
+    { icon: 'mdi-magnify', title: 'Rechercher', to: '/app/generale', access: 'all' }, // 👈 Ajouté
+
   { icon: 'mdi-swap-horizontal', title: 'CHANGE', to: '/app/change', access: 'all' },
   { icon: 'mdi-shield-account', title: 'Admin', to: '/app/session', access: 'admin' },
   { icon: 'mdi-file-table-box-multiple-outline', title: 'Mes Fichiers', to: '/app/file_manager', access: 'admin' },
