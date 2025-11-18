@@ -5,8 +5,19 @@
     class="mb-6 pa-6 rounded-xl"
     elevation="3"
   >
-    <h3 class="text-h6 mb-4 font-weight-bold">Résumé du tableau EPR</h3>
-
+<h3 class="text-h6 mb-4 font-weight-bold d-flex align-center">
+  <span>Résumé du EPR</span>
+  <v-chip
+    v-if="props.tableName"
+    color="yellow"
+    class="ml-4"
+    size="grand"
+    label
+    style="font-size:1.2rem;font-weight:500;"
+  >
+    {{ props.tableName }}
+  </v-chip>
+</h3>
     <v-row dense>
       <v-col cols="12" md="3">
         <v-card variant="tonal" color="primary" class="pa-3 rounded-lg">
