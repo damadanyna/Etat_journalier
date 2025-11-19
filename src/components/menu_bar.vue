@@ -184,6 +184,7 @@ const isChangePage = computed(() => route.path === '/app/change')
 const isCompte = computed(() => route.path === '/app/dav')
 const isSession = computed(() => route.path === '/app/session')
 const isInitialise = computed(() => route.path === '/app/Initialise')
+const isgenerale = computed(() => route.path === '/app/generale')
 
 
 const toolbarTitle = computed(() => {
@@ -192,6 +193,7 @@ const toolbarTitle = computed(() => {
   if (isCompte.value) return 'Encours Compte'
   if (isSession.value) return 'Gestion des utilisateurs'
   if (isInitialise.value) return 'Initialisation Compte'
+  if (isgenerale.value) return 'Filtre'
 
   return 'Encours des crédits'
 })

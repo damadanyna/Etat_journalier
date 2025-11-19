@@ -310,24 +310,55 @@ class DavReport:
                     return {"message": f"Aucune table trouvée pour la date {single_date_if_all}"}
 
                 for ag in AGENCES_DISPO:
-                    sql = f"""
-                        SELECT 
-                            COUNT(DISTINCT code_client) AS nb_clients,
-                            SUM(solde) AS total_montant,
-                            SUM(debit) AS total_debit,
-                            SUM(credit) AS total_credit
-                        FROM `{table_name}`
-                        WHERE Agence = :agence
-                    """
+                    if type_table == "dav":
+                        sql = f"""
+                            SELECT 
+                                COUNT(DISTINCT code_client) AS nb_clients,
+                                SUM(solde) AS total_montant,
+                                SUM(debit) AS total_debit,
+                                SUM(credit) AS total_credit
+                            FROM `{table_name}`
+                            WHERE Agence = :agence
+                        """
+                    elif type_table == "dat":
+                        sql = f"""
+                            SELECT 
+                                COUNT(DISTINCT code_client) AS nb_clients,
+                                SUM(montant_capital) AS total_montant,
+                                SUM(montant_pay_total) AS total_credit
+                            FROM `{table_name}`
+                            WHERE Agence = :agence
+                        """
+                    elif type_table == "epr":
+                        sql = f"""
+                            SELECT 
+                                COUNT(DISTINCT code_client) AS nb_clients,
+                                SUM(solde) AS total_montant,
+                                SUM(Debit) AS total_debit,
+                                SUM(Credit) AS total_credit
+                            FROM `{table_name}`
+                            WHERE Agence = :agence
+                        """
                     result = conn.execute(text(sql), {"agence": ag}).fetchone()
-                    results.append({
-                        "date": single_date_if_all,
-                        "agence": ag,
-                        "nb_clients": int(result[0] or 0),
-                        "total_montant": float(result[1] or 0),
-                        "total_debit": float(result[2] or 0),
-                        "total_credit": float(result[3] or 0)
-                    })
+                    # Ne retourne que si il y a des clients
+                    if result and result[0]:
+                        if type_table == "dav" or type_table == "epr":
+                            results.append({
+                                "date": single_date_if_all,
+                                "agence": ag,
+                                "nb_clients": int(result[0] or 0),
+                                "total_montant": float(result[1] or 0),
+                                "total_debit": float(result[2] or 0),
+                                "total_credit": float(result[3] or 0)
+                            })
+                        elif type_table == "dat":
+                            results.append({
+                                "date": single_date_if_all,
+                                "agence": ag,
+                                "nb_clients": int(result[0] or 0),
+                                "total_montant": float(result[1] or 0),
+                                "total_credit": float(result[2] or 0)
+                            })
             else:
                 # Filtrer les tables par plage de dates
                 if date_debut and date_fin:
@@ -340,19 +371,15 @@ class DavReport:
 
                 for table_name in sorted(filtered_tables):
                     table_date = table_name.replace(f"{type_table}_", "")
-
-                    # Clause WHERE pour agence spécifique
                     where = []
                     params = {}
                     if agence:
                         where.append("Agence = :agence")
                         params["agence"] = agence
-
                     where_clause = " AND ".join(where)
                     if where_clause:
                         where_clause = "WHERE " + where_clause
 
-                    # SQL adaptatif selon le type
                     if type_table == "dav":
                         sql = f"""
                             SELECT 
@@ -383,16 +410,24 @@ class DavReport:
                             {where_clause}
                         """
                     result = conn.execute(text(sql), params).fetchone()
-                    if not result:
-                        continue
-
-                    results.append({
-                        "date": table_date,
-                        "nb_clients": int(result[0] or 0),
-                        "total_montant": float(result[1] or 0),
-                        "total_debit": float(result[2] or 0) if len(result) > 2 else 0,
-                        "total_credit": float(result[3] or 0) if len(result) > 3 else 0
-                    })
+                    if result and result[0]:
+                        if type_table == "dav" or type_table == "epr":
+                            results.append({
+                                "date": table_date,
+                                "agence": agence if agence else None,
+                                "nb_clients": int(result[0] or 0),
+                                "total_montant": float(result[1] or 0),
+                                "total_debit": float(result[2] or 0),
+                                "total_credit": float(result[3] or 0)
+                            })
+                        elif type_table == "dat":
+                            results.append({
+                                "date": table_date,
+                                "agence": agence if agence else None,
+                                "nb_clients": int(result[0] or 0),
+                                "total_montant": float(result[1] or 0),
+                                "total_credit": float(result[2] or 0)
+                            })
 
             return results
 
