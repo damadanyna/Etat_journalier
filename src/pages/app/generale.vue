@@ -4,7 +4,8 @@
       class="pa-8 rounded-0 elevation-2 fade-in full-card"
       flat
     >
-      <h2 class="text-h5 font-weight-bold mb-6 text-center">
+      <h2 class="text-h4 font-weight-bold mb-6 text-center">
+        Résumé des Données par Type
       </h2>
 
       <!-- FORMULAIRE -->
@@ -12,7 +13,7 @@
         <v-col cols="12" sm="3">
           <v-select
             v-model="typeTable"
-            :items="['dav', 'dat', 'epr']"
+            :items="['all', 'dav', 'dat', 'epr']"
             label="Type de Table"
             variant="outlined"
             rounded="lg"
@@ -88,13 +89,29 @@
            recherche
         </v-btn>
       </div>
+      
+ <!-- ...dans le <template> juste avant <v-data-table> -->
 <div v-if="headers.length" class="d-flex flex-wrap align-center mb-4 px-2">
+  <span class="mr-3 font-weight-bold">Colonnes à afficher :</span>
   <v-checkbox
     v-for="header in headers"
     :key="header.key"
     v-model="visibleColumns"
     :label="header.title"
     :value="header.key"
+    density="compact"
+    hide-details
+    class="mr-2"
+  />
+</div>
+<div class="d-flex flex-wrap align-center mb-4 px-2">
+  <span class="mr-3 font-weight-bold">Tableaux à afficher :</span>
+  <v-checkbox
+    v-for="type in ['dav', 'dat', 'epr']"
+    :key="type"
+    v-model="visibleTables"
+    :label="type.toUpperCase()"
+    :value="type"
     density="compact"
     hide-details
     class="mr-2"
@@ -115,18 +132,76 @@
       </v-alert>
 
       <!-- TABLE -->
-      <v-data-table
-        v-if="results.length"
-        :headers="headers.filter(h => visibleColumns.includes(h.key))"
-        :items="results.map(item => {
-          const filtered = {};
-          visibleColumns.forEach(col => filtered[col] = item[col]);
-          return filtered;
-        })"
-        class="mt-8 elevation-2 fade-in full-table"
-        density="comfortable"
-        height="700px"
-      />
+      <v-row dense class="mt-8">
+        <!-- DAV -->
+        <v-col
+          v-if="visibleTables.includes('dav') && Array.isArray(resultsDav) && resultsDav.length"
+          cols="12"
+          md="4"
+        >
+          <v-data-table
+            class="elevation-2 fade-in full-table table-dav"
+            :headers="headers.filter(h => visibleColumns.includes(h.key))"
+            :items="resultsDav.map(item => {
+              const filtered = {};
+              visibleColumns.forEach(col => filtered[col] = item[col]);
+              return filtered;
+            })"
+            density="comfortable"
+            height="400px"
+          >
+            <template #top>
+              <h3 class="text-h6 font-weight-bold mb-2 table-title table-title-dav">DAV</h3>
+            </template>
+          </v-data-table>
+        </v-col>
+
+        <!-- DAT -->
+        <v-col
+          v-if="visibleTables.includes('dat') && Array.isArray(resultsDat) && resultsDat.length"
+          cols="12"
+          md="4"
+        >
+          <v-data-table
+            class="elevation-2 fade-in full-table table-dat"
+            :headers="headers.filter(h => visibleColumns.includes(h.key))"
+            :items="resultsDat.map(item => {
+              const filtered = {};
+              visibleColumns.forEach(col => filtered[col] = item[col]);
+              return filtered;
+            })"
+            density="comfortable"
+            height="400px"
+          >
+            <template #top>
+              <h3 class="text-h6 font-weight-bold mb-2 table-title table-title-dat">DAT</h3>
+            </template>
+          </v-data-table>
+        </v-col>
+
+        <!-- EPR -->
+        <v-col
+          v-if="visibleTables.includes('epr') && Array.isArray(resultsEpr) && resultsEpr.length"
+          cols="12"
+          md="4"
+        >
+          <v-data-table
+            class="elevation-2 fade-in full-table table-epr"
+            :headers="headers.filter(h => visibleColumns.includes(h.key))"
+            :items="resultsEpr.map(item => {
+              const filtered = {};
+              visibleColumns.forEach(col => filtered[col] = item[col]);
+              return filtered;
+            })"
+            density="comfortable"
+            height="400px"
+          >
+            <template #top>
+              <h3 class="text-h6 font-weight-bold mb-2 table-title table-title-epr">EPR</h3>
+            </template>
+          </v-data-table>
+        </v-col>
+      </v-row>
     </v-card>
   </v-container>
 </template>
@@ -137,7 +212,7 @@ import axios from "axios"
 
 const api = inject("api")
 
-const typeTable = ref("dav")
+const typeTable = ref("all")
 const agence = ref("")
 const singleDate = ref("")
 const dateDebut = ref("")
@@ -146,45 +221,80 @@ const dateFin = ref("")
 const loading = ref(false)
 const message = ref("")
 const messageType = ref("info")
-const results = ref([])
+const resultsDav = ref([])
+const resultsDat = ref([])
+const resultsEpr = ref([])
 const headers = ref([])
 const visibleColumns = ref([]) // Colonnes à afficher
+const visibleTables = ref(['dav', 'dat', 'epr']) // Par défaut, tout est affiché
 
 const isAllAgence = computed(() => agence.value === 'all')
 
 const rechercher = async () => {
   loading.value = true
   message.value = ""
-  results.value = []
+  resultsDav.value = []
+  resultsDat.value = []
+  resultsEpr.value = []
   headers.value = []
+  visibleColumns.value = []
 
   try {
-    const res = await axios.get(`${api}/api/resume/total-produit/${typeTable.value}`, {
-      params: {
-        agence: agence.value,
-        single_date_if_all: singleDate.value,
-        date_debut: dateDebut.value,
-        date_fin: dateFin.value,
-      }
-    })
+    let types = typeTable.value === 'all' ? ['dav', 'dat', 'epr'] : [typeTable.value]
 
-    if (Array.isArray(res.data) && res.data.length) {
-      results.value = res.data
-      headers.value = Object.keys(res.data[0]).map(key => ({
+    for (const type of types) {
+      const res = await axios.get(`${api}/api/resume/total-produit/${type}`, {
+        params: {
+          agence: agence.value,
+          single_date_if_all: singleDate.value,
+          date_debut: dateDebut.value,
+          date_fin: dateFin.value,
+        }
+      })
+      if (Array.isArray(res.data) && res.data.length) {
+        if (type === 'dav') resultsDav.value = res.data
+        if (type === 'dat') resultsDat.value = res.data
+        if (type === 'epr') resultsEpr.value = res.data
+      } else {
+        if (type === 'dav') resultsDav.value = []
+        if (type === 'dat') resultsDat.value = []
+        if (type === 'epr') resultsEpr.value = []
+      }
+    }
+
+    // Génère les headers dynamiquement pour chaque type si des résultats existent
+    if (resultsDav.value.length) {
+      headers.value = Object.keys(resultsDav.value[0]).map(key => ({
         title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         key
       }))
-      visibleColumns.value = headers.value.map(h => h.key) // Toutes visibles par défaut
+      visibleColumns.value = headers.value.map(h => h.key)
+    } else if (resultsDat.value.length) {
+      headers.value = Object.keys(resultsDat.value[0]).map(key => ({
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        key
+      }))
+      visibleColumns.value = headers.value.map(h => h.key)
+    } else if (resultsEpr.value.length) {
+      headers.value = Object.keys(resultsEpr.value[0]).map(key => ({
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        key
+      }))
+      visibleColumns.value = headers.value.map(h => h.key)
+    }
+
+    const total =
+      resultsDav.value.length +
+      resultsDat.value.length +
+      resultsEpr.value.length
+
+    if (total) {
       messageType.value = "success"
-      message.value = `Résultats trouvés : ${res.data.length}`
-    } else if (res.data.message) {
-      messageType.value = "error"
-      message.value = res.data.message
+      message.value = `Résultats trouvés : ${total}`
     } else {
       messageType.value = "info"
       message.value = "Aucun résultat trouvé."
     }
-
   } catch {
     messageType.value = "error"
     message.value = "❌ Une erreur est survenue lors de la recherche."
@@ -222,6 +332,40 @@ const rechercher = async () => {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+.table-title {
+  text-align: center; /* Centrer le texte horizontalement */
+  padding: 8px 0; /* Ajouter un peu d'espace autour du texte */
+  color: #fff; /* Couleur du texte (blanc) */
+  border-radius: 4px; /* Arrondi des coins */
+}
+
+.table-title-dat {
+  color: #43a047; /* Vert pour DAT */
+}
+
+.table-title-epr {
+  color: #fbc02d; /* Jaune pour EPR */
+}
+
+.table-title-dav {
+ color: #1976d2; /* Bleu pour DAV (si nécessaire) */
+}
+
+.table-dav {
+  border: 2px solid #1976d2; /* Bleu pour DAV */
+  border-radius: 8px;
+}
+
+.table-dat {
+  border: 2px solid #43a047; /* Vert pour DAT */
+  border-radius: 8px;
+}
+
+.table-epr {
+  border: 2px solid #fbc02d; /* Jaune pour EPR */
+  border-radius: 8px;
 }
 </style>
 
