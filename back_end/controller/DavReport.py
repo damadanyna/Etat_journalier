@@ -341,7 +341,7 @@ class DavReport:
                         """
                     result = conn.execute(text(sql), {"agence": ag}).fetchone()
                     # Ne retourne que si il y a des clients
-                    if result and result[0]:
+                    if result:
                         if type_table == "dav" or type_table == "epr":
                             results.append({
                                 "date": single_date_if_all,

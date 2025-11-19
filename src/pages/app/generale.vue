@@ -4,10 +4,7 @@
       class="pa-8 rounded-0 elevation-2 fade-in full-card"
       flat
     >
-      <h2 class="text-h4 font-weight-bold mb-6 text-center">
-        Résumé des Données par Type
-      </h2>
-
+      
       <!-- FORMULAIRE -->
       <v-row dense class="px-4">
         <v-col cols="12" sm="3">
@@ -302,6 +299,8 @@ const rechercher = async () => {
     loading.value = false
   }
 }
+
+
 </script>
 
 <style scoped>

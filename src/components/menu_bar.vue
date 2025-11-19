@@ -193,7 +193,7 @@ const toolbarTitle = computed(() => {
   if (isCompte.value) return 'Encours Compte'
   if (isSession.value) return 'Gestion des utilisateurs'
   if (isInitialise.value) return 'Initialisation Compte'
-  if (isgenerale.value) return 'Filtre'
+  if (isgenerale.value) return 'Vue'
 
   return 'Encours des crédits'
 })
