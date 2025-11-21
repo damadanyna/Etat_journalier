@@ -87,11 +87,37 @@
       </div>
 
       <!-- SELECTION DES COLONNES PAR TYPE -->
-      <div v-if="hasResults" class="d-flex flex-wrap align-center mb-4 px-2">
-        <span class="mr-3 font-weight-bold">Colonnes à afficher :</span>
-        
-        <!-- Colonnes pour DAV -->
-        <template v-if="visibleTables.includes('dav') && resultsDav.length">
+      <div v-if="hasResults" class="d-flex flex-column mb-4 px-2">
+  <span class="font-weight-bold mb-3">Colonnes à afficher :</span>
+  
+  <div class="d-flex flex-wrap gap-4">
+    <!-- Colonnes pour DATE & AGENCE -->
+<template v-if="(infoDav.length || infoDat.length || infoEpr.length)">
+  <div class="column-group">
+    <div class="group-title mb-2" style="background:#424242; color:white;">
+      Info (Date & Agence)
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+      <v-checkbox
+        v-for="col in ['date','agence']"
+        :key="col"
+        v-model="visibleColumns.info"
+        :label="col.toUpperCase()"
+        :value="col"
+        density="compact"
+        hide-details
+        class="column-checkbox"
+      />
+    </div>
+  </div>
+</template>
+
+    <!-- Colonnes pour DAV -->
+    <template v-if="visibleTables.includes('dav') && resultsDav.length">
+      <div class="column-group">
+        <div class="group-title group-title-dav mb-2">DAV</div>
+        <div class="d-flex flex-wrap gap-2">
           <v-checkbox
             v-for="header in headersDav"
             :key="header.key"
@@ -100,12 +126,17 @@
             :value="header.key"
             density="compact"
             hide-details
-            class="mr-2"
+            class="column-checkbox"
           />
-        </template>
+        </div>
+      </div>
+    </template>
 
-        <!-- Colonnes pour DAT -->
-        <template v-if="visibleTables.includes('dat') && resultsDat.length">
+    <!-- Colonnes pour DAT -->
+    <template v-if="visibleTables.includes('dat') && resultsDat.length">
+      <div class="column-group">
+        <div class="group-title group-title-dat mb-2">DAT</div>
+        <div class="d-flex flex-wrap gap-2">
           <v-checkbox
             v-for="header in headersDat"
             :key="header.key"
@@ -114,12 +145,17 @@
             :value="header.key"
             density="compact"
             hide-details
-            class="mr-2"
+            class="column-checkbox"
           />
-        </template>
+        </div>
+      </div>
+    </template>
 
-        <!-- Colonnes pour EPR -->
-        <template v-if="visibleTables.includes('epr') && resultsEpr.length">
+    <!-- Colonnes pour EPR -->
+    <template v-if="visibleTables.includes('epr') && resultsEpr.length">
+      <div class="column-group">
+        <div class="group-title group-title-epr mb-2">EPR</div>
+        <div class="d-flex flex-wrap gap-2">
           <v-checkbox
             v-for="header in headersEpr"
             :key="header.key"
@@ -128,25 +164,31 @@
             :value="header.key"
             density="compact"
             hide-details
-            class="mr-2"
+            class="column-checkbox"
           />
-        </template>
+        </div>
       </div>
+    </template>
+  </div>
+</div>
 
-      <!-- SELECTION DES TABLEAUX -->
-      <div class="d-flex flex-wrap align-center mb-4 px-2">
-        <span class="mr-3 font-weight-bold">Tableaux à afficher :</span>
-        <v-checkbox
-          v-for="type in ['dav', 'dat', 'epr']"
-          :key="type"
-          v-model="visibleTables"
-          :label="type.toUpperCase()"
-          :value="type"
-          density="compact"
-          hide-details
-          class="mr-2"
-        />
-      </div>
+     <!-- SELECTION DES TABLEAUX -->
+<div class="d-flex flex-column mb-4 px-2">
+  <span class="font-weight-bold mb-3">Tableaux à afficher :</span>
+  <div class="d-flex flex-wrap align-center gap-3">
+    <v-checkbox
+      v-for="type in ['dav', 'dat', 'epr']"
+      :key="type"
+      v-model="visibleTables"
+      :label="type.toUpperCase()"
+      :value="type"
+      density="compact"
+      hide-details
+      class="table-checkbox-styled"
+      :class="`table-checkbox-${type}`"
+    />
+  </div>
+</div>
 
       <!-- MESSAGE -->
       <v-alert
@@ -167,11 +209,14 @@
          <v-col cols="12" md="2">
             <v-data-table
               
-              :headers="[
-                { title: 'Date', key: 'date' },
-                { title: 'Agence', key: 'agence' }
-              ]"
-              :items="infoDav.length ? infoDav : infoDat.length ? infoDat : infoEpr"
+              :headers="headersInfo.filter(h => visibleColumns.info.includes(h.key))"
+
+              :items="(infoDav.length ? infoDav : infoDat.length ? infoDat : infoEpr).map(item => {
+                const filtered = {}
+                visibleColumns.info.forEach(col => filtered[col] = item[col])
+                return filtered
+              })"
+
               density="comfortable"
               hide-default-footer
               :items-per-page="-1"
@@ -290,9 +335,15 @@ const infoEpr = ref([])
 const headersDav = ref([])
 const headersDat = ref([])
 const headersEpr = ref([])
+const headersInfo = computed(() => [
+  { title: 'Date', key: 'date' },
+  { title: 'Agence', key: 'agence' }
+])
 
 // Colonnes visibles séparées par type
 const visibleColumns = ref({
+    info: ['date', 'agence'], // Par défaut, Date et Agence sont sélectionnées
+
   dav: [],
   dat: [],
   epr: []
@@ -304,6 +355,7 @@ const isAllAgence = computed(() => agence.value === 'all')
 const hasResults = computed(() => 
   resultsDav.value.length > 0 || resultsDat.value.length > 0 || resultsEpr.value.length > 0
 )
+
 
 const generateHeaders = (data) => {
   if (!data.length) return []
@@ -327,7 +379,7 @@ const rechercher = async () => {
   headersEpr.value = []
   
   // Réinitialiser les colonnes visibles
-  visibleColumns.value = { dav: [], dat: [], epr: [] }
+  visibleColumns.value = {info: ['date', 'agence'], dav: [], dat: [], epr: [] }
 
   try {
     let types = typeTable.value === 'all' ? ['dav', 'dat', 'epr'] : [typeTable.value]
@@ -407,7 +459,7 @@ const rechercher = async () => {
 /* Styles uniformes pour tous les tableaux */
 .data-table-fixed {
   width: 100%;
-}
+} 
 
 .data-table-fixed1 {
   width: 100%;
@@ -484,4 +536,47 @@ const rechercher = async () => {
 .table-epr {
   border: 2px solid #fbc02d;
 }
+
+.column-group {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  min-width: 200px;
+}
+
+.group-title {
+  font-weight: bold;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.group-title-dav {
+  background-color: #1976d2;
+}
+
+.group-title-dat {
+  background-color: #43a047;
+}
+
+.group-title-epr {
+  background-color: #fbc02d;
+}
+
+.column-checkbox {
+  min-width: 140px;
+  margin: 2px 0;
+}
+
+/* Espacement entre les groupes */
+.gap-4 {
+  gap: 16px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+
 </style>

@@ -280,7 +280,6 @@ class DavReport:
                        date_debut: str = None, date_fin: str = None,
                        single_date_if_all: str = "20251028"):
        
-
         AGENCES_DISPO = [
             "MG0010009","MG0010004","MG0010024","MG0010052","MG0010011",
             "MG0010012","MG0010010","MG0011001","MG0010003","MG0010022",
@@ -343,32 +342,29 @@ class DavReport:
                         """
                     result = conn.execute(text(sql), {"agence": ag}).fetchone()
                     if result:
+                        date_agence_data = {"date": single_date_if_all}
+                        
+                        if agence and agence.lower() == "all":
+                            date_agence_data["agence"] = ag
+                        
                         if type_table == "dav" or type_table == "epr":
                             results.append({
-                                "date_agence": {
-                                "date": single_date_if_all,
-                                "agence":ag
-                            },
-                            "data": {
-                                "date": single_date_if_all,
-                                "agence": ag,
-                                "nb_clients": int(result[0] or 0),
-                                "total_montant": float(result[1] or 0),
-                                "total_debit": float(result[2] or 0),
-                                "total_credit": float(result[3] or 0)
-                            }
+                                "date_agence": date_agence_data,
+                                "data": {
+                                    "nb_clients": int(result[0] or 0),
+                                    "total_montant": float(result[1] or 0),
+                                    "total_debit": float(result[2] or 0),
+                                    "total_credit": float(result[3] or 0)
+                                }
                             })
                         elif type_table == "dat":
                             results.append({
-                                "date_agence": {
-                                "date": single_date_if_all,
-                                "agence":ag
-                            },
-                                "data":{
-                                "nb_clients": int(result[0] or 0),
-                                "total_montant": float(result[1] or 0),
-                                "total_credit": float(result[2] or 0)}
-                                
+                                "date_agence": date_agence_data,
+                                "data": {
+                                    "nb_clients": int(result[0] or 0),
+                                    "total_montant": float(result[1] or 0),
+                                    "total_credit": float(result[2] or 0)
+                                }
                             })
             else:
                 # Filtrer les tables par plage de dates
@@ -421,13 +417,17 @@ class DavReport:
                             {where_clause}
                         """
                     result = conn.execute(text(sql), params).fetchone()
-                    if result :
+                    if result:
+                        # Construire l'objet date_agence conditionnellement
+                        date_agence_data = {"date": table_date}
+                        
+                        # Ajouter agence seulement si elle a une valeur
+                        if agence:
+                            date_agence_data["agence"] = agence
+                        
                         if type_table == "dav" or type_table == "epr":
                             results.append({
-                                "date_agence": {
-                                    "date": table_date,
-                                    "agence": agence if agence else None,
-                                },
+                                "date_agence": date_agence_data,
                                 "data": {
                                     "nb_clients": int(result[0] or 0),
                                     "total_montant": float(result[1] or 0),
@@ -435,20 +435,15 @@ class DavReport:
                                     "total_credit": float(result[3] or 0)
                                 }
                             })
-
                         elif type_table == "dat":
                             results.append({
-                                "date_agence": {
-                                    "date": table_date,
-                                    "agence": agence if agence else None,
-                                },
+                                "date_agence": date_agence_data,
                                 "data": {
                                     "nb_clients": int(result[0] or 0),
                                     "total_montant": float(result[1] or 0),
                                     "total_credit": float(result[2] or 0)
                                 }
                             })
-
 
             return results
 
