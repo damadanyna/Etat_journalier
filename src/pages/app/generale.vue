@@ -76,7 +76,6 @@
         <v-btn
           color="primary"
           size="large"
-
           rounded="lg"
           :loading="loading"
           @click="rechercher"
@@ -86,34 +85,69 @@
            recherche
         </v-btn>
       </div>
-      
- <!-- ...dans le <template> juste avant <v-data-table> -->
-<div v-if="headers.length" class="d-flex flex-wrap align-center mb-4 px-2">
-  <span class="mr-3 font-weight-bold">Colonnes à afficher :</span>
-  <v-checkbox
-    v-for="header in headers"
-    :key="header.key"
-    v-model="visibleColumns"
-    :label="header.title"
-    :value="header.key"
-    density="compact"
-    hide-details
-    class="mr-2"
-  />
-</div>
-<div class="d-flex flex-wrap align-center mb-4 px-2">
-  <span class="mr-3 font-weight-bold">Tableaux à afficher :</span>
-  <v-checkbox
-    v-for="type in ['dav', 'dat', 'epr']"
-    :key="type"
-    v-model="visibleTables"
-    :label="type.toUpperCase()"
-    :value="type"
-    density="compact"
-    hide-details
-    class="mr-2"
-  />
-</div>
+
+      <!-- SELECTION DES COLONNES PAR TYPE -->
+      <div v-if="hasResults" class="d-flex flex-wrap align-center mb-4 px-2">
+        <span class="mr-3 font-weight-bold">Colonnes à afficher :</span>
+        
+        <!-- Colonnes pour DAV -->
+        <template v-if="visibleTables.includes('dav') && resultsDav.length">
+          <v-checkbox
+            v-for="header in headersDav"
+            :key="header.key"
+            v-model="visibleColumns.dav"
+            :label="header.title"
+            :value="header.key"
+            density="compact"
+            hide-details
+            class="mr-2"
+          />
+        </template>
+
+        <!-- Colonnes pour DAT -->
+        <template v-if="visibleTables.includes('dat') && resultsDat.length">
+          <v-checkbox
+            v-for="header in headersDat"
+            :key="header.key"
+            v-model="visibleColumns.dat"
+            :label="header.title"
+            :value="header.key"
+            density="compact"
+            hide-details
+            class="mr-2"
+          />
+        </template>
+
+        <!-- Colonnes pour EPR -->
+        <template v-if="visibleTables.includes('epr') && resultsEpr.length">
+          <v-checkbox
+            v-for="header in headersEpr"
+            :key="header.key"
+            v-model="visibleColumns.epr"
+            :label="header.title"
+            :value="header.key"
+            density="compact"
+            hide-details
+            class="mr-2"
+          />
+        </template>
+      </div>
+
+      <!-- SELECTION DES TABLEAUX -->
+      <div class="d-flex flex-wrap align-center mb-4 px-2">
+        <span class="mr-3 font-weight-bold">Tableaux à afficher :</span>
+        <v-checkbox
+          v-for="type in ['dav', 'dat', 'epr']"
+          :key="type"
+          v-model="visibleTables"
+          :label="type.toUpperCase()"
+          :value="type"
+          density="compact"
+          hide-details
+          class="mr-2"
+        />
+      </div>
+
       <!-- MESSAGE -->
       <v-alert
         v-if="message"
@@ -128,24 +162,47 @@
         {{ message }}
       </v-alert>
 
-      <!-- TABLE -->
+      <!-- TABLEAUX -->
       <v-row dense class="mt-8">
+         <v-col cols="12" md="2">
+            <v-data-table
+              
+              :headers="[
+                { title: 'Date', key: 'date' },
+                { title: 'Agence', key: 'agence' }
+              ]"
+              :items="infoDav.length ? infoDav : infoDat.length ? infoDat : infoEpr"
+              density="comfortable"
+              hide-default-footer
+              :items-per-page="-1"
+
+              fixed-header
+              class="elevation-2 fade-in data-table-fixed1"
+            >
+              <template #top>
+                <h3 class="text-h6 font-weight-bold mb-2 table-title">Date & Agence</h3>
+              </template>
+            </v-data-table>
+          </v-col>
         <!-- DAV -->
+
         <v-col
           v-if="visibleTables.includes('dav') && Array.isArray(resultsDav) && resultsDav.length"
           cols="12"
-          md="4"
+          md="3"
         >
           <v-data-table
-            class="elevation-2 fade-in full-table table-dav"
-            :headers="headers.filter(h => visibleColumns.includes(h.key))"
+            class="elevation-2 fade-in full-table table-dav data-table-fixed"
+            :headers="headersDav.filter(h => visibleColumns.dav.includes(h.key))"
             :items="resultsDav.map(item => {
               const filtered = {};
-              visibleColumns.forEach(col => filtered[col] = item[col]);
+              visibleColumns.dav.forEach(col => filtered[col] = item[col]);
               return filtered;
             })"
             density="comfortable"
-            height="400px"
+            hide-default-footer
+            :items-per-page="-1"
+            fixed-header
           >
             <template #top>
               <h3 class="text-h6 font-weight-bold mb-2 table-title table-title-dav">DAV</h3>
@@ -157,18 +214,20 @@
         <v-col
           v-if="visibleTables.includes('dat') && Array.isArray(resultsDat) && resultsDat.length"
           cols="12"
-          md="4"
+          md="3"
         >
           <v-data-table
-            class="elevation-2 fade-in full-table table-dat"
-            :headers="headers.filter(h => visibleColumns.includes(h.key))"
+            class="elevation-2 fade-in full-table table-dat data-table-fixed"
+            :headers="headersDat.filter(h => visibleColumns.dat.includes(h.key))"
             :items="resultsDat.map(item => {
               const filtered = {};
-              visibleColumns.forEach(col => filtered[col] = item[col]);
+              visibleColumns.dat.forEach(col => filtered[col] = item[col]);
               return filtered;
             })"
             density="comfortable"
-            height="400px"
+            hide-default-footer
+            :items-per-page="-1"
+            fixed-header
           >
             <template #top>
               <h3 class="text-h6 font-weight-bold mb-2 table-title table-title-dat">DAT</h3>
@@ -180,18 +239,20 @@
         <v-col
           v-if="visibleTables.includes('epr') && Array.isArray(resultsEpr) && resultsEpr.length"
           cols="12"
-          md="4"
+          md="3"
         >
           <v-data-table
-            class="elevation-2 fade-in full-table table-epr"
-            :headers="headers.filter(h => visibleColumns.includes(h.key))"
+            class="elevation-2 fade-in full-table table-epr data-table-fixed"
+            :headers="headersEpr.filter(h => visibleColumns.epr.includes(h.key))"
             :items="resultsEpr.map(item => {
               const filtered = {};
-              visibleColumns.forEach(col => filtered[col] = item[col]);
+              visibleColumns.epr.forEach(col => filtered[col] = item[col]);
               return filtered;
             })"
             density="comfortable"
-            height="400px"
+            hide-default-footer
+            :items-per-page="-1"
+            fixed-header
           >
             <template #top>
               <h3 class="text-h6 font-weight-bold mb-2 table-title table-title-epr">EPR</h3>
@@ -221,11 +282,39 @@ const messageType = ref("info")
 const resultsDav = ref([])
 const resultsDat = ref([])
 const resultsEpr = ref([])
-const headers = ref([])
-const visibleColumns = ref([]) // Colonnes à afficher
-const visibleTables = ref(['dav', 'dat', 'epr']) // Par défaut, tout est affiché
+const infoDav = ref([])
+const infoDat = ref([])
+const infoEpr = ref([])
+
+// Headers séparés par type
+const headersDav = ref([])
+const headersDat = ref([])
+const headersEpr = ref([])
+
+// Colonnes visibles séparées par type
+const visibleColumns = ref({
+  dav: [],
+  dat: [],
+  epr: []
+})
+
+const visibleTables = ref(['dav', 'dat', 'epr'])
 
 const isAllAgence = computed(() => agence.value === 'all')
+const hasResults = computed(() => 
+  resultsDav.value.length > 0 || resultsDat.value.length > 0 || resultsEpr.value.length > 0
+)
+
+const generateHeaders = (data) => {
+  if (!data.length) return []
+
+  return Object.keys(data[0]).map(key => ({
+    title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    key,
+    align: key.includes('total') || key.includes('montant') ? 'end' : 'start'
+  }))
+}
+
 
 const rechercher = async () => {
   loading.value = true
@@ -233,8 +322,12 @@ const rechercher = async () => {
   resultsDav.value = []
   resultsDat.value = []
   resultsEpr.value = []
-  headers.value = []
-  visibleColumns.value = []
+  headersDav.value = []
+  headersDat.value = []
+  headersEpr.value = []
+  
+  // Réinitialiser les colonnes visibles
+  visibleColumns.value = { dav: [], dat: [], epr: [] }
 
   try {
     let types = typeTable.value === 'all' ? ['dav', 'dat', 'epr'] : [typeTable.value]
@@ -248,36 +341,30 @@ const rechercher = async () => {
           date_fin: dateFin.value,
         }
       })
+      
       if (Array.isArray(res.data) && res.data.length) {
-        if (type === 'dav') resultsDav.value = res.data
-        if (type === 'dat') resultsDat.value = res.data
-        if (type === 'epr') resultsEpr.value = res.data
-      } else {
-        if (type === 'dav') resultsDav.value = []
-        if (type === 'dat') resultsDat.value = []
-        if (type === 'epr') resultsEpr.value = []
-      }
-    }
+  if (type === 'dav') {
+    infoDav.value = res.data.map(item => item.date_agence)
+    resultsDav.value = res.data.map(item => item.data)
+    headersDav.value = generateHeaders(resultsDav.value)
+    visibleColumns.value.dav = headersDav.value.map(h => h.key)
+  }
 
-    // Génère les headers dynamiquement pour chaque type si des résultats existent
-    if (resultsDav.value.length) {
-      headers.value = Object.keys(resultsDav.value[0]).map(key => ({
-        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        key
-      }))
-      visibleColumns.value = headers.value.map(h => h.key)
-    } else if (resultsDat.value.length) {
-      headers.value = Object.keys(resultsDat.value[0]).map(key => ({
-        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        key
-      }))
-      visibleColumns.value = headers.value.map(h => h.key)
-    } else if (resultsEpr.value.length) {
-      headers.value = Object.keys(resultsEpr.value[0]).map(key => ({
-        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        key
-      }))
-      visibleColumns.value = headers.value.map(h => h.key)
+  if (type === 'dat') {
+    infoDat.value = res.data.map(item => item.date_agence)
+    resultsDat.value = res.data.map(item => item.data)
+    headersDat.value = generateHeaders(resultsDat.value)
+    visibleColumns.value.dat = headersDat.value.map(h => h.key)
+  }
+
+  if (type === 'epr') {
+    infoEpr.value = res.data.map(item => item.date_agence)
+    resultsEpr.value = res.data.map(item => item.data)
+    headersEpr.value = generateHeaders(resultsEpr.value)
+    visibleColumns.value.epr = headersEpr.value.map(h => h.key)
+  }
+}
+
     }
 
     const total =
@@ -299,11 +386,10 @@ const rechercher = async () => {
     loading.value = false
   }
 }
-
-
 </script>
 
 <style scoped>
+/* Vos styles existants restent les mêmes */
 .full-container {
   width: 100%;
   height: 100vh;
@@ -312,19 +398,53 @@ const rechercher = async () => {
   overflow-y: auto;
   padding-bottom: 20px;
   padding: 0 10px; 
-
 }
 
 .full-card {
-  width: 100%;
-  border-radius: 0 !important; /* pas d'arrondi */
+  border-radius: 0 !important;
 }
 
-.full-table {
+/* Styles uniformes pour tous les tableaux */
+.data-table-fixed {
   width: 100%;
 }
 
-/* Animation */
+.data-table-fixed1 {
+  width: 100%;
+}
+
+.table-dav,
+.table-dat,
+.table-epr {
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* Styles communs pour toutes les cellules de tableau */
+:deep(.table-dav .v-data-table__td),
+:deep(.table-dav .v-data-table__th),
+:deep(.table-dat .v-data-table__td),
+:deep(.table-dat .v-data-table__th),
+:deep(.table-epr .v-data-table__td),
+:deep(.table-epr .v-data-table__th) {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Assurer que tous les tableaux ont la même hauteur et largeur */
+:deep(.v-data-table) {
+  table-layout: fixed;
+  width: 100%;
+}
+
+:deep(.v-data-table__wrapper) {
+  width: 100%;
+}
+
 .fade-in {
   animation: fadeIn 0.5s ease-in-out;
 }
@@ -334,38 +454,34 @@ const rechercher = async () => {
 }
 
 .table-title {
-  text-align: center; /* Centrer le texte horizontalement */
-  padding: 8px 0; /* Ajouter un peu d'espace autour du texte */
-  color: #fff; /* Couleur du texte (blanc) */
-  border-radius: 4px; /* Arrondi des coins */
+  text-align: center;
+  padding: 8px 0;
+  color: #fff;
+  border-radius: 4px;
 }
 
 .table-title-dat {
-  color: #43a047; /* Vert pour DAT */
+  background-color: #43a047;
 }
 
 .table-title-epr {
-  color: #fbc02d; /* Jaune pour EPR */
+  background-color: #fbc02d;
 }
 
 .table-title-dav {
- color: #1976d2; /* Bleu pour DAV (si nécessaire) */
+  background-color: #1976d2;
 }
 
+/* Bordures colorées pour chaque tableau */
 .table-dav {
-  border: 2px solid #1976d2; /* Bleu pour DAV */
-  border-radius: 8px;
+  border: 2px solid #1976d2;
 }
 
 .table-dat {
-  border: 2px solid #43a047; /* Vert pour DAT */
-  border-radius: 8px;
+  border: 2px solid #43a047;
 }
 
 .table-epr {
-  border: 2px solid #fbc02d; /* Jaune pour EPR */
-  border-radius: 8px;
+  border: 2px solid #fbc02d;
 }
 </style>
-
-
