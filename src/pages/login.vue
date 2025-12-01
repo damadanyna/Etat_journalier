@@ -8,6 +8,10 @@
             Tout  en <br />
             quelques minutes seulement. <strong>Baiboho</strong>
         </p>
+        <div class="flex">
+            acceder à <span class=" ml-1 underline text-green-800 font-extrabold cursor-pointer">Pay By</span>
+      
+        </div>
       </div>
 
       <!-- Right side login form -->
@@ -41,11 +45,13 @@
 </template>
 
 <script setup>
+import { useRoute } from 'vue-router'
 import { ref,inject } from "vue"
 import { useNotificationStore } from '@/stores/notification'
 const notificationStore = useNotificationStore()
 
 
+const route = useRoute()
 const api = inject('api') 
 const activeTab = ref("signIn") // par défaut "Connexion"
 const username = ref("")
