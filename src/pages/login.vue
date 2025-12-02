@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page">
+  <div v-if="activeLogin=='APP'" class="login-page">
     <div class="login-card">
       <!-- Left side illustration -->
       <div class="login-left" >
@@ -45,7 +45,7 @@ import { ref,inject } from "vue"
 import { useNotificationStore } from '@/stores/notification'
 const notificationStore = useNotificationStore()
 
-
+const activeLogin=ref("APP")
 const api = inject('api') 
 const activeTab = ref("signIn") // par défaut "Connexion"
 const username = ref("")
