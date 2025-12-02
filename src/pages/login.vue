@@ -8,6 +8,10 @@
             Tout  en <br />
             quelques minutes seulement. <strong>Baiboho</strong>
         </p>
+        <div class="flex">
+            acceder à <span @click="change_page()" class=" ml-1 underline text-green-800 font-extrabold cursor-pointer">Pay By</span>
+      
+        </div>
       </div>
 
       <!-- Right side login form -->
