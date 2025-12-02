@@ -93,7 +93,7 @@ const logout=async ()=> {
       method: "POST",
             credentials: "include"
         })
-        
+      setLightTheme()
       console.log(response.status);
       if (response.status == 200) {
         localStorage.removeItem("access_token")
@@ -103,7 +103,7 @@ const logout=async ()=> {
 }
 
 onMounted(() => { 
- 
+   
   const theme = localStorage.getItem('theme')
   if (theme) {
     global.name.value = theme 

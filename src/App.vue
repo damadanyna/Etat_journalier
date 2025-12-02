@@ -3,9 +3,13 @@
   <VApp class="h-screen" >
       <login v-if="isLogged_status!==200"></login>
       <div v-else class="">
-        <LayoutDefault >
+        <LayoutEcours v-if="popupStore.user_access.app !== 'paie'">
           <router-view />
-        </LayoutDefault>
+        </LayoutEcours>
+        <LayoutPaie v-else>
+          <router-view />
+        </LayoutPaie>
+
         <VSnackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">
           {{snackbar.text}}
           <template #actions>
@@ -17,17 +21,21 @@
 </template>
 
 <script setup> 
+import { useRouter } from 'vue-router'
 const api = inject('api') 
 import login from './pages/login.vue';
 import { usePopupStore} from './stores'
-import LayoutDefault from '@/layouts/default.vue'
+import LayoutEcours from '@/layouts/encours.vue'
+import LayoutPaie from '@/layouts/paie.vue'
 import { useSnackbar } from '@/composables/useSnackbar' 
 import popup_view from './components/loading/file_porgress_bar_vues.vue';
 import { useTheme } from 'vuetify' 
 import { useRoute } from 'vue-router'
-import { computed, onMounted,ref,inject } from 'vue' 
+import { computed, onMounted,ref,inject, onBeforeMount } from 'vue' 
 
 const popupStore = usePopupStore()
+
+const router = useRouter();
 
 const { snackbar } = useSnackbar()
 const { global } = useTheme() 
@@ -59,16 +67,22 @@ const get_stat = async () => {
     const data = await protectedResp.json(); 
     popupStore.user_access.name=data.username
     popupStore.user_access.access=data.privillege
-    // console.log(popupStore.user_access) 
-    console.log("Headers:", protectedResp);
-    // console.log("Utilisateur connecté :", data);
+    popupStore.user_access.app=data.app  
+    console.log("Headers:", protectedResp); 
+    console.log("application= ",popupStore.user_access.app);
+    
+  if (popupStore.user_access.app === 'paie') {
+      router.replace({ path: '/app/paie' });
+    } else {
+      router.push({ path: '/app/credits' });
+    }
+    
   } else {
     const errorText = await protectedResp.text();
     console.error("Non authentifié ou erreur :", errorText);
   }
 };
  
-
 onMounted(() => { 
 
   get_stat()
@@ -77,6 +91,8 @@ onMounted(() => {
     global.name.value = theme
   }
    
+ 
+
 })
 
 // Optionally, handle dynamic layouts here if necessary

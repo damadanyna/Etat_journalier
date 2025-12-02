@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File,FastAPI,Response,Depends, Form, 
 from controller.Credits import Credits
 from controller.Credit_outstanding_report import Credit_outstanding_report
 from controller.Users import Users
+from controller.UsersPaie import UsersPaie
 from fastapi.responses import StreamingResponse
 from typing import List
 from typing import Optional
@@ -22,6 +23,7 @@ dav_unique = DavUnique()
 router = APIRouter()
 credits = Credits()
 user= Users()
+usersPaie= UsersPaie()
 credit_outstanding_report = Credit_outstanding_report()
 
 credit_outstanding_report = Credit_outstanding_report()
@@ -40,11 +42,34 @@ def get_credits():
 @router.post("/signup")
 def signup(username: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
     return user.signup(username, password, immatricule)
+# --- SIGNUP ---
 
 # --- SIGNIN ---
 @router.post("/signin")
 def signin(username: str = Form(...), password: str = Form(...)):
     result = user.signin(username, password)
+
+    # Si connexion réussie, on ajoute les colonnes manquantes
+    try:
+        success = dav_unique.add_status_columns()
+        if success:
+            print("[INFO] Vérification des colonnes de status terminée ✅")
+        else:
+            print("[WARN] Échec de la vérification/ajout des colonnes ⚠️")
+    except Exception as e:
+        print(f"[ERREUR] lors de la vérification des colonnes : {e}")
+
+    return result
+
+
+@router.post("/signupPaie")
+def signupPaie(username: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
+    return usersPaie.signup(username, password, immatricule)
+
+# --- SIGNINPAIE ---
+@router.post("/signinPaie")
+def signinPaie(username: str = Form(...), password: str = Form(...)):
+    result = usersPaie.signin(username, password)
 
     # Si connexion réussie, on ajoute les colonnes manquantes
     try:
@@ -525,4 +550,31 @@ def download_file(filename: str, date: str):
             "Content-Length": str(file_size)
         }
     )
+
+
+@router.get("/download-file-paie")
+def download_file(filename: str, date: str):
+    path = os.path.join(BASE_DIR, "load_file_paie", date, filename)
+    print(">>> Chemin construit :", path)
+
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Fichier introuvable")
+
+    file_size = os.path.getsize(path)
+
+    def iter_file():
+        with open(path, "rb") as f:
+            while chunk := f.read(1024 * 1024):  # 1 Mo par chunk
+                yield chunk
+
+    return StreamingResponse(
+        iter_file(),
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Length": str(file_size)
+        }
+    )
+
+
 api_router = router

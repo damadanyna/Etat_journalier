@@ -21,7 +21,8 @@ export const usePopupStore = defineStore('popup', () => {
   const user_access=ref({
     name:"",
     password:"", 
-    access:""
+    access:"",
+    app:"encours",
   })
 
   const togglePopup = () => {
