@@ -33,7 +33,7 @@ class Users:
                         validate_status BOOLEAN DEFAULT FALSE,
                         block_by VARCHAR(255) NULL,
                         block_at TIMESTAMP NULL,
-                        is_blocked BOOLEAN DEFAULT FALSE
+                        block_status BOOLEAN DEFAULT FALSE
                     )
                 """
                 conn.execute(text(query))
@@ -347,7 +347,8 @@ class Users:
         finally:
             if conn:
                 conn.close()
-
+    
+     
 
     
     def getListeUser(self):
@@ -419,8 +420,7 @@ class Users:
             username = payload.get("sub")
             privillege = payload.get("privillege")
             id = payload.get("id")
-            app = payload.get("app")
-            print ("payload---------->",payload)
+            app = payload.get("app") 
  
             print("user:", username, "id:", id, "privillege:", privillege   )
 

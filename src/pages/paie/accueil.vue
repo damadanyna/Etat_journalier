@@ -1,11 +1,10 @@
 <template>
-    <h1>accueil</h1>
+    <tableWiew></tableWiew>
 </template>
 
-<script>
-export default {
+<script setup>
+import tableWiew from '../../components/PAIE/dataViewer/tablePaie.vue';
 
-}
 </script>
 
 <style>

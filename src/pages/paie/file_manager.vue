@@ -47,7 +47,7 @@
           <v-icon size="14" style="margin-right: 5px;">mdi-file</v-icon> {{ name }}
         </li>
       </ul>
-      <input type="file" accept=".csv" multiple ref="fileInput" class="hidden-file-input" @change="handleFileUpload">
+      <input type="file" accept=".xlsx" multiple ref="fileInput" class="hidden-file-input" @change="handleFileUpload">
     </v-card>
     <v-dialog max-width="500">
       <template v-slot:activator="{ props: activatorProps }">
@@ -160,8 +160,8 @@ const handleFileUpload = (event) => {
   const files = event.target.files;
   const elt_ = document.getElementById('file_name');
 
-  if (files.length < 5 || files.length > 21) {
-    alert("Vous ne pouvez sélectionner que de 18 à 21  fichiers.");
+  if (files.length >1 ) {
+    alert("Vous ne pouvez sélectionner que de 1  fichiers.");
     event.target.value = ""; // reset
     file_name.value = "Importer un fichier";
     file_names.value = [];
@@ -223,11 +223,11 @@ const open_dialoge_date=()=> {
   isDialogActive.value = true
 }
 
-const load_database = async (refresh, files, folder,date_string) => {
-
-  var index_table=0;
+const load_database = async (refresh, files, folder, date_string) => {
+  let index_table = 0;
+  
   try {
-    const response = await fetch(`${api}/api/create_multiple_table`, {
+    const response = await fetch(`${api}/api/create_multiple_table_paie`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -236,82 +236,122 @@ const load_database = async (refresh, files, folder,date_string) => {
         files: files.map(f => f.title),
         app: null,
         folder: folder,
-        str_date:date_string
+        str_date: date_string
       })
     });
 
     if (!response.body) {
       throw new Error("Pas de flux en réponse !");
-    } 
-    
+    }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
-    usePopupStore().precentage=0
+    
+    // Initialisation
+    usePopupStore().precentage = 0;
+    usePopupStore().cdi_list_file_stream = [];
+    
     let partial = "";
+    let currentFileIndex = -1;
+    
     while (true) {
-      
       const { done, value } = await reader.read();
       if (done) break;
 
       partial += decoder.decode(value, { stream: true });
 
       // Découper les lignes (JSON par ligne)
-      let lines = partial.split("\n");  
-      // console.log(lines);
+      let lines = partial.split("\n");
+      partial = lines.pop() || "";
       
-      partial = lines.pop();
       for (const line of lines) {
-        if (line.trim()) {
-          try {
-            const msg = JSON.parse(line);
-            if (msg.fait) {
-              usePopupStore().precentage=0
-              usePopupStore().cdi_list_file_stream[index_table].success=true
-              index_table++
-              if (index_table==files.length) {
-                setTimeout(() => {
-                  usePopupStore().showPopupCDI = false
-                }, 200);
-              }
+        if (!line.trim()) continue;
+        
+        try {
+          const msg = JSON.parse(line);
+          
+          console.log('[STREAM]', msg);
 
-            }
-            if(msg.filename ){
-              usePopupStore().cdi_list_file_stream.push([
-                {file_name:msg.filename},
-                {task:msg.task},
-                {row_count:msg.row_count},
-                {success:false},
-                {total:msg.total}])
-
-            }else{
-               if(msg.task){
-                usePopupStore().cdi_list_file_stream[index_table].task=msg.task
-                }
-                if(msg.row_count){
-                    usePopupStore().cdi_list_file_stream[index_table].row_count=msg.row_count
-                }
-                if(msg.total){
-                    usePopupStore().cdi_list_file_stream[index_table].total=msg.total
-                }
-                if(msg.percentage){
-                    usePopupStore().precentage=parseFloat(msg.percentage)
-                }
-            }
-
-          } catch (e) {
-            console.warn("Impossible de parser la ligne :", line,e);
+          // Détection d'un nouveau fichier
+          if (msg.status === 'start' && msg.filename) {
+            currentFileIndex++;
+            usePopupStore().cdi_list_file_stream.push({
+              file_name: msg.filename,
+              task: 'En attente...',
+              row_count: 0,
+              total: 0,
+              success: false
+            });
+            usePopupStore().precentage = 0;
           }
+
+          // Mise à jour du fichier en cours
+          if (currentFileIndex >= 0 && currentFileIndex < usePopupStore().cdi_list_file_stream.length) {
+            const currentFile = usePopupStore().cdi_list_file_stream[currentFileIndex];
+
+            // Mise à jour de la tâche
+            if (msg.task) {
+              currentFile.task = msg.task;
+            }
+
+            // Mise à jour du compteur de lignes
+            if (msg.row_count) {
+              currentFile.row_count = msg.row_count;
+            }
+
+            // Mise à jour du total
+            if (msg.total) {
+              currentFile.total = msg.total;
+            }
+
+            // Mise à jour du pourcentage
+            if (msg.percentage !== undefined) {
+              usePopupStore().precentage = parseFloat(msg.percentage);
+            }
+
+            // Fichier terminé avec succès
+            if (msg.fait === true) {
+              currentFile.success = true;
+              usePopupStore().precentage = 100;
+              
+              console.log(`[FICHIER TERMINÉ] ${currentFile.file_name}`);
+              
+              // Si c'est le dernier fichier
+              if (currentFileIndex === files.length - 1) {
+                console.log('[TOUS LES FICHIERS TERMINÉS]');
+                setTimeout(() => {
+                  usePopupStore().showPopupCDI = false;
+                }, 500);
+              }
+            }
+          }
+
+          // Messages d'erreur
+          if (msg.status === 'error' || msg.status === 'critical_error') {
+            console.error('[ERREUR]', msg.message);
+            if (currentFileIndex >= 0) {
+              usePopupStore().cdi_list_file_stream[currentFileIndex].task = 'Erreur';
+              usePopupStore().cdi_list_file_stream[currentFileIndex].success = false;
+            }
+          }
+
+          // Message final global
+          if (msg.status === 'done') {
+            console.log('[PROCESSUS TERMINÉ]', msg.summary);
+          }
+
+        } catch (e) {
+          console.warn("Impossible de parser la ligne :", line, e);
         }
       }
     }
+
+    console.log('[STREAMING TERMINÉ]');
 
   } catch (error) {
     console.error("Erreur lors du chargement du fichier dans la base :", error);
   } finally {
     refresh.classList.remove('animIt');
-    index_table=0
-    usePopupStore().cdi_list_file_stream=[]
   }
 };
 
@@ -332,7 +372,7 @@ const uploadFile = async (folder_name) => {
   formData.append('app', app_type.value);
   formData.append('folder_name', folder_name);
   try {
-    const response = await fetch(`${api}/api/upload_multiple_files`, {
+    const response = await fetch(`${api}/api/upload_multiple_files_paie`, {
       method: 'POST',
       body: formData,
     });
@@ -423,7 +463,7 @@ const uploadFile = async (folder_name) => {
 // Méthode pour afficher les fichiers
 const showFiles = async () => {
   try {
-    const response = await axios.get('/api/show_files', {
+    const response = await axios.get('/api/show_files_paie', {
       params: {
         app:app_type.value
       }

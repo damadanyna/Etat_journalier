@@ -1,7 +1,6 @@
 <template>
   <v-toolbar color=" " class="bg-transparent" :title="toolbarTitle">
-    <!-- Badge date -->
-
+     
       <div class="flex flex-row justify-end items-center space-x-4 mx-4" >
         <h3 class="mr-5 text-xl">Date d'arrêt</h3>
 
@@ -68,16 +67,9 @@
           </v-list-item>
         </v-list>
       </v-menu>
-      </div>
-    <!-- <div class="flex items-center gap-1 green_transparent mr-2 px-5 rounded-md">
-      <v-icon icon="mdi-database" />
-      <span v-if="date_last_import_file !== ''" title="Dernière importation">
-        {{ formatDateString(date_last_import_file) }}
-      </span>
-      <span v-else>Récupération ...</span>
-    </div> -->
+      </div> 
 
-
+     
     <!-- Menu change et esri export -->
     <v-btn 
       v-if="isEsriPage || isChangePage" 

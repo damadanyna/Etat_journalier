@@ -1,23 +1,11 @@
 from fastapi import Request
-from fastapi.responses import StreamingResponse
-import json
+from fastapi.responses import StreamingResponse 
 from typing import List
-import os
-from datetime import datetime
-import time
-import re 
-import random
-import string
-import openpyxl
-import pymysql.cursors
-import csv 
-import sys  
-import shutil 
+import os,time,re,json,string,random,openpyxl,pymysql.cursors,csv,sys,shutil,aiofiles,io
+from datetime import datetime 
 import pandas as pd
 from db.db  import DB
-from werkzeug.utils import secure_filename 
-import aiofiles
-import io
+from werkzeug.utils import secure_filename  
 from sqlalchemy import text
 
 

@@ -105,6 +105,14 @@ def validate_user(
     
     return user.validate_user(request, username,role,admin_password)
 
+@router.post("/validate_user_paie")
+def validate_user( request: Request, username: str = Form(...), role: str = Form(...), admin_password: str = Form(...)):
+    current_user = user.get_current_user(request) 
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    
+    return usersPaie.validate_user(request, username,role,admin_password)
+
 
 @router.post("/block_user")
 def block_user(
@@ -120,6 +128,20 @@ def block_user(
     return user.block_user(request, username, admin_password)
 
 
+@router.post("/block_user_paie")
+def block_user(
+    request: Request,
+    username: str = Form(...),
+    admin_password: str = Form(...)
+):
+    
+    current_user = user.get_current_user(request)
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    
+    return usersPaie.block_user(request, username, admin_password)
+
+
 @router.post("/update_user_role")
 def update_user_role(
     request: Request,
@@ -133,6 +155,19 @@ def update_user_role(
         raise HTTPException(status_code=403, detail="Accès refusé")
     return user.update_user_role(request, username, role, admin_password)
 
+@router.post("/update_user_role_paie")
+def update_user_role(
+    request: Request,
+    username: str = Form(...),
+    role: str = Form(...),
+    admin_password: str = Form(...)
+):
+    current_user = user.get_current_user(request)
+
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    return usersPaie.update_user_role(request, username, role, admin_password)
+
 @router.get("/users")
 def get_users(request: Request):
     current_user = user.get_current_user(request)
@@ -142,9 +177,22 @@ def get_users(request: Request):
 
     return user.getListeUser()
 
+@router.get("/usersPaie")
+def get_usersPaie(request: Request):
+    current_user = user.get_current_user(request)
+
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    return usersPaie.getListeUser() 
+
 @router.get("/users/pending_count")
 def get_pending_count():
     return user.get_pending_validation_count()
+
+@router.get("/usersPaie/pending_count")
+def get_pending_count():
+    return usersPaie.get_pending_validation_count()
 
 @router.get("/user/{user_id}")
 def get_users(request: Request, user_id: int):
@@ -154,6 +202,16 @@ def get_users(request: Request, user_id: int):
         raise HTTPException(status_code=403, detail="Accès refusé")
 
     return user.getUserById(user_id)
+
+
+@router.get("/userPaie/{user_id}")
+def get_users(request: Request, user_id: int):
+    current_user = user.get_current_user(request)
+
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    return usersPaie.getUserById(user_id)
 
 
 # --- LOGOUT ---
@@ -216,6 +274,73 @@ async def upload_multiple_files(
                 }) + '\n'
 
                 for progress in credits.upload_file_manual_in_detail(
+                    memory_file, folder_name, i, total_files
+                ):
+                    print(f"[Progression] {filename}: {progress.get('percentage', '?')}% - {progress.get('message', '')}")
+                    yield json.dumps(progress) + '\n'
+
+            except Exception as e:
+                print(f"[Erreur] {filename} : {e}")
+                yield json.dumps({
+                    "status": "error",
+                    "file": filename,
+                    "message": f"Erreur pendant le traitement : {str(e)}"
+                }) + '\n'
+
+        yield json.dumps({
+            "status": "success",
+            "message": "Tous les fichiers ont été importés avec succès.",
+            "percentage": 100
+        }) + '\n'
+
+    return StreamingResponse(main_process(), media_type="application/json")
+
+
+@router.post("/upload_multiple_files_paie")
+async def upload_multiple_files_paie(files: List[UploadFile] = File(...),app: str = Form(...),folder_name: str = Form(...)):
+    import io, json
+    from fastapi.responses import StreamingResponse
+
+    class NamedBytesIO(io.BytesIO):
+        def __init__(self, content, filename):
+            super().__init__(content)
+            self.filename = filename
+
+    # 🔥 Étape 1 : lire tous les fichiers **immédiatement**
+    in_memory_files = []
+    for file in files:
+        try:
+            content = await file.read()  # doit être fait ici
+            memory_file = NamedBytesIO(content, file.filename)
+            in_memory_files.append(memory_file)
+        except Exception as e:
+            return StreamingResponse(iter([json.dumps({"status": "error","file": getattr(file, 'filename', 'inconnu'),
+                "message": f"Erreur de lecture du fichier : {str(e)}"}) + '\n']),
+                media_type="application/json"
+            )
+
+    # ✅ Étape 2 : générateur avec les fichiers déjà chargés en mémoire
+    def main_process():
+        total_files = len(in_memory_files)
+
+        yield json.dumps({
+            "status": "info",
+            "message": f"{total_files} fichiers chargés pour l'application '{app}', dossier '{folder_name}'.",
+            "total_files": total_files
+        }) + '\n'
+
+        for i, memory_file in enumerate(in_memory_files, start=1):
+            filename = memory_file.filename
+            try:
+                yield json.dumps({
+                    "status": "info",
+                    "file": filename,
+                    "current": i,
+                    "total_files": total_files,
+                    "message": f"Traitement du fichier {i}/{total_files} : {filename}..."
+                }) + '\n'
+
+                for progress in usersPaie.upload_file_manual_in_detail(
                     memory_file, folder_name, i, total_files
                 ):
                     print(f"[Progression] {filename}: {progress.get('percentage', '?')}% - {progress.get('message', '')}")
@@ -303,9 +428,187 @@ async def create_multiple_table(request: Request):
         credits.insert_into_history_table(label_value=str_date, used=1,stat_of=None)
     return StreamingResponse(generate_all(), media_type="application/json")
 
+
+@router.post("/create_multiple_table_paie")
+async def create_multiple_table(request: Request):
+    """
+    Endpoint pour créer plusieurs tables à partir de fichiers Excel
+    avec streaming en temps réel de la progression
+    """
+    try:
+        data = await request.json()
+    except Exception as e:
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"JSON invalide : {str(e)}"}
+        )
+
+    # Validation des paramètres requis
+    if 'files' not in data or 'folder' not in data or 'str_date' not in data:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Paramètres manquants : files, folder et str_date requis"}
+        )
+
+    filenames: List[str] = data['files']
+    folder: str = data['folder']
+    str_date: str = data['str_date']
+
+    # Validation des données
+    if not isinstance(filenames, list) or len(filenames) == 0:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Le paramètre 'files' doit être une liste non vide"}
+        )
+
+    def generate_all():
+        """Générateur pour le streaming des messages de progression"""
+        
+        # Message d'initialisation IMMÉDIAT
+        yield json.dumps({
+            "status": "init",
+            "message": "[INFO] Initialisation du processus...",
+            "total_files": len(filenames)
+        }) + "\n"
+        
+        # IMPORTANT: yield vide pour forcer le flush
+        yield ""
+
+        # Création de la table historique
+        try:
+            yield json.dumps({
+                "status": "info",
+                "message": "[INFO] Création/vérification de la table historique..."
+            }) + "\n"
+            
+            usersPaie.create_history_table()
+            
+            yield json.dumps({
+                "status": "info",
+                "message": "[INFO] Table historique vérifiée/créée"
+            }) + "\n"
+        except Exception as e:
+            yield json.dumps({
+                "status": "warning",
+                "message": f"[AVERTISSEMENT] Problème table historique : {str(e)}"
+            }) + "\n"
+
+        # Compteurs pour le résumé final
+        success_count = 0
+        error_count = 0
+        processed_tables = []
+
+        # Traitement de chaque fichier
+        for idx, filename in enumerate(filenames, 1):
+            
+            yield json.dumps({
+                "status": "start",
+                "message": f"[INFO] Début du traitement du fichier {idx}/{len(filenames)} : {filename}",
+                "filename": filename,
+                "file_index": idx,
+                "total_files": len(filenames)
+            }) + "\n"
+
+            try:
+                # Appel de la fonction de chargement
+                generator = usersPaie.load_file_excel_in_database(filename, folder, str_date)
+
+                if generator is None:
+                    error_count += 1
+                    yield json.dumps({
+                        "status": "error",
+                        "message": f"[ERREUR] Aucun générateur retourné pour {filename}",
+                        "filename": filename
+                    }) + "\n"
+                    continue
+
+                # Stream des messages de progression
+                file_success = False
+                table_name = None
+                for message in generator:
+                    try:
+                        msg_data = json.loads(message)
+                        if msg_data.get("status") == "success":
+                            file_success = True
+                            table_name = msg_data.get("table_name")
+                        yield message + "\n"
+                    except json.JSONDecodeError:
+                        yield message + "\n"
+
+                if file_success:
+                    success_count += 1
+                    if table_name:
+                        processed_tables.append(table_name)
+                else:
+                    error_count += 1
+
+            except Exception as e:
+                error_count += 1
+                yield json.dumps({
+                    "status": "critical_error",
+                    "message": f"[ERREUR CRITIQUE] Problème sur {filename} : {str(e)}",
+                    "filename": filename
+                }) + "\n"
+
+            # Message de fin pour ce fichier
+            yield json.dumps({
+                "status": "end",
+                "message": f"[INFO] Fin du traitement du fichier {idx}/{len(filenames)} : {filename}",
+                "filename": filename,
+                "file_index": idx,
+                "total_files": len(filenames)
+            }) + "\n"
+
+        # Mise à jour de l'historique
+        try:
+            usersPaie.insert_into_history_table(
+                label_value=str_date,
+                used=1,
+                stat_of=None
+            )
+            yield json.dumps({
+                "status": "info",
+                "message": "[INFO] Historique mis à jour"
+            }) + "\n"
+        except Exception as e:
+            yield json.dumps({
+                "status": "warning",
+                "message": f"[AVERTISSEMENT] Erreur mise à jour historique : {str(e)}"
+            }) + "\n"
+
+        # Message final avec résumé
+        yield json.dumps({
+            "status": "done",
+            "message": "[INFO] Tous les fichiers ont été traités.",
+            "summary": {
+                "total_files": len(filenames),
+                "success": success_count,
+                "errors": error_count,
+                "tables_created": processed_tables
+            }
+        }) + "\n"
+
+    # Retour du StreamingResponse
+    return StreamingResponse(
+        generate_all(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no"
+        }
+    )
+    
+    
+    
+    
 @router.get("/show_files")
 async def show_files(app: Optional[str] = Query(None)):
     files = credits.show_files(app=app)
+    return JSONResponse(content={"files": files})
+
+@router.get("/show_files_paie")
+async def show_files_paie(app: Optional[str] = Query(None)):
+    files = usersPaie.show_files(app=app)
     return JSONResponse(content={"files": files})
 
 
@@ -417,6 +720,43 @@ def get_capital_sums():
         print("Erreur dans get_capital_sums:", e)
         return JSONResponse(status_code=500, content={"status": "error", "detail": str(e)})
     
+
+
+@router.get("/get_paie_list")
+def get_capital_sums(
+    matricule: str | None = Query(default=None),
+    dateStr: str | None = Query(default=None)
+):
+    try:
+        # Appel de la fonction avec les paramètres
+        data = usersPaie.get_users(matricule=matricule, dateStr=dateStr)
+
+        if data is None:
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "detail": "Erreur lors de la récupération des données."}
+            )
+
+        # Convertir les types non JSON serializable
+        data_serializable = convert_decimals(data)
+
+        return JSONResponse(
+            content={
+                "status": "success",
+                "matricule": matricule,
+                "dateStr": dateStr,
+                "data": data_serializable
+            }
+        )
+
+    except Exception as e:
+        print("Erreur dans get_capital_sums:", e)
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "detail": str(e)}
+        )
+
+    
     
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -488,6 +828,21 @@ async def history_insert( ):
         print(f"[ERREUR route get_encours_credits] {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/history_insert_paie")
+async def history_insert( ): 
+    try:
+        response = usersPaie.get_history_insert()
+
+        if response is None or len(response.get("data", [])) == 0:
+            raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour la limit_type donnée.")
+
+        return {"response": response}
+
+    except Exception as e:
+        print(f"[ERREUR route get_encours_credits] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/get_local_ref")
 async def get_local_ref(date: str = Query(...)): 
     try:
@@ -517,10 +872,7 @@ async def get_pa_class(date: str = Query(...)):
         print(f"[ERREUR route get_encours_credits] {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.get("/users/pending_count")
-def get_pending_count():
-    return user.get_pending_validation_count()
+ 
 
 
 
