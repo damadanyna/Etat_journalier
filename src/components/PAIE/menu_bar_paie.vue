@@ -1,25 +1,28 @@
 <template>
 <v-toolbar color=" " class="bg-transparent" title="Pay By">
-    <h3 class="mr-5 text-xl">Date de paie</h3> 
+    <div v-if="popupStore.user_access.access=='admin'" class=" flex flex-row">
+        <h3 class="mr-5 text-xl">Date de paie</h3> 
 
-    <v-menu   v-model="menu" close-on-content-click offset-y max-width="200" min-width="200">
-        <template #activator="{ props }">
-            <v-btn v-bind="props" prepend-icon="mdi-calendar-range" variant="outlined">
-                <template #prepend>
-                    <v-icon color="success" />
+            <v-menu   v-model="menu" close-on-content-click offset-y max-width="200" min-width="200">
+                <template #activator="{ props }">
+                    <v-btn v-bind="props" prepend-icon="mdi-calendar-range" variant="outlined">
+                        <template #prepend>
+                            <v-icon color="success" />
+                        </template>
+                        <span class="text-2xl">{{ selectedDate }}</span>
+                    </v-btn>
                 </template>
-                <span class="text-2xl">{{ selectedDate }}</span>
-            </v-btn>
-        </template>
-        <v-list style="max-height: 200px; overflow-y: auto;">
-            <v-list-item v-for="date in historyDates" :key="date.label" @click="() => selectDateStatOf(date.label, date.stat_of)" role="button">
-                <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''"> 
-                    <v-icon   color="success" class=" mr-2">mdi mdi-calendar</v-icon>
-                    <v-list-item-title>{{ date.label }}</v-list-item-title>
-                </div>
-            </v-list-item>
-        </v-list>
-    </v-menu>
+                <v-list style="max-height: 200px; overflow-y: auto;">
+                    <v-list-item v-for="date in historyDates" :key="date.label" @click="() => selectDateStatOf(date.label, date.stat_of)" role="button">
+                        <div class="flex" :title="date.stat_of!='init'? 'Base non initialisé':''"> 
+                            <v-icon   color="success" class=" mr-2">mdi mdi-calendar</v-icon>
+                            <v-list-item-title>{{ date.label }}</v-list-item-title>
+                        </div>
+                    </v-list-item>
+                </v-list>
+            </v-menu>
+    </div>
+    
     <user_btn_profil class=" mx-4"></user_btn_profil>
 </v-toolbar>
 </template>
@@ -102,17 +105,14 @@ watch(historyDates, (val) => {
 
     // Émet l'événement pour synchroniser la sélection
     
-    console.log("📅 Dernière date sélectionnée automatiquement :", lastDate)
+    // console.log("📅 Dernière date sélectionnée automatiquement :", lastDate)
   }
 }, { immediate: true })
 
 onMounted(() => {
     (async () => {
         historyDates.value = await fetchData(`${api}/api/history_insert_paie`)
-    })();
-
-    console.log("ionsdiosd", historyDates);
-
+    })(); 
 })
 </script>
 

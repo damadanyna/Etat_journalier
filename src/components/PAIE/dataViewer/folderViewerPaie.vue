@@ -1,0 +1,80 @@
+<template>
+  <div class="flex flex-row h-[89vh] px-3">
+    
+    <div class=" grid grid-cols-5 gap-5 w-[55%] h-2.5 ">
+
+        <div v-for="item,i in props.data" :key="i" class=" cursor-pointer  ">
+          <button @click="selectDate(item.label)"  class="flex flex-col"> 
+            <span class="mdi mdi-folder-arrow-down text-7xl text-stone-500" ></span>
+            <span>{{item.label}}</span>
+          </button> 
+        </div> 
+    </div>
+    <v-divider vertical></v-divider>
+    <div class="flex max-w-[45%] justify-center items-center overflow-auto  ">
+      <FactureViewerPaie :data="dataPaie"></FactureViewerPaie>
+      <!-- <div class="flex flex-col items-center">
+        <span class="mdi mdi-email-seal-outline text-7xl  text-stone-800"></span>
+        <span class=" text-stone-700 font-bold"> Auccun fichier trouvé</span>
+      </div> -->
+    </div>
+  </div>
+</template>
+
+<script setup >
+import FactureViewerPaie from './factureViewerPaie.vue';
+import { ref,inject} from 'vue';  
+import { usePopupStore } from '../../../stores';
+
+const dataPaie=ref([])
+const api = inject('api') 
+const popupStore = usePopupStore() 
+
+
+const fetch_all_paie = async (matricule = null, dateStr = null) => {
+  
+  
+  try {
+    // Construire l'URL avec paramètres query
+    let url = `${api}/api/get_paie_list`;
+    const params = new URLSearchParams();
+    if (matricule) params.append("matricule", matricule);
+    if (dateStr) params.append("dateStr", dateStr);
+
+    if ([...params].length > 0) {
+      url += `?${params.toString()}`;
+    }
+
+    const response = await fetch(url);
+    const json = await response.json();
+
+    if (!response.ok) throw new Error(json.detail || "Erreur inconnue");
+ 
+    // console.log(json.data.users);
+    dataPaie.value = json.data.users;
+    console.log(dataPaie.value);
+    
+
+  } catch (err) {
+    console.log(err.message || "Erreur inconnue");
+    console.error("Erreur fetch_all_paie:", err);
+
+  } finally {
+    // loading.value = false;
+  }
+};
+
+const props = defineProps({
+  data: { type: Object, default: null }
+});
+
+const selectDate=(date)=>{
+    const matricule= popupStore.user_access.name 
+    fetch_all_paie(matricule, popupStore.selected_date) 
+
+}
+</script>
+
+<style>
+
+</style>

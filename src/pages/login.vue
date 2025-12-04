@@ -67,12 +67,19 @@
         <h2 class=" text-black">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</h2>
 
         <form @submit.prevent="handleSubmitPaie">
-          <input type="text" placeholder="Votre nom d'utilisateur" v-model="username" />
+          <input v-if="activeTab !== 'signIn'" type="text" placeholder="Nom d'utilisateur" v-model="username" />
+          <input @keyup="validateImmatricule" type="text" placeholder="Immatricule (Format: P0XXXX)" v-model="immatricule" />
           <input type="password" placeholder="Mot de passe" v-model="password" />
           <input v-if="activeTab !== 'signIn'" type="Verification mot de passe" placeholder="Verification mot de passe" v-model="verif_password" />
-          <input v-if="activeTab !== 'signIn'"  type="text" placeholder="Immatricule" v-model="immatricule" />
           <a href="#" v-if="activeTab === 'signIn'" class="forgot">Mot de passe oublier?</a>
-          <button type="submit">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
+          <div v-if="activeTab !== 'signIn'" class=" flex w-full">
+            <button class=" w-full" v-if="!username || !password || !verif_password || !immatricule || validateIM==false"  type="reset">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
+            <button class=" w-full" v-else type="submit">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
+          </div>
+          <div v-else class=" flex w-full">
+            <button class=" w-full" v-if=" !password ||!immatricule "  type="reset">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
+            <button class=" w-full" v-else type="submit">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
+          </div>
         </form>
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
@@ -90,12 +97,22 @@ const notificationStore = useNotificationStore()
 const activeLogin=ref("APP")
 const api = inject('api') 
 const activeTab = ref("signIn") // par défaut "Connexion"
-const username = ref("")
+const username = ref("") 
 const password = ref("")
 const verif_password = ref("")
 const immatricule = ref("")
 const errorMessage = ref("")
-
+const validateIM=ref(false)
+const  validateImmatricule=() => {
+      const regex = /^P0\d{4}$/;
+      if (!regex.test(immatricule.value)) {
+        console.log('Format invalide ! L\'immatricule doit être de la forme P0XXXX');
+        validateIM.value= false;
+      } else {
+      validateIM.value= true; 
+      }
+    }
+ 
 const handleSubmit = async () => {    
   errorMessage.value = "" // réinitialiser l'erreur
   try { 
@@ -160,7 +177,7 @@ const handleSubmitPaie = async () => {
     
     if (activeTab.value === "signIn") {
       const formData = new FormData();
-      formData.append("username", username.value);
+      formData.append("immatricule", immatricule.value);
       formData.append("password", password.value);
 
       response = await fetch(`${api}/api/signinPaie`, {
@@ -367,7 +384,7 @@ const change_page=() => {
   color: #47ca73;
   text-decoration: underline;
 }
-
+ 
 .login-right button[type="submit"] {
   padding: 12px;
   border: none;
@@ -382,6 +399,17 @@ const change_page=() => {
   padding: 12px;
   border: none;
   border-radius: 10px;
+  background: #1d3521;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+.login-right-paie button[type="reset"] {
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  opacity: .5;
   background: #1d3521;
   color: #ffffff;
   cursor: pointer;

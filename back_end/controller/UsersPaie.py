@@ -89,14 +89,14 @@ class UsersPaie:
                 conn.close()
  
 
-    def signin(self, username: str, password: str):
+    def signin(self, immatricule: str, password: str):
         conn = None
         try:
             conn = self.db.connect()
 
             # Vérifier si l'utilisateur existe
-            query = text("SELECT * FROM usersPaie WHERE username = :username")
-            result = conn.execute(query, {"username": username})
+            query = text("SELECT * FROM usersPaie WHERE immatricule = :immatricule")
+            result = conn.execute(query, {"immatricule": immatricule})
             user = result.mappings().first()
 
             if not user:
@@ -111,7 +111,7 @@ class UsersPaie:
 
             # Générer le JWT
             token_data = {
-                "sub": username,
+                "sub": immatricule,
                 "id": user["id"],
                 "app": "paie",
                 "privillege": user["privillege"],
@@ -124,7 +124,7 @@ class UsersPaie:
                 "access_token": token,
                 "id": user["id"],
                 "token_type": "bearer",
-                "user": {"username": username},
+                "user": {"immatricule": immatricule},
                 "privilege": user["privillege"]
             }
 
@@ -933,7 +933,8 @@ class UsersPaie:
 
             # Construire la requête dynamiquement
             if matricule:
-                query = text(f"SELECT * FROM {table_name} WHERE immatricule = :mat")
+                query = text(f"SELECT * FROM {table_name} WHERE matricule = :mat")
+                print(query)
                 result = conn.execute(query, {"mat": matricule})
             else:
                 query = text(f"SELECT * FROM {table_name}")

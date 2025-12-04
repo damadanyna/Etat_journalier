@@ -51,7 +51,7 @@ const api = inject('api')
 const list_menu = [{
         icon: 'mdi-home-city',
         title: 'Accueil',
-        to: '/paie/accueil',
+        to: '/paie/accueil', 
         access: 'all'
     },
     {
@@ -65,7 +65,7 @@ const list_menu = [{
         icon: 'mdi-file',
         title: 'Importation',
         to: '/paie/file_manager',
-        access: 'all'
+        access: 'admin'
     }
 ];
 
@@ -78,7 +78,7 @@ const fetchDemandesValidation = async () => {
         })
 
         const data = await res.json()
-        console.log("pending_count API response:", data);
+        // console.log("pending_count API response:", data);
         demandesValidation.value = data.count || 0
         notificationStore.demandesValidation = data.count || 0
 

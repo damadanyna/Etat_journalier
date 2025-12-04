@@ -76,7 +76,7 @@ const fetchDemandesValidation = async () => {
       headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
     })
     const data = await res.json()
-    console.log("pending_count API response:", data);
+    // console.log("pending_count API response:", data);
     demandesValidation.value = data.count || 0
     
     notificationStore.setDemandesValidation(data.count || 0)

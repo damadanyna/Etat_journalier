@@ -68,11 +68,11 @@ const get_stat = async () => {
     popupStore.user_access.name=data.username
     popupStore.user_access.access=data.privillege
     popupStore.user_access.app=data.app  
-    console.log("Headers:", protectedResp); 
-    console.log("application= ",popupStore.user_access.app);
+    // console.log("Headers:", protectedResp); 
+    // console.log("application= ",popupStore.user_access.app);
     
   if (popupStore.user_access.app === 'paie') {
-      router.replace({ path: '/app/paie' });
+      router.replace({ path: '/paie/accueil' });
     } else {
       router.push({ path: '/app/credits' });
     }

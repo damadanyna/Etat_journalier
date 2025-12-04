@@ -68,8 +68,8 @@ def signupPaie(username: str = Form(...), password: str = Form(...), immatricule
 
 # --- SIGNINPAIE ---
 @router.post("/signinPaie")
-def signinPaie(username: str = Form(...), password: str = Form(...)):
-    result = usersPaie.signin(username, password)
+def signinPaie(immatricule: str = Form(...), password: str = Form(...)):
+    result = usersPaie.signin(immatricule, password)
 
     # Si connexion réussie, on ajoute les colonnes manquantes
     try:
@@ -727,6 +727,7 @@ def get_capital_sums(
     matricule: str | None = Query(default=None),
     dateStr: str | None = Query(default=None)
 ):
+    print( "matricule: ", matricule, "dateStr: ", {dateStr} )
     try:
         # Appel de la fonction avec les paramètres
         data = usersPaie.get_users(matricule=matricule, dateStr=dateStr)
