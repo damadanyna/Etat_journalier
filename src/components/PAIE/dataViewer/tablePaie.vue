@@ -207,7 +207,7 @@ watch(
   () => popupStore.selected_date,
   () => { 
     
-    console.log(popupStore.user_access);
+    // console.log(popupStore.user_access);
     
     const access=popupStore.user_access.access
     if(access=='admin')
