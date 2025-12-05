@@ -1,11 +1,7 @@
 <template>
 <div class=" max-h-full  ">
-    <button 
-    @click="telechargerPDF() " 
-    :disabled="isGeneratingPDF"
-    class="px-4  bg-green-500 text-black rounded   disabled:opacity-50"
-  >
-    {{ isGeneratingPDF ? 'Génération en cours...' : 'Télécharger PDF' }}
+    <button @click="telechargerPDF() " :disabled="isGeneratingPDF"class=" text-white border-stone-500 mb-3">
+      <span class=" bg-green-700 px-3 py-1  rounded-2xl"> {{ isGeneratingPDF ? 'Génération en cours...' : 'Télécharger PDF' }}</span>
   </button>
     <div class="max-w-4xl mx-auto px-4 py-7 h-full bg-white"  id="file_" >
         <!-- Header avec logo et titre -->

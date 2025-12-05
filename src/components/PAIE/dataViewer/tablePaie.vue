@@ -129,7 +129,8 @@ const
 const date_liste= ref([])
 
 const showRow = (event, row) => {
-  selectedRow.value = row.item;   // données de la ligne cliquée
+  // selectedRow.value = ;
+  selectedRow.value = [row.item ,  { "upload_date":  popupStore.selected_date }]   // données de la ligne cliquée
   showForme.value = true;         // ouvrir le formulaire
   // console.log("Ligne cliquée :", row.item);
 };
@@ -205,12 +206,11 @@ onMounted(async () => {
 // Watch sur la date sélectionnée
 watch(
   () => popupStore.selected_date,
-  () => { 
-    
-    // console.log(popupStore.user_access);
-    
+  () => {  
     const access=popupStore.user_access.access
     if(access=='admin')
+       console.log(popupStore.selected_date);
+       
       fetch_all_paie(null, popupStore.selected_date) 
   },
   { immediate: true }
