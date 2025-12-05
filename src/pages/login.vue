@@ -70,7 +70,7 @@
           <input v-if="activeTab !== 'signIn'" type="text" placeholder="Nom d'utilisateur" v-model="username" />
           <input @keyup="validateImmatricule" type="text" placeholder="Immatricule (Format: P0XXXX)" v-model="immatricule" />
           <input type="password" placeholder="Mot de passe" v-model="password" />
-          <input v-if="activeTab !== 'signIn'" type="Verification mot de passe" placeholder="Verification mot de passe" v-model="verif_password" />
+          <input type="password" v-if="activeTab !== 'signIn'"  placeholder="Verification mot de passe" v-model="verif_password" />
           <a href="#" v-if="activeTab === 'signIn'" class="forgot">Mot de passe oublier?</a>
           <div v-if="activeTab !== 'signIn'" class=" flex w-full">
             <button class=" w-full" v-if="!username || !password || !verif_password || !immatricule || validateIM==false"  type="reset">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
