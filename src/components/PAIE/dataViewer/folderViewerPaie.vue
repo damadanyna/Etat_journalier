@@ -35,7 +35,7 @@ const popupStore = usePopupStore()
 
 const fetch_all_paie = async (matricule = null, dateStr = null) => {
   
-  console.log(dateStr);
+  // console.log(dateStr);
   
   try {
     // Construire l'URL avec paramètres query
@@ -52,10 +52,11 @@ const fetch_all_paie = async (matricule = null, dateStr = null) => {
     const json = await response.json();
 
     if (!response.ok) throw new Error(json.detail || "Erreur inconnue");
- 
-    dataPaie.value = [...json.data.users, { "upload_date": dateStr }];
+  
     
-    console.log(dataPaie.value);
+    
+    dataPaie.value = [ ...json.data.users, { "upload_date": dateStr }];
+     
     
 
   } catch (err) {

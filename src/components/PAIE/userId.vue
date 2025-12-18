@@ -47,6 +47,14 @@
                 {{ user.block_status ? 'Utilisateur bloqué' : (user.validate_status ? 'Compte validé' : 'En attente') }}
               </v-chip>
 
+
+
+              <v-chip color="red" variant="flat"size="small">
+                <v-icon start small>mdi-security</v-icon>Mot de passe
+              </v-chip>
+
+
+
             </div>
           </div>
         </div>
@@ -210,7 +218,7 @@
         color="warning"
         size="large"
         class="modify-role-btn mt-4"
-        @click="showRoleDialog = true"
+        @click="showDialogOfDescription(user)"
       >
         <v-icon start>mdi-account-edit</v-icon>
         Modifier le rôle
@@ -225,6 +233,19 @@
 
           <v-card-text>
             <p><strong>Utilisateur :</strong> {{ user.username }}</p>
+ 
+            <v-text-field
+              v-model="user_property.lastname"
+              type="text"
+              label="Nom et Prenom du collaborateur"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model="user_property.immatricule"
+              type="text"
+              label="Immatricule u collaborateur"
+              variant="outlined"
+            />
 
             <v-select
               v-model="newRole"
@@ -312,6 +333,12 @@ const fetchUser = async () => {
   }
 }
 
+function  showDialogOfDescription(user){
+  user_property.value.lastname = user.username
+  user_property.value.immatricule = user.immatricule
+  showRoleDialog.value = true
+}
+
 const validateUser = async () => {
   loading.value = true
   errorMsg.value = ''
@@ -334,6 +361,10 @@ const validateUser = async () => {
 const showDialog = ref(false)
 const selectedRole = ref('user')
 const adminPassword = ref('')
+const user_property = ref({ 
+  lastname: '',
+  immatricule: '',
+}) 
 
 const emit = defineEmits(['back', 'user-validated'])
 
@@ -355,7 +386,7 @@ const confirmValidation = async () => {
     })
 
     successMsg.value = `Utilisateur validé avec le rôle "${selectedRole.value}"`
-
+    adminPassword.value = ''
     await fetchUser()
     emit('user-validated')
   } catch (e) {
@@ -375,8 +406,10 @@ const confirmRoleChange = async () => {
   successMsg.value = ''
 
   try {
-    const formData = new FormData()
-    formData.append('username', user.value.username)
+    const formData = new FormData() 
+    formData.append('colab_lastname', user_property.value.lastname)
+    formData.append('colab_immatricule', user_property.value.immatricule)
+    formData.append('user_id', user.value.id)
     formData.append('role', newRole.value)
     formData.append('admin_password', adminPassword.value)
 

@@ -422,9 +422,10 @@ class UsersPaie:
                 conn.close()
                 
                                        
-    def update_user_role(self, request: Request, username: str, role: str, admin_password: str):
+    def update_user_role(self, request: Request, colab_lastname:str, colab_immatricule:str, user_id: str, role: str, admin_password: str):
         conn = None
         try:
+            current_user = self.get_current_user(request)
             current_user = self.get_current_user(request)
             admin_name = current_user.get("username")
             admin_id = current_user.get("id")
@@ -439,16 +440,18 @@ class UsersPaie:
             conn = self.db.connect()
             query = text("""
                 UPDATE usersPaie
-                SET privillege = :role
-                WHERE username = :username
+                SET privillege = :role, 
+                    username = :colab_lastname,
+                    immatricule = :colab_immatricule
+                WHERE id = :user_id
             """)
-            result = conn.execute(query, {"username": username, "role": role})
+            result = conn.execute(query, {"colab_lastname": colab_lastname,"colab_immatricule": colab_immatricule,"user_id": user_id, "role": role})
             conn.commit()
 
             if result.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
-            return {"message": f"Rôle de {username} modifié avec succès par {admin_name}"}
+            return {"message": f"Rôle de {user_id} modifié avec succès par {admin_name}"}
 
         except HTTPException as e:
             raise e

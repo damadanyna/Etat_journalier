@@ -136,8 +136,7 @@ watch(isRunning, (newVal) => {
 watch(
   () => popupStore.selected_date,
   (elt_resp) => {
-    selected_date.value = elt_resp;
-    // console.log('[watch] selected_date =', elt_resp);
+    selected_date.value = elt_resp; 
   },
   { immediate: true }
 );
@@ -196,13 +195,20 @@ const isAllowed = computed(() => {
 })
 
 const runStep = (index) => {
+  console.log(localStorage.getItem('selectedTable'));
+  
   return new Promise((resolve, reject) => {
     // steps.value[index].status = 'running'
     var index=null
-    const str_date = selected_date.value.label; // ta variable dynamique
+    const str_date =localStorage.getItem('selectedTable'); // ta variable dynamique 
     // console.log('str_date',str_date);
+    if (str_date!=undefined || str_date) {
+          const evtSource = new EventSource(`${api}/api/run_encours?str_date=${encodeURIComponent(str_date)}`);
+    }else{
+      alert("Acunne Date d'arrêt séléctionner")
+    }
+
     
-    const evtSource = new EventSource(`${api}/api/run_encours?str_date=${encodeURIComponent(str_date)}`);
     evtSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)

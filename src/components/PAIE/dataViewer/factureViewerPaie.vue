@@ -7,9 +7,9 @@
         <!-- Header avec logo et titre -->
         <div class=" flex items-center justify-between">
             <img class=" w-[100px] " src="../../../../public/img/logo.jpg" alt="">
-            <div class=" flex flex-col items-center">
+            <div v-if="props.data" class=" flex flex-col items-center">
                 <span class=" font-bold ">FICHE DE PAIE</span>
-                <span class=" text-sm">{{formaterMoisAnnee(props.data[1].upload_date) }}</span>
+                <span class=" text-sm ">{{formaterMoisAnnee(props.data[1].upload_date) }}</span>
             </div>
             <div></div>
         </div>

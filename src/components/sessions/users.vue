@@ -4,42 +4,24 @@
     
     <v-card elevation="3" class="rounded-lg">
       <v-card-text class="pa-0">
-        <v-data-table
-          :headers="headers"
-          :items="users"
-          :items-per-page="10"
-          class="elevation-1"
-          density="comfortable"
-          hover
-          @click:row="(event, { item }) => $emit('select-user', item.id)"
-        >
+        <template #text>
+          <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" variant="outlined" hide-details single-line/>
+        </template>
+        <v-data-table  :search="search" :headers="headers" :items="users" :items-per-page="10" class="elevation-1" density="comfortable" hover @click:row="(event, { item }) => $emit('select-user', item.id)">
           <template v-slot:item.validate_status="{ item }">
-            <v-chip 
-                :color="item.block_status ? 'red' : (item.validate_status ? 'green' : 'orange')" 
-                variant="flat"
-                size="small"
-              >
-                <v-icon start small>
-                  {{ item.block_status ? 'mdi-block-helper' : (item.validate_status ? 'mdi-check-circle' : 'mdi-clock-outline') }}
-                </v-icon>
+            <v-chip  :color="item.block_status ? 'red' : (item.validate_status ? 'green' : 'orange')"  variant="flat" size="small">
+                <v-icon start small>{{ item.block_status ? 'mdi-block-helper' : (item.validate_status ? 'mdi-check-circle' : 'mdi-clock-outline') }}</v-icon>
                 {{ item.block_status ? 'Utilisateur bloqué' : (item.validate_status ? 'Compte validé' : 'En attente') }}
-              </v-chip>
+            </v-chip>
           </template>
 
           <template v-slot:item.privillege="{ item }">
-            <v-chip
-              :color="getPrivilegeColor(item.privillege)"
-              variant="flat"
-              size="small"
-            >
-              {{ item.privillege }}
+            <v-chip :color="getPrivilegeColor(item.privillege)" variant="flat" size="small"> {{ item.privillege }}
             </v-chip>
           </template>
 
           <template v-slot:item.id="{ item }">
-            <span class="font-weight-bold text-blue-darken-2">
-              {{ item.id }}
-            </span>
+            <span class="font-weight-bold text-blue-darken-2">{{ item.id }}</span>
           </template>
         </v-data-table>
       </v-card-text>
@@ -48,6 +30,8 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
 defineProps({
   users: Array
 })
@@ -59,6 +43,8 @@ const headers = [
   { title: 'Privilège', key: 'privillege', align: 'center' },
   { title: 'Statut', key: 'validate_status', align: 'center' }
 ]
+
+const search=ref('')
 
 function getPrivilegeColor(priv) {
   switch (priv?.toLowerCase()) {
