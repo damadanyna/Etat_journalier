@@ -1410,6 +1410,7 @@ class Credits:
                                                 END AS Date_pret, 
                                                 tmp_int.Date_fin_pret AS Date_fin_pret,
                                                 arrangement.product AS Produits,
+                                                tmp_CLT.sector AS Secteur,
                                                 tmp_amnt.amount AS Amount,
                                                 tmp_int.`Duree_Remboursement` as Duree_Remboursement,
                                                 tmp_int.taux_d_interet as taux_d_interet,
@@ -1740,13 +1741,15 @@ class Credits:
                                                                 ON echeance.arrangement_id=temp_arr.arrangement_id
                                                         LEFT JOIN temp_balances as balance 
                                                                 ON balance.id=arrangement.linked_appl_id 
-                                                        WHERE    (bill_detail.property NOT LIKE '%DISBURSEMENTFEE%' 
+                                                        WHERE   (bill_detail.property NOT LIKE '%DISBURSEMENTFEE%' 
                                                                 OR bill_detail.property NOT LIKE '%NEWARRANGEMENTFEE%')
                                                                 AND CAST(SUBSTRING_INDEX(bill_detail.bill_date, '|', 1) AS UNSIGNED) > '20250101'
                                                                 AND bill_detail.os_prop_amount >= 0
                                                                 AND arrangement.product NOT LIKE '%.DAT%' 
                                                                 AND opening_date is NOT NULL 
-                                                                HAVING total!=0 ;"""
+                                                                HAVING total!=0 ;
+                                                        
+                                                    """
                         },    
                         {
                             "name": """ Suppression de la TABLE etat_remboursement_{current_date} IF EXISTS """,

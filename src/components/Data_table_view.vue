@@ -171,7 +171,7 @@ watch(() => popupStore.selected_date, (val) => {
 });
 
 onMounted(() => {
-  const date = '20250919';
+  const date = '20260101';
   fetchData(`${api}/api/get_encours_credits?date=${date}`, listes.encours, 'encours_actual_data');
   fetchData(`${api}/api/encours_remboursement?date=${date}`, listes.remboursement, 'remboursement_actual_data');
   fetchData(`${api}/api/encours_limit?limit_type=8400`, listes.avm, 'limit_avm_actual_data');

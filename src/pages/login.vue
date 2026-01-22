@@ -52,7 +52,7 @@
             quelques minutes seulement. <strong>Baiboho</strong>
         </p>
         <div class="flex">
-            acceder à <span @click="change_page()" class=" ml-1 underline text-green-800 font-extrabold cursor-pointer">Quiambala</span>
+            acceder à <span @click="change_page()" class=" ml-1 underline text-green-800 font-extrabold cursor-pointer">Kiambala</span>
         </div>
       </div>
 
@@ -68,6 +68,8 @@
         <form @submit.prevent="handleSubmitPaie">
           <input v-if="activeTab !== 'signIn'" type="text" placeholder="Nom d'utilisateur" v-model="username" />
           <input @keyup="validateImmatricule" type="text" placeholder="Immatricule (Format: P0XXXX)" v-model="immatricule" />
+          <input type="mail" v-if="activeTab !== 'signIn'"  placeholder="email" v-model="email" />
+
           <input type="password" placeholder="Mot de passe" v-model="password" />
           <input type="password" v-if="activeTab !== 'signIn'"  placeholder="Verification mot de passe" v-model="verif_password" />
           <a href="#" v-if="activeTab === 'signIn'" class="forgot">Mot de passe oublier?</a>
@@ -97,6 +99,7 @@ const activeLogin=ref("APP")
 const api = inject('api') 
 const activeTab = ref("signIn") // par défaut "Connexion"
 const username = ref("") 
+const email = ref("") 
 const password = ref("")
 const verif_password = ref("")
 const immatricule = ref("")
@@ -199,9 +202,9 @@ const handleSubmitPaie = async () => {
       if (password.value !== verif_password.value) {
         throw new Error("Les mots de passe ne correspondent pas");
       } 
-
       const formData = new FormData();
       formData.append("username", username.value);
+      formData.append("email", email.value);
       formData.append("password", password.value);
       formData.append("immatricule", immatricule.value);
 

@@ -63,8 +63,8 @@ def signin(username: str = Form(...), password: str = Form(...)):
 
 
 @router.post("/signupPaie")
-def signupPaie(username: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
-    return usersPaie.signup(username, password, immatricule)
+def signupPaie(username: str = Form(...),email: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
+    return usersPaie.signup(username,email, password, immatricule)
 
 # --- SIGNINPAIE ---
 @router.post("/signinPaie")

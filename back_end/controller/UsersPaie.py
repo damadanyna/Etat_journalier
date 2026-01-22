@@ -48,7 +48,7 @@ class UsersPaie:
         except Exception as e:
             print(f"[ERREUR] Impossible de créer la table {table_name} : {e}")
     
-  
+   
     # --- SIGN UP --- 
     def signup(self, username: str, password: str, immatricule: str):
         conn = None
@@ -67,8 +67,8 @@ class UsersPaie:
 
             # Insérer l'utilisateur
             query_insert = text("""
-                INSERT INTO usersPaie (username, password, immatricule, privillege)
-                VALUES (:username, :password, :immatricule, '')
+                INSERT INTO usersPaie (username, password, email immatricule, privillege)
+                VALUES (:username, :password, :email, :immatricule, '')
             """)
             conn.execute(query_insert, {
                 "username": username,

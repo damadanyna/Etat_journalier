@@ -9,7 +9,7 @@ from jose import jwt,JWTError
 
 SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 360
+ACCESS_TOKEN_EXPIRE_MINUTES = 3600
 
 class Users: 
     def __init__(self): 
