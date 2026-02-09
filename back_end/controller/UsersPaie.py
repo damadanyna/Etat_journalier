@@ -622,7 +622,7 @@ class UsersPaie:
                 # S'assurer que ça ne commence pas par un chiffre
                 if nom and nom[0].isdigit():
                     nom = 'tbl_' + nom
-                return nom
+                return "ETAT_DETAILLE" 
 
             # Nom de table
             filename_clean = os.path.splitext(filename)[0]
