@@ -18,7 +18,7 @@
       <v-card min-width="300">
         <v-list>
           <v-list-item
-            prepend-avatar="https://lh3.googleusercontent.com/ogw/AF2bZygo0R6QyxbDE03RKSIfl1v-6Bjq_46Lk_RUZ5TS7sTCHzI=s64-c-mo"
+            prepend-avatar="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIFYgpCPMtvHYo7rQ8fFSEgLa1BO78b_9hHA&s"
             subtitle="Compte"
             :title="popupStore.user_access.name"
           >
