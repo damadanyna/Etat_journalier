@@ -34,7 +34,7 @@ const
     [
       ...headersBase,
       { key: 'matricule', title: 'Matricule' },
-      { key: 'nom_et_prenoms', title: 'Nom et Prénoms' },
+      { key: 'nom_et_prenom_s_', title: 'Nom et Prénoms' },
       { key: 'fonction', title: 'Fonction' },
       { key: 'departement', title: 'Département' },
       { key: 'direction', title: 'Direction' },
