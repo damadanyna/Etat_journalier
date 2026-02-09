@@ -136,15 +136,20 @@ class UsersPaie:
         finally:
             if conn:
                 conn.close()
-
-    
+                
+                
     def upload_file_manual_in_detail(self, file, folder_name=None, current=None, total=None):
-        filename = getattr(file, 'filename', None)
-        if not file or not filename or not self.allowed_file(filename):
+        original_filename = getattr(file, 'filename', None)
+        if not file or not original_filename or not self.allowed_file(original_filename):
             yield {"status": "error", "file": str(file), "message": "Format invalide"}
             return
 
-        filename = secure_filename(filename)
+        original_filename = secure_filename(original_filename)
+
+        # 📌 Forcer le nom du fichier
+        _, ext = os.path.splitext(original_filename)
+        filename = f"etat_detaille{ext}"
+
         folder_path = os.path.join(self.upload_folder, folder_name) if folder_name else self.upload_folder
         os.makedirs(folder_path, exist_ok=True)
 
@@ -152,8 +157,13 @@ class UsersPaie:
         backup_filepath = None
 
         try:
-            yield {"status": "info", "file": filename, "message": "Lecture du fichier en cours..."}
-            # Lecture du contenu - méthode synchrone (suppose que file.read() est synchrone)
+            yield {
+                "status": "info",
+                "file": filename,
+                "message": "Lecture du fichier en cours..."
+            }
+
+            # 🔍 Lecture du fichier
             if hasattr(file, 'read'):
                 file_content = file.read()
             elif hasattr(file, 'file') and hasattr(file.file, 'read'):
@@ -162,24 +172,31 @@ class UsersPaie:
                 raise IOError(f"Type de fichier non supporté: {type(file)}")
 
             if not isinstance(file_content, bytes):
-                file_content = file_content.encode('utf-8') if isinstance(file_content, str) else bytes(file_content)
+                file_content = (
+                    file_content.encode("utf-8")
+                    if isinstance(file_content, str)
+                    else bytes(file_content)
+                )
 
             total_size = len(file_content)
+
             yield {
                 "status": "info",
                 "file": filename,
                 "message": f"Fichier lu: {total_size / (1024 * 1024):.2f} MB. Écriture en cours..."
             }
 
+            # 🧯 Backup AVANT écriture
             if os.path.exists(final_filepath):
-                backup_filepath = final_filepath + '.backup'
+                backup_filepath = final_filepath + ".backup"
                 shutil.copy2(final_filepath, backup_filepath)
 
             chunk_size = 1024 * 1024  # 1 MB
             written_size = 0
 
-            with open(final_filepath, 'wb') as f:
+            with open(final_filepath, "wb") as f:
                 content_buffer = io.BytesIO(file_content)
+
                 while chunk := content_buffer.read(chunk_size):
                     f.write(chunk)
                     f.flush()
@@ -193,15 +210,20 @@ class UsersPaie:
                         "received_mb": round(written_size / (1024 * 1024), 2),
                         "total_mb": round(total_size / (1024 * 1024), 2),
                         "percentage_file": round((written_size / total_size) * 100, 2),
-                        "message": f"[Serveur] Écrit {written_size / (1024 * 1024):.2f} / {total_size / (1024 * 1024):.2f} MB"
+                        "message": (
+                            f"[Serveur] Écrit {written_size / (1024 * 1024):.2f} / "
+                            f"{total_size / (1024 * 1024):.2f} MB"
+                        )
                     }
 
                 f.flush()
                 os.fsync(f.fileno())
 
+            # ❌ Vérification taille
             if written_size != total_size:
                 if backup_filepath and os.path.exists(backup_filepath):
                     shutil.move(backup_filepath, final_filepath)
+
                 yield {
                     "status": "error",
                     "file": filename,
@@ -209,6 +231,7 @@ class UsersPaie:
                 }
                 return
 
+            # 🧹 Suppression du backup si OK
             if backup_filepath and os.path.exists(backup_filepath):
                 os.remove(backup_filepath)
 
@@ -216,7 +239,10 @@ class UsersPaie:
                 "status": "success",
                 "file": filename,
                 "received_mb": round(total_size / (1024 * 1024), 2),
-                "message": f"✅ Fichier {filename} transféré avec succès ({total_size / (1024 * 1024):.2f} MB)"
+                "message": (
+                    f"✅ Fichier {filename} transféré avec succès "
+                    f"({total_size / (1024 * 1024):.2f} MB)"
+                )
             }
 
         except Exception as e:
@@ -227,13 +253,13 @@ class UsersPaie:
                     yield {
                         "status": "warning",
                         "file": filename,
-                        "message": f"Erreur et impossible de restaurer le backup: {str(restore_error)}"
+                        "message": f"Erreur et impossible de restaurer le backup: {restore_error}"
                     }
 
             yield {
                 "status": "error",
                 "file": filename,
-                "message": f"Erreur lors de l'upload: {str(e)}"
+                "message": f"Erreur lors de l'upload: {e}"
             }
 
         finally:
@@ -242,6 +268,113 @@ class UsersPaie:
                     os.remove(backup_filepath)
                 except:
                     pass
+
+
+    
+    # def upload_file_manual_in_detail(self, file, folder_name=None, current=None, total=None):
+    #     filename = getattr(file, 'filename', None)
+    #     if not file or not filename or not self.allowed_file(filename):
+    #         yield {"status": "error", "file": str(file), "message": "Format invalide"}
+    #         return
+
+    #     filename = secure_filename(filename)
+    #     folder_path = os.path.join(self.upload_folder, folder_name) if folder_name else self.upload_folder
+    #     os.makedirs(folder_path, exist_ok=True)
+
+    #     final_filepath = os.path.join(folder_path, filename)
+    #     backup_filepath = None
+
+    #     try:
+    #         yield {"status": "info", "file": filename, "message": "Lecture du fichier en cours..."}
+    #         # Lecture du contenu - méthode synchrone (suppose que file.read() est synchrone)
+    #         if hasattr(file, 'read'):
+    #             file_content = file.read()
+    #         elif hasattr(file, 'file') and hasattr(file.file, 'read'):
+    #             file_content = file.file.read()
+    #         else:
+    #             raise IOError(f"Type de fichier non supporté: {type(file)}")
+
+    #         if not isinstance(file_content, bytes):
+    #             file_content = file_content.encode('utf-8') if isinstance(file_content, str) else bytes(file_content)
+
+    #         total_size = len(file_content)
+    #         yield {
+    #             "status": "info",
+    #             "file": filename,
+    #             "message": f"Fichier lu: {total_size / (1024 * 1024):.2f} MB. Écriture en cours..."
+    #         }
+
+    #         if os.path.exists(final_filepath):
+    #             backup_filepath = final_filepath + '.backup'
+    #             shutil.copy2(final_filepath, backup_filepath)
+
+    #         chunk_size = 1024 * 1024  # 1 MB
+    #         written_size = 0
+
+    #         with open(final_filepath, 'wb') as f:
+    #             content_buffer = io.BytesIO(file_content)
+    #             while chunk := content_buffer.read(chunk_size):
+    #                 f.write(chunk)
+    #                 f.flush()
+    #                 written_size += len(chunk)
+
+    #                 yield {
+    #                     "status": "progress",
+    #                     "file": filename,
+    #                     "current": current,
+    #                     "total": total,
+    #                     "received_mb": round(written_size / (1024 * 1024), 2),
+    #                     "total_mb": round(total_size / (1024 * 1024), 2),
+    #                     "percentage_file": round((written_size / total_size) * 100, 2),
+    #                     "message": f"[Serveur] Écrit {written_size / (1024 * 1024):.2f} / {total_size / (1024 * 1024):.2f} MB"
+    #                 }
+
+    #             f.flush()
+    #             os.fsync(f.fileno())
+
+    #         if written_size != total_size:
+    #             if backup_filepath and os.path.exists(backup_filepath):
+    #                 shutil.move(backup_filepath, final_filepath)
+    #             yield {
+    #                 "status": "error",
+    #                 "file": filename,
+    #                 "message": f"Erreur d'écriture: {written_size} / {total_size} octets"
+    #             }
+    #             return
+
+    #         if backup_filepath and os.path.exists(backup_filepath):
+    #             os.remove(backup_filepath)
+
+    #         yield {
+    #             "status": "success",
+    #             "file": filename,
+    #             "received_mb": round(total_size / (1024 * 1024), 2),
+    #             "message": f"✅ Fichier {filename} transféré avec succès ({total_size / (1024 * 1024):.2f} MB)"
+    #         }
+
+    #     except Exception as e:
+    #         if backup_filepath and os.path.exists(backup_filepath):
+    #             try:
+    #                 shutil.move(backup_filepath, final_filepath)
+    #             except Exception as restore_error:
+    #                 yield {
+    #                     "status": "warning",
+    #                     "file": filename,
+    #                     "message": f"Erreur et impossible de restaurer le backup: {str(restore_error)}"
+    #                 }
+
+    #         yield {
+    #             "status": "error",
+    #             "file": filename,
+    #             "message": f"Erreur lors de l'upload: {str(e)}"
+    #         }
+
+    #     finally:
+    #         if backup_filepath and os.path.exists(backup_filepath):
+    #             try:
+    #                 os.remove(backup_filepath)
+    #             except:
+    #                 pass
     
     
     def allowed_file(self, filename):
