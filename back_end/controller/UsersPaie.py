@@ -760,8 +760,11 @@ class UsersPaie:
             # Nom de table
             filename_clean = os.path.splitext(filename)[0]
             table_name = f"{filename_clean}_{str_date}"
-            table_name = nettoyer_nom_fichier(table_name)
+            # table_name = nettoyer_nom_fichier(table_name)
             header_table=[]
+            
+            # print(f"[INFO]---------------> {f"{filename_clean}_{str_date}"} en cours...")
+            # print(f"[INFO]---------------> {table_name} en cours...")
 
             try:
                 # 1) Vérification fichier
