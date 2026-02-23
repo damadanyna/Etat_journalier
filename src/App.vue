@@ -1,7 +1,7 @@
 <template>
   <popup_view v-if="usePopupStore().showPopupCDI"></popup_view>
-  <VApp class="h-screen" >
-      <login v-if="isLogged_status!==200"></login>
+  <VApp class="h-screen " style=" height: 80vh;" >
+      <login   v-if="isLogged_status!==200"></login>
       <div v-else class="">
         <LayoutEcours v-if="popupStore.user_access.app !== 'paie'">
           <router-view />
