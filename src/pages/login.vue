@@ -112,63 +112,63 @@ const  validateImmatricule=() => {
       }
     }
  
-const handleSubmit = async () => {    
-  errorMessage.value = "" // réinitialiser l'erreur
-  try { 
-    let response, data;
+// const handleSubmit = async () => {    
+//   errorMessage.value = "" // réinitialiser l'erreur
+//   try { 
+//     let response, data;
     
-    if (activeTab.value === "signIn") {
-      const formData = new FormData();
-      formData.append("username", username.value);
-      formData.append("password", password.value);
+//     if (activeTab.value === "signIn") {
+//       const formData = new FormData();
+//       formData.append("username", username.value);
+//       formData.append("password", password.value);
 
-      response = await fetch(`${api}/api/signin`, {
-        method: "POST",
-        body: formData
-      });
+//       response = await fetch(`${api}/api/signin`, {
+//         method: "POST",
+//         body: formData
+//       });
 
-      data = await response.json();
+//       data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.detail || "Identifiants invalides");
-      }
+//       if (!response.ok) {
+//         throw new Error(data.detail || "Identifiants invalides");
+//       }
 
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("privilege", data.privilege);
-      location.replace('/');
+//       localStorage.setItem("access_token", data.access_token);
+//       localStorage.setItem("privilege", data.privilege);
+//       location.replace('/');
 
-    } else {
-      // Inscription
-      if (password.value !== verif_password.value) {
-        throw new Error("Les mots de passe ne correspondent pas");
-      } 
+//     } else {
+//       // Inscription
+//       if (password.value !== verif_password.value) {
+//         throw new Error("Les mots de passe ne correspondent pas");
+//       } 
 
-      const formData = new FormData();
-      formData.append("username", username.value);
-      formData.append("password", password.value);
-      formData.append("immatricule", immatricule.value);
+//       const formData = new FormData();
+//       formData.append("username", username.value);
+//       formData.append("password", password.value);
+//       formData.append("immatricule", immatricule.value);
 
-      response = await fetch(`${api}/api/signup`, {
-        method: "POST",  
-        body: formData
-      });
+//       response = await fetch(`${api}/api/signup`, {
+//         method: "POST",  
+//         body: formData
+//       });
 
-      data = await response.json();
+//       data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.detail || "Erreur lors de l'inscription");
-      }
+//       if (!response.ok) {
+//         throw new Error(data.detail || "Erreur lors de l'inscription");
+//       }
       
-      await notificationStore.fetchDemandesValidation(api);
+//       await notificationStore.fetchDemandesValidation(api);
 
-      location.replace('/');
-    }
+//       location.replace('/');
+//     }
 
-  } catch (err) {
-    // Afficher le message d'erreur provenant de l'API ou de JS
-    errorMessage.value = err.message || "Une erreur est survenue";
-  }
-}
+//   } catch (err) {
+//     // Afficher le message d'erreur provenant de l'API ou de JS
+//     errorMessage.value = err.message || "Une erreur est survenue";
+//   }
+// }
 const handleSubmitPaie = async () => {    
   errorMessage.value = "" // réinitialiser l'erreur
   try { 
@@ -192,7 +192,7 @@ const handleSubmitPaie = async () => {
 
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("privilege", data.privilege);
-      location.replace('/');
+      location.reload();
 
     } else {
       // Inscription
@@ -218,7 +218,7 @@ const handleSubmitPaie = async () => {
       
       await notificationStore.fetchDemandesValidation(api);
 
-      location.replace('/');
+      location.reload();
     }
 
   } catch (err) {
@@ -226,13 +226,13 @@ const handleSubmitPaie = async () => {
     errorMessage.value = err.message || "Une erreur est survenue";
   }
 }
-const change_page=() => {
-  if (activeLogin.value === "APP") {
-    activeLogin.value = "BAYBY";
-  } else {
-    activeLogin.value = "APP";
-  }
-}
+// const change_page=() => {
+//   if (activeLogin.value === "APP") {
+//     activeLogin.value = "BAYBY";
+//   } else {
+//     activeLogin.value = "APP";
+//   }
+// }
 
 </script>
 
