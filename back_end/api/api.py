@@ -170,6 +170,21 @@ def update_user_role(
         raise HTTPException(status_code=403, detail="Accès refusé")
     return usersPaie.update_user_role(request,  colab_lastname, colab_immatricule, user_id, role, admin_password)
 
+
+@router.post("/update_user_pwd_paie")
+def update_user_pwd_paie(
+    request: Request,  
+    colab_pwd: str = Form(...),
+    colab_immatricule: str = Form(...),
+    user_id: str = Form(...), 
+    admin_password: str = Form(...)
+):
+    current_user = user.get_current_user(request)
+
+    if current_user.get("privillege") not in ["admin", "superadmin"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    return usersPaie.update_user_pwd_paie(request, colab_pwd,colab_immatricule, user_id, admin_password)
+
 @router.get("/users")
 def get_users(request: Request):
     current_user = user.get_current_user(request)

@@ -593,6 +593,45 @@ class UsersPaie:
         finally:
             if conn:
                 conn.close()
+                              
+    def update_user_pwd_paie(self, request: Request, colab_pwd:str, colab_immatricule:str, user_id: str,   admin_password: str):
+        conn = None
+        try:
+            current_user = self.get_current_user(request)
+            current_user = self.get_current_user(request)
+            admin_name = current_user.get("username")
+            admin_id = current_user.get("id")
+
+            if current_user.get("privillege") not in ["admin", "superadmin"]:
+                raise HTTPException(status_code=403, detail="Accès refusé : privilège insuffisant")
+
+            admin_data = self.getUserById(admin_id)["user"]
+            if not bcrypt.checkpw(admin_password.encode("utf-8"), admin_data["password"].encode("utf-8")):
+                raise HTTPException(status_code=401, detail="Mot de passe administrateur incorrect")
+    
+            hashed_pw = bcrypt.hashpw(colab_pwd.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+            conn = self.db.connect()
+            query = text("""
+                UPDATE usersPaie
+                SET password = :password  
+                WHERE id = :user_id
+            """)
+            result = conn.execute(query, {"password": hashed_pw,"user_id": user_id})
+            conn.commit()
+
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+            return {"message": f"Rôle de {user_id} modifié avec succès par {admin_name}"}
+
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            if conn:
+                conn.close()
 
     def  block_user(self, request: Request, username: str,admin_password: str):
         conn = None

@@ -1,14 +1,8 @@
 <template>
   <div v-if="user" class="user-details-container">
     <div class="header-section">
-      <v-btn 
-        @click="$emit('back')" 
-        color="primary" 
-        variant="text"
-        class="back-btn"
-      >
-        <v-icon start>mdi-arrow-left</v-icon>
-        Retour à la liste
+      <v-btn  @click="$emit('back')"  color="primary"  variant="text" class="back-btn">
+        <v-icon start>mdi-arrow-left</v-icon> Retour à la liste
       </v-btn>
       <h1 class="text-h4 font-weight-bold primary--text">
          Profil Utilisateur
@@ -28,39 +22,16 @@
           <div class="user-title">
             <h2 class="text-h5 font-weight-bold">{{ user.username }}</h2>
             <div class="user-badges">
-              <v-chip 
-                :color="getPrivilegeColor(user.privillege)" 
-                variant="flat"
-                size="small"
-              >
-                <v-icon start small>mdi-shield-account</v-icon>
-                {{ user.privillege }}
-              </v-chip>
-              <v-chip 
-                :color="user.block_status ? 'red' : (user.validate_status ? 'green' : 'orange')" 
-                variant="flat"
-                size="small"
-              >
-                <v-icon start small>
-                  {{ user.block_status ? 'mdi-block-helper' : (user.validate_status ? 'mdi-check-circle' : 'mdi-clock-outline') }}
-                </v-icon>
-                {{ user.block_status ? 'Utilisateur bloqué' : (user.validate_status ? 'Compte validé' : 'En attente') }}
-              </v-chip>
-
-
-
-              <v-chip color="red" variant="flat"size="small">
-                <v-icon start small>mdi-security</v-icon>Mot de passe
-              </v-chip>
-
-
-
+              <v-chip  :color="getPrivilegeColor(user.privillege)"  variant="flat" size="small"><v-icon start small>mdi-shield-account</v-icon>{{ user.privillege }}</v-chip>
+              <v-chip :color="user.block_status ? 'red' : (user.validate_status ? 'green' : 'orange')" variant="flat"size="small">
+              <v-icon start small>{{ user.block_status ? 'mdi-block-helper' : (user.validate_status ? 'mdi-check-circle' : 'mdi-clock-outline') }}</v-icon>{{ user.block_status ? 'Utilisateur bloqué' : (user.validate_status ? 'Compte validé' : 'En attente') }}</v-chip>
+              <v-chip color="red" variant="flat"size="small" @click="showDialogOfpwd(user)">
+              <v-icon start small>mdi-security</v-icon>Mot de passe 
+              </v-chip> 
             </div>
           </div>
-        </div>
-
-        <v-divider class="my-6"></v-divider>
-        
+        </div> 
+        <v-divider class="my-6"></v-divider> 
         <v-row>
           <v-col cols="12" md="6">
             <h3 class="text-h6 mb-4 section-title">
@@ -233,33 +204,10 @@
 
           <v-card-text>
             <p><strong>Utilisateur :</strong> {{ user.username }}</p>
- 
-            <v-text-field
-              v-model="user_property.lastname"
-              type="text"
-              label="Nom et Prenom du collaborateur"
-              variant="outlined"
-            />
-            <v-text-field
-              v-model="user_property.immatricule"
-              type="text"
-              label="Immatricule u collaborateur"
-              variant="outlined"
-            />
-
-            <v-select
-              v-model="newRole"
-              :items="['user', 'admin', 'superadmin']"
-              label="Choisir un rôle"
-              variant="outlined"
-            />
-
-            <v-text-field
-              v-model="adminPassword"
-              type="password"
-              label="Mot de passe administrateur"
-              variant="outlined"
-            />
+            <v-text-field v-model="user_property.lastname" type="text" label="Nom et Prenom du collaborateur" variant="outlined"/>
+            <v-text-field v-model="user_property.immatricule" type="text" label="Immatricule u collaborateur" variant="outlined"/>
+            <v-select v-model="newRole" :items="['user', 'admin', 'superadmin']" label="Choisir un rôle" variant="outlined"/>
+            <v-text-field v-model="adminPassword" type="password" label="Mot de passe administrateur" variant="outlined"/>
           </v-card-text>
 
           <v-card-actions>
@@ -270,29 +218,32 @@
       </v-dialog>
 
 
-          <v-progress-circular
-            v-if="loading"
-            indeterminate
-            color="primary"
-            class="mx-4"
+      
+      <!-- MODALE DE MODIFICATION Pwd -->
+      <v-dialog v-model="showPwdDialog" max-width="450">
+        <v-card>
+          <v-card-title class="text-h6"> Modification mot de passe
+          </v-card-title>
+          <v-card-text> <div class=" mb-3">   <p><strong>Utilisateur :</strong> {{ user.username }}</p> </div>
+          <v-text-field   v-model="user_property.pwd"   type="text"   label="Mot de passe de réinitialisation"   variant="outlined" />
+          <v-text-field   v-model="adminPassword"   type="password"   label="Mot de passe administrateur"   variant="outlined" />
+          </v-card-text>
+          <v-card-actions> <v-btn variant="text" @click="showPwdDialog = false">Annuler</v-btn> 
+            <v-btn color="primary" @click="confirmPwdChange">Confirmer</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+          <v-progress-circular v-if="loading" indeterminate color="primary" class="mx-4"
           ></v-progress-circular>
 
-          <v-alert
-            v-if="successMsg"
-            type="success"
-            variant="tonal"
-            class="mt-4"
-          >
-            {{ successMsg }}
+          <v-alert v-if="successMsg" type="success" variant="tonal" class="mt-4"
+          > {{ successMsg }}
           </v-alert>
 
-          <v-alert
-            v-if="errorMsg"
-            type="error"
-            variant="tonal"
-            class="mt-4"
-          >
-            {{ errorMsg }}
+          <v-alert v-if="errorMsg" type="error" variant="tonal" class="mt-4"
+          > {{ errorMsg }}
           </v-alert>
         </div>
       </v-card-text>
@@ -338,25 +289,30 @@ function  showDialogOfDescription(user){
   user_property.value.immatricule = user.immatricule
   showRoleDialog.value = true
 }
-
-const validateUser = async () => {
-  loading.value = true
-  errorMsg.value = ''
-  successMsg.value = ''
-  try {
-    const formData = new FormData()
-    formData.append('username', user.value.username)
-    await axios.post(`${api}/api/validate_user_paie`, formData, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
-    })
-    successMsg.value = "Utilisateur validé avec succès"
-    await fetchUser()
-  } catch (e) {
-    errorMsg.value = "Erreur lors de la validation"
-  } finally {
-    loading.value = false
-  }
+function  showDialogOfpwd(user){ 
+  user_property.value.pwd = user.pwd
+  user_property.value.immatricule = user.id 
+  showPwdDialog.value = true
 }
+
+// const validateUser = async () => {
+//   loading.value = true
+//   errorMsg.value = ''
+//   successMsg.value = ''
+//   try {
+//     const formData = new FormData()
+//     formData.append('username', user.value.username)
+//     await axios.post(`${api}/api/validate_user_paie`, formData, {
+//       headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+//     })
+//     successMsg.value = "Utilisateur validé avec succès"
+//     await fetchUser()
+//   } catch (e) {
+//     errorMsg.value = "Erreur lors de la validation"
+//   } finally {
+//     loading.value = false
+//   }
+// }
 
 const showDialog = ref(false)
 const selectedRole = ref('user')
@@ -364,6 +320,7 @@ const adminPassword = ref('')
 const user_property = ref({ 
   lastname: '',
   immatricule: '',
+  pwd:''
 }) 
 
 const emit = defineEmits(['back', 'user-validated'])
@@ -397,11 +354,13 @@ const confirmValidation = async () => {
 }
 
 const showRoleDialog = ref(false)
+const showPwdDialog = ref(false)
 const newRole = ref(user.value?.privillege || 'user')
 
 const confirmRoleChange = async () => {
   loading.value = true
   showRoleDialog.value = false
+  showPwdDialog.value = false
   errorMsg.value = ''
   successMsg.value = ''
 
@@ -418,6 +377,34 @@ const confirmRoleChange = async () => {
     })
 
     successMsg.value = `Rôle modifié avec succès en "${newRole.value}"`
+    await fetchUser()
+
+  } catch (e) {
+    errorMsg.value = "Erreur : Mot de passe incorrect ou privilège insuffisant"
+  } finally {
+    loading.value = false
+  }
+}
+const confirmPwdChange = async () => {
+  loading.value = true
+  showRoleDialog.value = false
+  showPwdDialog.value = false
+  errorMsg.value = ''
+  successMsg.value = ''
+
+  try {
+    const formData = new FormData() 
+    formData.append('colab_pwd', user_property.value.pwd)
+    formData.append('colab_immatricule', user_property.value.immatricule)
+    formData.append('user_id', user.value.id) 
+    formData.append('admin_password', adminPassword.value)
+ 
+
+    const response = await axios.post(`${api}/api/update_user_pwd_paie`, formData, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+    })
+
+    successMsg.value = `Mot de passe avec succès en "${user_property.value.pwd}"`
     await fetchUser()
 
   } catch (e) {
