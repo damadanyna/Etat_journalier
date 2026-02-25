@@ -135,7 +135,7 @@ const handleSubmit = async () => {
 
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("privilege", data.privilege);
-      location.replace('/paie/accueil');
+      location.replace('/');
 
     } else {
       // Inscription
@@ -161,7 +161,7 @@ const handleSubmit = async () => {
       
       await notificationStore.fetchDemandesValidation(api);
 
-      location.replace('/paie/accueil');
+      location.replace('/');
     }
 
   } catch (err) {
@@ -192,7 +192,7 @@ const handleSubmitPaie = async () => {
 
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("privilege", data.privilege);
-      location.replace('/paie/accueil');
+      location.replace('/');
 
     } else {
       // Inscription
@@ -218,7 +218,7 @@ const handleSubmitPaie = async () => {
       
       await notificationStore.fetchDemandesValidation(api);
 
-      location.replace('/paie/accueil');
+      location.replace('/');
     }
 
   } catch (err) {
