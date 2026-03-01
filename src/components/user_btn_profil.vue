@@ -89,10 +89,14 @@ const toggleTheme=()=> {
 }
 
 const logout=async ()=> {
-     const response = await fetch(`${api}/api/logout`, {  
+    const matricule= popupStore.user_access.name 
+     const response = await fetch(`${api}/api/logoutpaie`, {  
       method: "POST",
-            credentials: "include"
-        })
+      body: JSON.stringify({
+        matricule: matricule
+      })
+    })
+
       setLightTheme()
       console.log(response.status);
       if (response.status == 200) {

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File,FastAPI,Response,Depends, Form, Request,HTTPException,Query
+from fastapi import APIRouter, UploadFile, Body,File,FastAPI,Response,Depends, Form, Request,HTTPException,Query
 from controller.Credits import Credits
 from controller.Credit_outstanding_report import Credit_outstanding_report
 from controller.Users import Users
@@ -63,13 +63,15 @@ def signin(username: str = Form(...), password: str = Form(...)):
 
 
 @router.post("/signupPaie")
-def signupPaie(username: str = Form(...),email: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
-    return usersPaie.signup(username,email, password, immatricule)
+def signupPaie(request: Request,username: str = Form(...),email: str = Form(...), password: str = Form(...), immatricule: str = Form(...)):
+    client_ip = request.client.host
+    return usersPaie.signup(username,email, password, immatricule, ip_address=client_ip)
 
 # --- SIGNINPAIE ---
 @router.post("/signinPaie")
-def signinPaie(immatricule: str = Form(...), password: str = Form(...)):
-    result = usersPaie.signin(immatricule, password)
+def signinPaie(request: Request,immatricule: str = Form(...), password: str = Form(...)):
+    client_ip = request.client.host
+    result = usersPaie.signin(immatricule, password, ip_address=client_ip)
 
     # Si connexion réussie, on ajoute les colonnes manquantes
     try:
@@ -261,8 +263,62 @@ def get_users(request: Request, user_id: int):
 
 @router.post("/logout")
 def logout(response: Response):
-    return user.logout(response)
+    return user.logout(response) 
 
+def extract_matricule(data):
+    """
+    Extrait la valeur du matricule et optionnellement file_id depuis un dict ou une string JSON
+    Retourne :
+      - [matricule, file_id] si file_id présent
+      - matricule seul si file_id absent
+      - None si matricule absent ou invalide
+    """
+    # Si c'est une string, essayer de la parser en dict
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except json.JSONDecodeError:
+            return None
+    
+    # Si c'est un dict, extraire la valeur
+    if isinstance(data, dict):
+        matricule_value = data.get("matricule")
+        file_id_value = data.get("file_id")
+
+        # Nettoyer les strings et gérer les absents
+        matricule_value = matricule_value.strip() if isinstance(matricule_value, str) else None
+        file_id_value = file_id_value.strip() if isinstance(file_id_value, str) else None
+
+        if matricule_value and file_id_value:
+            return [matricule_value, file_id_value]
+        return matricule_value  # retourne juste le matricule si file_id absent
+    
+    return None
+
+@router.post("/logoutpaie")
+def logoutpaie(
+    request: Request,
+    response: Response,
+    matricule: str = Body(...)
+):
+    # print(client_ip,matricule)
+    matricule_value =extract_matricule (matricule)[0]
+    client_ip = request.client.host  
+    
+    return usersPaie.logout(response,ip_address=client_ip,matricule=matricule_value)
+
+@router.post("/downloadpaie")
+def downloadpaie(
+    request: Request,
+    response: Response,
+    matricule: str = Body(...)
+):
+    # print(client_ip,matricule)
+    matricule_value =extract_matricule (matricule)[0]
+    file_id_value =extract_matricule (matricule)[1]
+    client_ip = request.client.host  
+    
+    return usersPaie.downloadpaie(response,ip_address=client_ip,matricule=matricule_value,file_id=file_id_value)
 
 @router.post("/upload_multiple_files")
 async def upload_multiple_files(

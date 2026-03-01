@@ -32,7 +32,8 @@ class UsersPaie:
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         username VARCHAR(255) UNIQUE NOT NULL,
                         password VARCHAR(255) NOT NULL,
-                        immatricule VARCHAR(50) NOT NULL,
+                        email VARCHAR(255) NOT NULL,
+                        matricule VARCHAR(50) NOT NULL,
                         privillege VARCHAR(50) NULL,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         validate_at TIMESTAMP NULL,
@@ -56,32 +57,19 @@ class UsersPaie:
                 # Création table si non existante  
                 
                 query = f"""
-                   CREATE TABLE {table_name} (
-                        id BIGINT AUTO_INCREMENT PRIMARY KEY, 
-                        user_id BIGINT NOT NULL,
-                        username VARCHAR(100) NOT NULL,
-
+                   CREATE TABLE IF NOT EXISTS {table_name} (
+                        id INT AUTO_INCREMENT PRIMARY KEY, 
+                        user_id VARCHAR(100) NOT NULL, 
                         action VARCHAR(100) NOT NULL,
-                        entity_type VARCHAR(100) NOT NULL,      -- ex: "fiche_paie"
-                        entity_id VARCHAR(100) NULL,            -- id de la fiche concernée
-
-                        description TEXT NULL,                  -- description détaillée
-
-                        old_value JSON NULL,                    -- ancienne valeur (si modification)
-                        new_value JSON NULL,                    -- nouvelle valeur
-
+                        entity_type VARCHAR(100) NOT NULL, 
+                        description TEXT NULL,    
+                        old_value JSON NULL,                    
+                        new_value JSON NULL,   
                         ip_address VARCHAR(45) NULL,
-                        user_agent TEXT NULL,
-
-                        status ENUM('SUCCESS', 'FAILED') DEFAULT 'SUCCESS',
-
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                        INDEX idx_user_id (user_id),
-                        INDEX idx_entity (entity_type, entity_id),
-                        INDEX idx_created_at (created_at)
-                        );
-                    )
+                        user_agent TEXT NULL, 
+                        status TEXT DEFAULT 'SUCCESS', 
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        ) 
                 """
                 conn.execute(text(query))
                 conn.commit()
@@ -91,7 +79,7 @@ class UsersPaie:
     
    
     # --- SIGN UP --- 
-    def signup(self, username: str, password: str, immatricule: str):
+    def signup(self, username: str,email:str, password: str, immatricule: str, ip_address: str):
         conn = None
         try:
             conn = self.db.connect() 
@@ -108,15 +96,18 @@ class UsersPaie:
 
             # Insérer l'utilisateur
             query_insert = text("""
-                INSERT INTO usersPaie (username, password, email immatricule, privillege)
+                INSERT INTO usersPaie (username, password, email, immatricule, privillege)
                 VALUES (:username, :password, :email, :immatricule, '')
             """)
             conn.execute(query_insert, {
                 "username": username,
+                "email": email,
                 "password": hashed_pw,
                 "immatricule": immatricule
             })
             conn.commit()
+            
+            self.saveEvent(user_id= immatricule, action="signup", entity_type="user", description=f"Nouvel utilisateur inscrit: {username}", old_value=None, new_value=json.dumps({"username": username, "email": email, "immatricule": immatricule}), ip_address=ip_address, user_agent=None)
         
 
             return {"message": "Utilisateur créé avec succès"}
@@ -129,8 +120,35 @@ class UsersPaie:
             if conn:
                 conn.close()
  
+    def saveEvent(self,user_id:str,action:str,entity_type:str,description:str,old_value:str,new_value:str,ip_address:str,user_agent:str):
+        conn = None
+        try:
+            conn = self.db.connect() 
+            query_insert = text("""
+                INSERT INTO user_activity_log ( user_id,action,entity_type,description,old_value,new_value,ip_address,user_agent)
+                VALUES (:user_id,:action,:entity_type,:description,:old_value,:new_value,:ip_address,:user_agent)
+            """)
+            conn.execute(query_insert, {
+                "user_id": user_id,
+                "action": action,
+                "entity_type": entity_type,
+                "description": description,
+                "old_value": old_value,
+                "new_value": new_value,
+                "ip_address": ip_address,
+                "user_agent": user_agent
+            })
+            conn.commit()
+        except HTTPException as http_err:
+            raise http_err
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Erreur serveur",error=e)
+        finally:
+            if conn:
+                conn.close()
+ 
 
-    def signin(self, immatricule: str, password: str):
+    def signin(self, immatricule: str, password: str, ip_address: str = None):
         conn = None
         try:
             conn = self.db.connect()
@@ -159,6 +177,8 @@ class UsersPaie:
                 "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             }
             token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+            
+            self.saveEvent(user_id= immatricule, action="signin", entity_type="user", description=f"Utilisateur connecté: {immatricule}", old_value=None, new_value=json.dumps({"username": user["username"], "email": user["email"], "immatricule": immatricule}), ip_address=ip_address, user_agent=None)
 
             return {
                 "message": "Connexion réussie",
@@ -177,7 +197,20 @@ class UsersPaie:
         finally:
             if conn:
                 conn.close()
-                
+        
+    
+    # --- LOGOUT ---
+    def logout(self, response: Response, ip_address: str = None,matricule:str = None):
+        response.delete_cookie("access_token")
+        self.saveEvent(user_id=matricule, action="logout", entity_type="user", description=f"Utilisateur déconnecté {matricule}", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
+        return {"message": "Déconnexion réussie"}
+    
+    # --- LOGOUT ---
+    def downloadpaie(self, response: Response, ip_address: str = None,matricule:str = None, file_id:str = None):
+        response.delete_cookie("access_token")
+        self.saveEvent(user_id=matricule, action="download_paie", entity_type=file_id, description=f"Utilisateur téléchargé paie {matricule} avec file_id {file_id}", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
+        return {"message": "Téléchargement réussie"}
+    
                 
     def upload_file_manual_in_detail(self, file, folder_name=None, current=None, total=None):
         original_filename = getattr(file, 'filename', None)

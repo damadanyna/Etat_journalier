@@ -124,8 +124,10 @@
 
 <script setup>
 
-import { ref,computed,watch} from 'vue';
+import { ref,computed,watch,inject } from 'vue';
 import html2pdf from 'html2pdf.js';
+import { usePopupStore } from '../../../stores'  
+const popupStore = usePopupStore()
 
 import domtoimage from 'dom-to-image'
 import jsPDF from 'jspdf'
@@ -193,6 +195,7 @@ const totalRetenus=ref('')
 const salaireNet=ref('')
 const netAPayer=ref('')
 const soldeConge=ref('')
+const api = inject('api') 
 
 
 // Mapping entre les labels des rubriques et les clés de l'objet de données
@@ -401,6 +404,7 @@ async function telechargerPDF() {
     
     pdf.save(`bulletin-paie-${formaterMoisAnnee(props.data[1].upload_date)}.pdf`)
     
+    download(matricule.value)
   } catch (error) {
     console.error('Erreur:', error)
     alert('Erreur lors de la génération du PDF')
@@ -409,7 +413,24 @@ async function telechargerPDF() {
     element.style.width = 'auto'
   }
 }
+const download=async ()=> {
+    const id_user= popupStore.user_access.name 
+     const response = await fetch(`${api}/api/downloadpaie`, {  
+      method: "POST",
+      body: JSON.stringify({
+        matricule: id_user,
+        file_id:matricule.value
+      })
+    })
 
+      setLightTheme()
+      console.log(response.status);
+      if (response.status == 200) {
+        localStorage.removeItem("access_token")
+        location.replace('/login')
+      }
+      
+}
 
 
 function formaterMoisAnnee(dateStr) {

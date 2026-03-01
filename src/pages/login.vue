@@ -67,15 +67,15 @@
           <input @keyup="validateImmatricule" type="text" placeholder="Immatricule (Format: P0XXXX)" v-model="immatricule" />
           <input type="mail" v-if="activeTab !== 'signIn'"  placeholder="email" v-model="email" />
 
-          <input type="password" placeholder="Mot de passe" v-model="password" />
+          <input @keyup="validateMDP" type="password" placeholder="Mot de passe" v-model="password" />
           <input type="password" v-if="activeTab !== 'signIn'"  placeholder="Verification mot de passe" v-model="verif_password" />
-          <a href="#" v-if="activeTab === 'signIn'" class="forgot">Mot de passe oublier?</a>
+          <a href="#" v-if="activeTab === 'signIn'" :title="noteTitle" class="forgot">{{note}}</a>
           <div v-if="activeTab !== 'signIn'" class=" flex w-full">
             <button class=" w-full" v-if="!username || !password || !verif_password || !immatricule || validateIM==false"  type="reset">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
             <button class=" w-full" v-else type="submit">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
           </div>
           <div v-else class=" flex w-full">
-            <button class=" w-full" v-if=" !password ||!immatricule "  type="reset">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
+            <button class=" w-full" v-if=" !validatePW ||!immatricule "  type="reset">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
             <button class=" w-full" v-else type="submit">{{ activeTab === 'signIn' ? 'Connexion' : 'Inscription' }}</button>
           </div>
         </form>
@@ -102,6 +102,9 @@ const verif_password = ref("")
 const immatricule = ref("")
 const errorMessage = ref("")
 const validateIM=ref(false)
+const validatePW=ref(false)
+const note= ref("Bonjour !")
+const noteTitle = ref('')
 const  validateImmatricule=() => {
       const regex = /^P0\d{4}$/;
       if (!regex.test(immatricule.value)) {
@@ -111,6 +114,39 @@ const  validateImmatricule=() => {
       validateIM.value= true; 
       }
     }
+ 
+const validateMDP = () => {
+    const pwd = password.value; // ton input
+    const minLength = 8;
+    if (pwd==''){
+      note.value='Bonjour !'
+    }
+    // Vérifie longueur
+    if (pwd.length < minLength && pwd.length !=0) {
+        note.value="Mot de passe trop court ! (≥ 8 caractères)";
+        noteTitle.value=""
+        validatePW.value = false;
+        return;
+    }
+    
+    // Vérifie présence d'au moins une lettre
+    const hasLetter = /[A-Za-z]/.test(pwd);
+    // Vérifie présence d'au moins un chiffre
+    const hasNumber = /[0-9]/.test(pwd);
+    
+    if (!hasLetter || !hasNumber) {
+        note.value="Mot de passe invalide ! ";
+        noteTitle.value= "Il doit contenir au moins une lettre et une chiffre"
+        validatePW.value = false;
+        return;
+    }else{
+      note.value="là c'est ok..."
+      noteTitle.value=''
+    }
+    
+    // Tout est bon
+    validatePW.value = true;
+};
  
 // const handleSubmit = async () => {    
 //   errorMessage.value = "" // réinitialiser l'erreur

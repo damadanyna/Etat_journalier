@@ -10,4 +10,4 @@ python-multipart
 jwt
 pycryptodome
 python-jose[cryptography]
-bcrypt
+bcrypt 

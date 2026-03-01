@@ -4,3 +4,5 @@ node_modules - Copie
 *.csv
 __pycache__/
 *.pyc
+*.dist-info
+venv/
