@@ -404,6 +404,10 @@ const confirmPwdChange = async () => {
       headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
     })
 
+    user_property.value.pwd= ''
+    adminPassword.value= ''
+    user.value.id=''
+
     successMsg.value = `Mot de passe avec succès en "${user_property.value.pwd}"`
     await fetchUser()
 

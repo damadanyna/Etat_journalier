@@ -17,6 +17,7 @@ class UsersPaie:
     def __init__(self): 
             self.db = DB()  
             self.create_table("usersPaie")
+            self.create_table_log("user_activity_log")
             self.upload_folder = 'load_file_paie' 
             if not os.path.exists(self.upload_folder):
                 os.makedirs(self.upload_folder) 
@@ -40,6 +41,46 @@ class UsersPaie:
                         block_by VARCHAR(255) NULL,
                         block_at TIMESTAMP NULL,
                         block_status BOOLEAN DEFAULT FALSE
+                    )
+                """
+                conn.execute(text(query))
+                conn.commit()
+                print(f"[INFO] Table '{table_name}' créée ou déjà existante")
+        except Exception as e:
+            print(f"[ERREUR] Impossible de créer la table {table_name} : {e}")
+    
+   
+    def create_table_log(self, table_name: str):
+        try:
+            with self.db.connect() as conn:
+                # Création table si non existante  
+                
+                query = f"""
+                   CREATE TABLE {table_name} (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY, 
+                        user_id BIGINT NOT NULL,
+                        username VARCHAR(100) NOT NULL,
+
+                        action VARCHAR(100) NOT NULL,
+                        entity_type VARCHAR(100) NOT NULL,      -- ex: "fiche_paie"
+                        entity_id VARCHAR(100) NULL,            -- id de la fiche concernée
+
+                        description TEXT NULL,                  -- description détaillée
+
+                        old_value JSON NULL,                    -- ancienne valeur (si modification)
+                        new_value JSON NULL,                    -- nouvelle valeur
+
+                        ip_address VARCHAR(45) NULL,
+                        user_agent TEXT NULL,
+
+                        status ENUM('SUCCESS', 'FAILED') DEFAULT 'SUCCESS',
+
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                        INDEX idx_user_id (user_id),
+                        INDEX idx_entity (entity_type, entity_id),
+                        INDEX idx_created_at (created_at)
+                        );
                     )
                 """
                 conn.execute(text(query))

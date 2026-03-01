@@ -185,6 +185,32 @@ def update_user_pwd_paie(
         raise HTTPException(status_code=403, detail="Accès refusé")
     return usersPaie.update_user_pwd_paie(request, colab_pwd,colab_immatricule, user_id, admin_password)
 
+
+@router.post("/log_user_activity")
+def log_user_activity(
+    request: Request,
+    action: str = Form(...),
+    entity_type: str = Form(...),
+    entity_id: str = Form(None),
+    description: str = Form(None),
+    status: str = Form("SUCCESS")
+):
+    current_user = user.get_current_user(request)
+
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Utilisateur non authentifié")
+
+    return usersPaie.insert_user_activity_log(
+        request=request,
+        current_user=current_user,
+        action=action,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        description=description,
+        status=status
+    )
+
+
 @router.get("/users")
 def get_users(request: Request):
     current_user = user.get_current_user(request)
