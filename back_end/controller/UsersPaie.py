@@ -85,8 +85,8 @@ class UsersPaie:
             conn = self.db.connect() 
             
             # Vérifier si l'utilisateur existe déjà
-            query_check = text("SELECT * FROM usersPaie WHERE username = :username")
-            result = conn.execute(query_check, {"username": username})
+            query_check = text("SELECT * FROM usersPaie WHERE username = :username OR email = :email OR immatricule = :immatricule")
+            result = conn.execute(query_check, {"username": username, "email": email, "immatricule": immatricule})
             existing = result.mappings().first()
             if existing:
                 raise HTTPException(status_code=400, detail="Utilisateur déjà existant")
