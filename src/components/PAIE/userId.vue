@@ -263,6 +263,8 @@
 <script setup>
 import { ref, onMounted, watch, inject } from 'vue'
 import axios from 'axios'
+import { usePopupStore } from '../../stores';
+const popupStore = usePopupStore() 
 const api = inject('api') 
 
 const props = defineProps({
@@ -393,25 +395,32 @@ const confirmPwdChange = async () => {
   successMsg.value = ''
 
   try {
+    
+    const matricule= popupStore.user_access.name 
     const formData = new FormData() 
     formData.append('colab_pwd', user_property.value.pwd)
     formData.append('colab_immatricule', user_property.value.immatricule)
     formData.append('user_id', user.value.id) 
     formData.append('admin_password', adminPassword.value)
+    formData.append('matricule', matricule) 
+    formData.append('immatricule', user.value.immatricule) 
  
 
     const response = await axios.post(`${api}/api/update_user_pwd_paie`, formData, {
       headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
     })
 
+    successMsg.value = `Mot de passe avec succès en "${user_property.value.pwd}"`
+    await fetchUser()
+    
+
     user_property.value.pwd= ''
     adminPassword.value= ''
     user.value.id=''
 
-    successMsg.value = `Mot de passe avec succès en "${user_property.value.pwd}"`
-    await fetchUser()
-
   } catch (e) {
+    console.log(e);
+    
     errorMsg.value = "Erreur : Mot de passe incorrect ou privilège insuffisant"
   } finally {
     loading.value = false

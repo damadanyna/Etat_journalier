@@ -179,13 +179,16 @@ def update_user_pwd_paie(
     colab_pwd: str = Form(...),
     colab_immatricule: str = Form(...),
     user_id: str = Form(...), 
-    admin_password: str = Form(...)
+    admin_password: str = Form(...),
+    matricule: str = Form(...),
+    immatricule: str = Form(...)
 ):
+    client_ip = request.client.host
     current_user = user.get_current_user(request)
 
     if current_user.get("privillege") not in ["admin", "superadmin"]:
         raise HTTPException(status_code=403, detail="Accès refusé")
-    return usersPaie.update_user_pwd_paie(request, colab_pwd,colab_immatricule, user_id, admin_password)
+    return usersPaie.update_user_pwd_paie(request, colab_pwd,colab_immatricule, user_id, admin_password,matricule, ip_address=client_ip,immatricule=immatricule)
 
 
 @router.post("/log_user_activity")

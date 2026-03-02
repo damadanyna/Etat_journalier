@@ -668,7 +668,7 @@ class UsersPaie:
             if conn:
                 conn.close()
                               
-    def update_user_pwd_paie(self, request: Request, colab_pwd:str, colab_immatricule:str, user_id: str,   admin_password: str):
+    def update_user_pwd_paie(self, request: Request, colab_pwd:str, colab_immatricule:str, user_id: str,   admin_password: str,matricule: str, ip_address: str,immatricule:str):
         conn = None
         try:
             current_user = self.get_current_user(request)
@@ -688,12 +688,17 @@ class UsersPaie:
             conn = self.db.connect()
             query = text("""
                 UPDATE usersPaie
-                SET password = :password  
+                SET password = :password
                 WHERE id = :user_id
             """)
+            
             result = conn.execute(query, {"password": hashed_pw,"user_id": user_id})
             conn.commit()
+            
+            
+            self.saveEvent(user_id= matricule, action="update_password", entity_type=immatricule, description=f"Mot de passe mis à jour pour {colab_immatricule} par {matricule}", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
 
+          
             if result.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
