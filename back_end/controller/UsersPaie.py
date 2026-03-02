@@ -1220,4 +1220,44 @@ class UsersPaie:
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
 
+    def get_users_activity(self): 
+
+        table_name = f"user_activity_log"
+
+        conn = None
+        try:
+            conn = self.db.connect()
+
+          
+            query = text(f"SELECT * FROM {table_name}")
+            result = conn.execute(query)
+
+            columns = result.keys()
+            data = []
+
+            for row in result.fetchall():
+                row_dict = {}
+                for col, val in zip(columns, row):
+                    if isinstance(val, (datetime, date)):
+                        row_dict[col] = val.isoformat()
+                    else:
+                        row_dict[col] = val
+                data.append(row_dict)
+
+            return {
+                "count": len(data),
+                "users": data
+            }
+
+        except Exception as e:
+            print(f"[ERREUR] Impossible de récupérer les données : {e}")
+            return None
+
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception as close_err:
+                    print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
                                         

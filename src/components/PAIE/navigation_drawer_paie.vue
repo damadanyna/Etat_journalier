@@ -66,7 +66,8 @@ const list_menu = [{
         title: 'Importation',
         to: '/paie/file_manager',
         access: 'admin'
-    }
+    }, 
+    { icon: 'mdi-file-table-box-multiple-outline', title: 'Historique', to: '/paie/history', access: 'admin' },
 ];
 
 const fetchDemandesValidation = async () => {

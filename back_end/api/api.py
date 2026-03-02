@@ -302,22 +302,16 @@ def logoutpaie(
     matricule: str = Body(...)
 ):
     # print(client_ip,matricule)
-    matricule_value =extract_matricule (matricule)[0]
+    matricule_value =extract_matricule (matricule)
     client_ip = request.client.host  
-    
     return usersPaie.logout(response,ip_address=client_ip,matricule=matricule_value)
 
 @router.post("/downloadpaie")
-def downloadpaie(
-    request: Request,
-    response: Response,
-    matricule: str = Body(...)
-):
+def downloadpaie(request: Request,response: Response,matricule: str = Body(...)):
     # print(client_ip,matricule)
     matricule_value =extract_matricule (matricule)[0]
     file_id_value =extract_matricule (matricule)[1]
     client_ip = request.client.host  
-    
     return usersPaie.downloadpaie(response,ip_address=client_ip,matricule=matricule_value,file_id=file_id_value)
 
 @router.post("/upload_multiple_files")
@@ -845,6 +839,38 @@ def get_capital_sums(
                 "status": "success",
                 "matricule": matricule,
                 "dateStr": dateStr,
+                "data": data_serializable
+            }
+        )
+
+    except Exception as e:
+        print("Erreur dans get_capital_sums:", e)
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "detail": str(e)}
+        )
+
+    
+@router.get("/get_activite_list")
+def get_capital_sums( 
+): 
+    try:
+        # Appel de la fonction avec les paramètres
+        data = usersPaie.get_users_activity()
+
+        if data is None:
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "detail": "Erreur lors de la récupération des données."}
+            )
+
+        # Convertir les types non JSON serializable
+        data_serializable = convert_decimals(data)
+        
+        return JSONResponse(
+            content={
+                "status": "success", 
+                "matricule": "",
                 "data": data_serializable
             }
         )
