@@ -13,15 +13,27 @@ from socket_manager import socket_manager
 fastapi_app = FastAPI()
 
 frontend_port = os.getenv("FRONTEND_PORT", "5173")
+configured_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
+
+default_allowed_origins = [
+    f"http://localhost:{frontend_port}", 
+    f"http://127.0.0.1:{frontend_port}", 
+    "http://10.192.1.15",
+    f"http://10.192.1.15:{frontend_port}", 
+    "https://aboaly.sipembanque.local",
+]
+
+allow_origins = [
+    origin.strip()
+    for origin in (configured_origins.split(",") if configured_origins else default_allowed_origins)
+    if origin.strip()
+]
 
 
 # Middleware CORS
 fastapi_app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        f"http://localhost:{frontend_port}",
-        f"http://127.0.0.1:{frontend_port}",
-    ],
+    allow_origins=allow_origins,
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
