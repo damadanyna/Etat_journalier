@@ -6,7 +6,7 @@
     <div class="max-w-4xl mx-auto px-4 py-7 h-full bg-white"  id="file_" >
         <!-- Header avec logo et titre -->
         <div class=" flex items-center justify-between">
-            <img class=" w-[100px] " src="../../../../public/img/logo.jpg" alt="">
+            <img class=" w-[100px] " src="/img/logo.jpg" alt="">
             <div v-if="props.data" class=" flex flex-col items-center">
                 <span class=" font-bold ">FICHE DE PAIE</span>
                 <span class=" text-sm ">{{formaterMoisAnnee(props.data[1].upload_date) }}</span>
@@ -114,7 +114,7 @@
                     <span>L'Employeur ou son</span>
                     <span>Représentant</span>
                 </div>
-                <img src="../../../../../back_end/load_file_paie/sign/signature.png" class=" w-[150px]" alt="">
+                <img src="/img/signature.png" class=" w-[150px]" alt="">
         
             </div>
         </div>

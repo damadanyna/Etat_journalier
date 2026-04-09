@@ -6,6 +6,17 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
   const backendUrl = env.VITE_DEV_BACKEND_URL || 'http://127.0.0.1:8000'
+  const proxy = {
+    '/api': {
+      target: backendUrl,
+      changeOrigin: true,
+    },
+    '/socket.io': {
+      target: backendUrl,
+      changeOrigin: true,
+      ws: true,
+    },
+  }
 
   return {
     plugins: [
@@ -24,17 +35,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      proxy: {
-        '/api': {
-          target: backendUrl,
-          changeOrigin: true,
-        },
-        '/socket.io': {
-          target: backendUrl,
-          changeOrigin: true,
-          ws: true,
-        },
-      },
+      proxy,
+    },
+    preview: {
+      proxy,
     },
     optimizeDeps: {
       include: ['postcss', 'source-map-js'],
