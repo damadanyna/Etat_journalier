@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, Response,Request
 from sqlalchemy import text 
 import os,io,sys,json,re,string
+from config import load_project_env
 from db.db  import DB 
 from jose import jwt,JWTError 
 from werkzeug.utils import secure_filename 
@@ -10,7 +11,10 @@ import shutil
 from datetime import date, datetime
 from socket_manager import socket_manager
 
-SECRET_KEY = "supersecret"
+
+load_project_env()
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 360
 

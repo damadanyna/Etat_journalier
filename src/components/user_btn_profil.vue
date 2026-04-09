@@ -90,6 +90,7 @@ import { computed, ref , onMounted,inject} from 'vue'
 import { useRouter } from 'vue-router'
 import { usePopupStore } from '../stores'  
 import { useSnackbar } from '@/composables/useSnackbar'
+import { safeReadJson } from '@/utils/http'
 
 
 
@@ -181,7 +182,7 @@ const submitPasswordChange = async () => {
       body: formData,
     })
 
-    const data = await response.json()
+    const data = await safeReadJson(response)
     if (!response.ok) {
       throw new Error(data.detail || 'Erreur lors de la mise à jour du mot de passe')
     }

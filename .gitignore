@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 *.dist-info
 venv/
+.env
+.env.local
+.env.production

@@ -88,6 +88,7 @@
 </template>
 
 <script setup>
+import { safeReadJson } from '@/utils/http'
 import { ref,inject } from "vue"
 import { useRouter } from 'vue-router'
 import { usePopupStore } from '@/stores'
@@ -242,7 +243,7 @@ const handleSubmitPaie = async () => {
         body: formData
       });
 
-      data = await response.json();
+      data = await safeReadJson(response)
 
       if (!response.ok) {
         throw new Error(data.detail || "Identifiants invalides");
@@ -273,7 +274,7 @@ const handleSubmitPaie = async () => {
         body: formData
       });
 
-      data = await response.json();
+      data = await safeReadJson(response)
 
       if (!response.ok) {
         throw new Error(data.detail || "Erreur lors de l'inscription");

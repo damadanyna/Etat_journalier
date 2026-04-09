@@ -36,6 +36,7 @@ import { onBeforeUnmount, onMounted, ref, inject, watch } from 'vue'
 import { useActivityLogger } from '@/composables/useActivityLogger'
 import { useNotificationStore } from '@/stores/notification'
 import { connectSocketClient, disconnectSocketClient, getSocketClient } from '@/composables/useSocketClient'
+import { safeReadJson } from '@/utils/http'
 
 const api = inject('api') 
 const { logUserActivity } = useActivityLogger(api)
@@ -244,7 +245,7 @@ const get_stat = async () => {
     isLogged_status.value = protectedResp.status
 
     if (protectedResp.ok) {
-      const data = await protectedResp.json(); 
+      const data = await safeReadJson(protectedResp)
       popupStore.user_access.name = data.username || data.sub || ''
       popupStore.user_access.access = data.privillege || ''
       popupStore.user_access.app = data.app || 'encours'

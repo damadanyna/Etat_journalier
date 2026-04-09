@@ -1,9 +1,7 @@
 export default {
   install(app) {
-    const protocol = window.location.protocol
-    const hostname = window.location.hostname || '127.0.0.1'
-    const apiPort = import.meta.env.VITE_API_PORT || '8000'
-    const apiBaseUrl = `${protocol}//${hostname}:${apiPort}`
+    const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const apiBaseUrl = configuredApiBaseUrl.replace(/\/api\/?$/, '')
 
     app.config.globalProperties.$api = apiBaseUrl
 

@@ -3,11 +3,14 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, Response,Request
 from sqlalchemy import text 
 import os
+from config import load_project_env
 from db.db  import DB 
 from jose import jwt,JWTError 
  
 
-SECRET_KEY = "supersecret"
+load_project_env()
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 3600
 

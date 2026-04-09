@@ -8,7 +8,11 @@ from api.api import api_router
 from fastapi.middleware.cors import CORSMiddleware
 from socketio import ASGIApp
 
+from config import load_project_env
 from socket_manager import socket_manager
+
+
+load_project_env()
 
 fastapi_app = FastAPI()
 
