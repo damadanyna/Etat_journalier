@@ -60,19 +60,15 @@ const demandesValidation = ref(0)
 const api = inject('api') 
 
 const list_menu = [
-  { icon: 'mdi-home-city', title: 'Crédits', to: '/app/credits', access: 'all' },
-  { icon: 'mdi-bank', title: 'My Account', to: '/app/dav', access: 'all' },
-  { icon: 'mdi-account', title: 'ESRI', to: '/app/esri', access: 'all' },
-    // { icon: 'mdi-magnify', title: 'Rechercher', to: '/app/generale', access: 'admin' }, 
-
-  { icon: 'mdi-swap-horizontal', title: 'CHANGE', to: '/app/change', access: 'all' },
-  { icon: 'mdi-shield-account', title: 'Admin', to: '/app/session', access: 'admin', badge: () => notificationStore.demandesValidation },  
-  { icon: 'mdi-file-table-box-multiple-outline', title: 'Mes Fichiers', to: '/app/file_manager', access: 'admin' },
-];
+  { icon: 'mdi-home-city', title: 'Accueil', to: '/paie/accueil', access: 'all' },
+  { icon: 'mdi-shield-account', title: 'Demande de Validation', to: '/paie/session', access: 'admin', badge: () => notificationStore.demandesValidation },
+  { icon: 'mdi-file', title: 'Importation', to: '/paie/file_manager', access: 'admin' },
+  { icon: 'mdi-file-table-box-multiple-outline', title: 'Historique', to: '/paie/history', access: 'admin' },
+]
 
 const fetchDemandesValidation = async () => {
   try {
-    const res = await fetch(`${api}/api/users/pending_count`, {
+    const res = await fetch(`${api}/api/usersPaie/pending_count`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
     })
     const data = await res.json()
@@ -96,7 +92,7 @@ const filteredMenu = computed(() => {
 });
 
 onMounted(() => {
-  notificationStore.fetchDemandesValidation(api)
+  notificationStore.fetchDemandesValidation(api, 'usersPaie/pending_count')
 })
 defineExpose({ fetchDemandesValidation })
 

@@ -6,10 +6,7 @@
       </div>
       <login v-else-if="isLogged_status!==200"></login>
       <div v-else class="">
-        <LayoutEcours v-if="popupStore.user_access.app !== 'paie'">
-          <router-view />
-        </LayoutEcours>
-        <LayoutPaie v-else>
+        <LayoutPaie>
           <router-view />
         </LayoutPaie>
 
@@ -26,7 +23,6 @@
 <script setup> 
 import login from './pages/login.vue';
 import { usePopupStore} from './stores'
-import LayoutEcours from '@/layouts/encours.vue'
 import LayoutPaie from '@/layouts/paie.vue'
 import { useSnackbar } from '@/composables/useSnackbar' 
 import popup_view from './components/loading/file_porgress_bar_vues.vue';
@@ -61,7 +57,7 @@ const inactivityTimer = ref(null)
 const isAutoLoggingOut = ref(false)
 const lastActivityResetAt = ref(0)
 
-const getHomeRoute = (appName) => appName === 'paie' ? '/paie/accueil' : '/app/credits'
+const getHomeRoute = () => '/paie/accueil'
 
 const shouldRedirectToHome = () => route.path === '/' || route.path === '/login'
 
@@ -69,7 +65,7 @@ const clearAuthState = () => {
   isLogged_status.value = 401
   popupStore.user_access.name = ''
   popupStore.user_access.access = ''
-  popupStore.user_access.app = 'encours'
+  popupStore.user_access.app = 'paie'
   notificationStore.setDemandesValidation(0)
   pendingValidationCount.value = 0
   clearInactivityTimer()
@@ -92,10 +88,9 @@ async function logoutCurrentSession(reason = 'manual') {
   clearInactivityTimer()
 
   try {
-    const currentApp = popupStore.user_access.app
     const currentUser = popupStore.user_access.name
 
-    if (currentApp === 'paie' && currentUser) {
+    if (currentUser) {
       if (reason === 'inactivity') {
         await logUserActivity({
           action: 'auto_logout',
@@ -110,10 +105,6 @@ async function logoutCurrentSession(reason = 'manual') {
         body: JSON.stringify({
           matricule: currentUser,
         }),
-      })
-    } else {
-      await fetch(`${api}/api/logout`, {
-        method: 'POST',
       })
     }
   } catch (error) {
@@ -214,7 +205,7 @@ const bindSocketListeners = () => {
 }
 
 const syncSocketConnection = () => {
-  if (isLogged_status.value === 200 && popupStore.user_access.app === 'paie') {
+  if (isLogged_status.value === 200) {
     bindSocketListeners()
     connectSocketClient(api)
     return
@@ -248,12 +239,12 @@ const get_stat = async () => {
       const data = await safeReadJson(protectedResp)
       popupStore.user_access.name = data.username || data.sub || ''
       popupStore.user_access.access = data.privillege || ''
-      popupStore.user_access.app = data.app || 'encours'
+      popupStore.user_access.app = 'paie'
       pendingValidationCount.value = Number(notificationStore.demandesValidation || 0)
       syncSocketConnection()
 
       if (shouldRedirectToHome()) {
-        const homeRoute = getHomeRoute(popupStore.user_access.app)
+        const homeRoute = getHomeRoute()
         if (route.path !== homeRoute) {
           await router.replace({ path: homeRoute })
         }

@@ -22,7 +22,7 @@ export const usePopupStore = defineStore('popup', () => {
     name:"",
     password:"", 
     access:"",
-    app:"encours",
+    app:"paie",
   })
 
   const togglePopup = () => {

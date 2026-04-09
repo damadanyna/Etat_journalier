@@ -112,7 +112,7 @@ const note= ref("Bonjour !")
 const noteTitle = ref('')
 const isSubmitting = ref(false)
 
-const getHomeRoute = (appName) => appName === 'paie' ? '/paie/accueil' : '/app/credits'
+const getHomeRoute = () => '/paie/accueil'
 
 const resetSignupForm = () => {
   username.value = ''
@@ -255,7 +255,7 @@ const handleSubmitPaie = async () => {
       popupStore.user_access.access = data.privilege || ''
       popupStore.user_access.app = 'paie'
 
-      await router.replace(getHomeRoute('paie'))
+      await router.replace(getHomeRoute())
       window.dispatchEvent(new Event('auth:changed'))
 
     } else {
