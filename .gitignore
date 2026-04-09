@@ -5,6 +5,7 @@ node_modules - Copie
 __pycache__/
 *.pyc
 *.dist-info
+dist
 venv/
 .env
 .env.local
