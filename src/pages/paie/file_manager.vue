@@ -485,7 +485,7 @@ const uploadFile = async (folder_name) => {
 // Méthode pour afficher les fichiers
 const showFiles = async () => {
   try {
-    const response = await axios.get('/api/show_files_paie', {
+    const response = await axios.get('/show_files_paie', {
       params: {
         app:app_type.value
       }
