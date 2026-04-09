@@ -61,7 +61,10 @@ const { logUserActivity } = useActivityLogger(api)
 
 const historyDates = ref([])
 const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
-const isAdmin = computed(() => ['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access)))
+const isAdmin = computed(() => {
+    const privilege = normalizePrivilege(popupStore.user_access.access || localStorage.getItem('privilege'))
+    return ['admin', 'superadmin'].includes(privilege)
+})
 
 const refreshHistoryDates = async () => {
     historyDates.value = await fetchData(`${api}/api/history_insert_paie`)

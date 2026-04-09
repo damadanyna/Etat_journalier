@@ -239,7 +239,7 @@ const get_stat = async () => {
     if (protectedResp.ok) {
       const data = await safeReadJson(protectedResp)
       popupStore.user_access.name = data.username || data.sub || ''
-      popupStore.user_access.access = normalizePrivilege(data.privillege || data.privilege)
+      popupStore.user_access.access = normalizePrivilege(data.privillege || data.privilege || localStorage.getItem('privilege'))
       popupStore.user_access.app = 'paie'
       pendingValidationCount.value = Number(notificationStore.demandesValidation || 0)
       syncSocketConnection()

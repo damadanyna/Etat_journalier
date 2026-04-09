@@ -32,18 +32,25 @@ import { safeReadJson } from '@/utils/http'
 const dataPaie=ref([])
 const api = inject('api') 
 const popupStore = usePopupStore() 
+const normalizePayrollDate = (value) => String(value || '').replace(/-/g, '').trim()
 
 
 const fetch_all_paie = async (matricule = null, dateStr = null) => {
+  const normalizedDate = normalizePayrollDate(dateStr)
   
   // console.log(dateStr);
   
   try {
+    if (!/^\d{8}$/.test(normalizedDate)) {
+      dataPaie.value = []
+      return
+    }
+
     // Construire l'URL avec paramètres query
     let url = `${api}/api/get_paie_list`;
     const params = new URLSearchParams();
     if (matricule) params.append("matricule", matricule);
-    if (dateStr) params.append("dateStr", dateStr);
+    params.append("dateStr", normalizedDate);
 
     if ([...params].length > 0) {
       url += `?${params.toString()}`;
@@ -57,7 +64,7 @@ const fetch_all_paie = async (matricule = null, dateStr = null) => {
   
     
     
-    dataPaie.value = [ ...json.data.users, { "upload_date": dateStr }];
+    dataPaie.value = [ ...json.data.users, { "upload_date": normalizedDate }];
      
     
 

@@ -137,7 +137,11 @@ const showRow = (event, row) => {
 };
 
 const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
-const isAdmin = computed(() => ['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access)))
+const normalizePayrollDate = (value) => String(value || '').replace(/-/g, '').trim()
+const isAdmin = computed(() => {
+  const privilege = normalizePrivilege(popupStore.user_access.access || localStorage.getItem('privilege'))
+  return ['admin', 'superadmin'].includes(privilege)
+})
 
 const filteredMenu = computed(() => {
     const privilege = normalizePrivilege(popupStore.user_access.access)
@@ -149,14 +153,20 @@ const filteredMenu = computed(() => {
 
 const fetch_all_paie = async (matricule = null, dateStr = null) => {
   loading.value = true;
+  const normalizedDate = normalizePayrollDate(dateStr)
   // console.log(popupStore.user_access.access);
   
   try {
+    if (!/^\d{8}$/.test(normalizedDate)) {
+      dataPaie.value = []
+      return
+    }
+
     // Construire l'URL avec paramètres query
     let url = `${api}/api/get_paie_list`;
     const params = new URLSearchParams();
     if (matricule) params.append("matricule", matricule);
-    if (dateStr) params.append("dateStr", dateStr);
+    params.append("dateStr", normalizedDate);
 
     if ([...params].length > 0) {
       url += `?${params.toString()}`;
@@ -212,10 +222,11 @@ onMounted(async () => {
 watch(
   () => popupStore.selected_date,
   () => {  
-    if(isAdmin.value)
-       console.log(popupStore.selected_date);
-       
-      fetch_all_paie(null, popupStore.selected_date) 
+    if (!isAdmin.value) {
+      return
+    }
+
+    fetch_all_paie(null, popupStore.selected_date)
   },
   { immediate: true }
 )
