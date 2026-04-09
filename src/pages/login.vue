@@ -89,8 +89,12 @@
 
 <script setup>
 import { ref,inject } from "vue"
+import { useRouter } from 'vue-router'
+import { usePopupStore } from '@/stores'
 import { useNotificationStore } from '@/stores/notification'
 const notificationStore = useNotificationStore()
+const popupStore = usePopupStore()
+const router = useRouter()
 
 const activeLogin=ref("APP")
 const api = inject('api') 
@@ -105,6 +109,19 @@ const validateIM=ref(false)
 const validatePW=ref(false)
 const note= ref("Bonjour !")
 const noteTitle = ref('')
+const isSubmitting = ref(false)
+
+const getHomeRoute = (appName) => appName === 'paie' ? '/paie/accueil' : '/app/credits'
+
+const resetSignupForm = () => {
+  username.value = ''
+  email.value = ''
+  password.value = ''
+  verif_password.value = ''
+  immatricule.value = ''
+  validateIM.value = false
+  validatePW.value = false
+}
 const  validateImmatricule=() => {
       const regex = /^P0\d{4}$/;
       if (!regex.test(immatricule.value)) {
@@ -207,6 +224,11 @@ const validateMDP = () => {
 // }
 const handleSubmitPaie = async () => {    
   errorMessage.value = "" // réinitialiser l'erreur
+  if (isSubmitting.value) {
+    return
+  }
+
+  isSubmitting.value = true
   try { 
     let response, data;
     
@@ -228,7 +250,12 @@ const handleSubmitPaie = async () => {
 
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("privilege", data.privilege);
-      location.reload();
+      popupStore.user_access.name = data.user?.immatricule || immatricule.value
+      popupStore.user_access.access = data.privilege || ''
+      popupStore.user_access.app = 'paie'
+
+      await router.replace(getHomeRoute('paie'))
+      window.dispatchEvent(new Event('auth:changed'))
 
     } else {
       // Inscription
@@ -252,14 +279,18 @@ const handleSubmitPaie = async () => {
         throw new Error(data.detail || "Erreur lors de l'inscription");
       }
       
-      await notificationStore.fetchDemandesValidation(api);
+      activeTab.value = 'signIn'
+      resetSignupForm()
+      errorMessage.value = data.message || "Inscription envoyée. Attendez la validation d'un administrateur."
 
-      location.reload();
+      await notificationStore.fetchDemandesValidation(api, 'usersPaie/pending_count');
     }
 
   } catch (err) {
     // Afficher le message d'erreur provenant de l'API ou de JS
     errorMessage.value = err.message || "Une erreur est survenue";
+  } finally {
+    isSubmitting.value = false
   }
 }
 // const change_page=() => {

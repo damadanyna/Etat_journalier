@@ -7,3 +7,4 @@ sqlalchemy
 werkzeug
 aiofiles
 python-multipart
+python-socketio[asgi]

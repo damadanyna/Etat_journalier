@@ -115,7 +115,7 @@ class Users:
         except HTTPException as http_err:
             raise http_err
         except Exception as e:
-            raise HTTPException(status_code=500, detail="Erreur serveur",error=e)
+            raise HTTPException(status_code=500, detail=f"Erreur serveur: {e}")
         finally:
             if conn:
                 conn.close()
@@ -435,6 +435,39 @@ class Users:
     def logout(self, response: Response):
         response.delete_cookie("access_token")
         return {"message": "Déconnexion réussie"}
+
+    def change_own_password(self, request: Request, current_password: str, new_password: str):
+        conn = None
+        try:
+            current_user = self.get_current_user(request)
+            username = current_user.get("username")
+
+            conn = self.db.connect()
+            query = text("SELECT * FROM users WHERE username = :username")
+            result = conn.execute(query, {"username": username})
+            user = result.mappings().first()
+
+            if not user:
+                raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+            if not bcrypt.checkpw(current_password.encode("utf-8"), user["password"].encode("utf-8")):
+                raise HTTPException(status_code=401, detail="Ancien mot de passe incorrect")
+
+            hashed_pw = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+            conn.execute(
+                text("UPDATE users SET password = :password WHERE username = :username"),
+                {"password": hashed_pw, "username": username}
+            )
+            conn.commit()
+
+            return {"message": "Mot de passe mis à jour avec succès"}
+        except HTTPException as http_err:
+            raise http_err
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            if conn:
+                conn.close()
     
     #user non valider
     def get_pending_validation_count(self):

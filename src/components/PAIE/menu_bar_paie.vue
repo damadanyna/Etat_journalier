@@ -33,6 +33,7 @@ import {
     ref,
     watch,
     onMounted,
+    onBeforeUnmount,
     inject,
     computed
 } from 'vue'
@@ -46,6 +47,7 @@ import * as XLSX from 'xlsx'
 import {
     useRouter
 } from 'vue-router'
+import { useActivityLogger } from '@/composables/useActivityLogger'
 
 const route = useRoute()
 const api = inject('api')
@@ -54,8 +56,23 @@ const menu = ref(false)
 const popupStore = usePopupStore()
 const exporting = ref(false)
 const router = useRouter()
+const { logUserActivity } = useActivityLogger(api)
 
 const historyDates = ref([])
+
+const refreshHistoryDates = async () => {
+    historyDates.value = await fetchData(`${api}/api/history_insert_paie`)
+}
+
+const handlePayrollDateUpdated = async (event) => {
+    const payload = event.detail || {}
+
+    if (!payload.label) {
+        return
+    }
+
+    await refreshHistoryDates()
+}
 
 async function selectDateStatOf(date, stat_of) {
     selectedDate.value = date
@@ -74,6 +91,13 @@ async function selectDateStatOf(date, stat_of) {
             stat_of
         }
     }))
+
+    await logUserActivity({
+        action: 'select_payroll_date',
+        entityType: 'history_insert_paie',
+        entityId: date,
+        description: `Sélection de la date de paie ${date}`,
+    })
 }
 async function fetchData(baseUrl, date = null) {
   try {
@@ -111,8 +135,13 @@ watch(historyDates, (val) => {
 
 onMounted(() => {
     (async () => {
-        historyDates.value = await fetchData(`${api}/api/history_insert_paie`)
+        await refreshHistoryDates()
     })(); 
+    window.addEventListener('socket:payroll-date-updated', handlePayrollDateUpdated)
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('socket:payroll-date-updated', handlePayrollDateUpdated)
 })
 </script>
 

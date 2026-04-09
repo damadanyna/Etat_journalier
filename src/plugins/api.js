@@ -1,9 +1,12 @@
 export default {
   install(app) {
-    // ✅ Définit une propriété globale accessible dans tous les composants
-    app.config.globalProperties.$api = 'http://127.0.0.1:8000'
+    const protocol = window.location.protocol
+    const hostname = window.location.hostname || '127.0.0.1'
+    const apiPort = import.meta.env.VITE_API_PORT || '8000'
+    const apiBaseUrl = `${protocol}//${hostname}:${apiPort}`
 
-    // ✅ (optionnel) Tu peux aussi l’ajouter à app.provide pour l’injecter avec `inject()`
+    app.config.globalProperties.$api = apiBaseUrl
+
     app.provide('api', app.config.globalProperties.$api)
   }
 }

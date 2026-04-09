@@ -1,20 +1,21 @@
 <template> 
-  <v-card v-if="popupStore.user_access.access=='admin'" flat style="background: transparent;" >
+  <v-card v-if="canViewHistory" flat style="background: transparent;" >
     <template #text>
       <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" variant="outlined" hide-details single-line/>
     </template>
     <v-data-table  style="padding:0px 15px;" class="bg-transparent" :headers="header_paie" :items="dataPaie" :search="search" item-value="Numero_pret" item-key="id" fixed-header height="450px" :items-per-page="50" @click:row="showRow"> 
       <template #item.ID="{ item }"> {{ item.ID?.slice(0, 2) || '' }}</template>
       <template #item.index="{ index }"> {{ index + 1 }}</template>
+      <template #item.created_at="{ item }"> {{ formatHistoryDate(item.created_at) }}</template>
     </v-data-table>
   </v-card> 
   <FormeViewPaie :data="selectedRow"  @close="selectedRow = null"  />
-  <FolderViewerPaie :data="date_liste" v-if="popupStore.user_access.access!='admin'" />
+  <FolderViewerPaie :data="date_liste" v-if="!canViewHistory" />
 </template>
 
 <script setup>
 import { usePopupStore } from '../../../stores';
-import { watch, ref,inject,computed, onMounted} from 'vue'; 
+import { watch, ref,inject,computed, onMounted, onBeforeUnmount} from 'vue'; 
 import FormeViewPaie from './formeViewPaie.vue'; 
 import FolderViewerPaie from './folderViewerPaie.vue';
 
@@ -47,6 +48,40 @@ const
 
 const date_liste= ref([])
 
+const formatHistoryDate = (value) => {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  const months = [
+    'Janvier',
+    'Fevrier',
+    'Mars',
+    'Avril',
+    'Mai',
+    'Juin',
+    'Juillet',
+    'Aout',
+    'Septembre',
+    'Octobre',
+    'Novembre',
+    'Decembre',
+  ]
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = months[date.getMonth()]
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${day} ${month} ${year} a ${hours}h ${minutes}`
+}
+
 const showRow = (event, row) => {
   // selectedRow.value = ;
   selectedRow.value = [row.item ,  { "upload_date":  popupStore.selected_date }]   // données de la ligne cliquée
@@ -54,13 +89,15 @@ const showRow = (event, row) => {
   // console.log("Ligne cliquée :", row.item);
 };
 
-const filteredMenu = computed(() => {
-    const privilege = popupStore.user_access.access || '';
-    if (!['admin', 'superadmin'].includes(privilege)) {
-       return 'non Admin'
-       
-    } 
-});
+const canViewHistory = computed(() => ['admin', 'superadmin'].includes(popupStore.user_access.access || ''))
+
+const handleUserActivityUpdated = async () => {
+  if (!canViewHistory.value) {
+    return
+  }
+
+  await fetch_all_activites()
+}
 
 const fetch_all_activites = async () => {
   loading.value = true;
@@ -75,18 +112,16 @@ const fetch_all_activites = async () => {
       url += `?${params.toString()}`;
     }
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
     const json = await response.json();
-    console.log("Réponse de l'API get_activite_list:", json);
 
     if (!response.ok) throw new Error(json.detail || "Erreur inconnue");
 
-    // Nouvelle structure : data.users
-    const capitalData = json.data?.users || [];
-    // console.log(json.data.users);
-    dataPaie.value = json.data.users;
-
-    // Tu peux continuer à traiter capitalData ici...
+    dataPaie.value = json.data?.users || [];
 
   } catch (err) {
     console.log(err.message || "Erreur inconnue");
@@ -99,12 +134,16 @@ const fetch_all_activites = async () => {
  
 onMounted(async () => { 
   
-    const access=popupStore.user_access.access
-  if(access=='admin'){
+  if (canViewHistory.value) {
     fetch_all_activites()
-  } 
-   
+  }
+
+  window.addEventListener('socket:user-activity-updated', handleUserActivityUpdated)
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('socket:user-activity-updated', handleUserActivityUpdated)
+})
  
  
 </script>

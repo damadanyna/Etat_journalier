@@ -8,6 +8,7 @@ from jose import jwt,JWTError
 from werkzeug.utils import secure_filename 
 import shutil 
 from datetime import date, datetime
+from socket_manager import socket_manager
 
 SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
@@ -33,7 +34,7 @@ class UsersPaie:
                         username VARCHAR(255) UNIQUE NOT NULL,
                         password VARCHAR(255) NOT NULL,
                         email VARCHAR(255) NOT NULL,
-                        matricule VARCHAR(50) NOT NULL,
+                        immatricule VARCHAR(50) NOT NULL,
                         privillege VARCHAR(50) NULL,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         validate_at TIMESTAMP NULL,
@@ -45,6 +46,47 @@ class UsersPaie:
                     )
                 """
                 conn.execute(text(query))
+
+                immatricule_exists = conn.execute(
+                    text(
+                        """
+                        SELECT COUNT(*)
+                        FROM information_schema.COLUMNS
+                        WHERE TABLE_SCHEMA = DATABASE()
+                          AND TABLE_NAME = :table_name
+                          AND COLUMN_NAME = 'immatricule'
+                        """
+                    ),
+                    {"table_name": table_name}
+                ).scalar()
+
+                matricule_exists = conn.execute(
+                    text(
+                        """
+                        SELECT COUNT(*)
+                        FROM information_schema.COLUMNS
+                        WHERE TABLE_SCHEMA = DATABASE()
+                          AND TABLE_NAME = :table_name
+                          AND COLUMN_NAME = 'matricule'
+                        """
+                    ),
+                    {"table_name": table_name}
+                ).scalar()
+
+                if not immatricule_exists:
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN immatricule VARCHAR(50) NULL AFTER email"))
+
+                if matricule_exists:
+                    conn.execute(
+                        text(
+                            f"""
+                            UPDATE {table_name}
+                            SET immatricule = matricule
+                            WHERE immatricule IS NULL OR immatricule = ''
+                            """
+                        )
+                    )
+
                 conn.commit()
                 print(f"[INFO] Table '{table_name}' créée ou déjà existante")
         except Exception as e:
@@ -108,6 +150,8 @@ class UsersPaie:
             conn.commit()
             
             self.saveEvent(user_id= immatricule, action="signup", entity_type="user", description=f"Nouvel utilisateur inscrit: {username}", old_value=None, new_value=json.dumps({"username": username, "email": email, "immatricule": immatricule}), ip_address=ip_address, user_agent=None)
+            pending_count = self.get_pending_validation_count().get("count", 0)
+            socket_manager.emit_pending_validation_update_sync(pending_count)
         
 
             return {"message": "Utilisateur créé avec succès"}
@@ -115,18 +159,18 @@ class UsersPaie:
         except HTTPException as http_err:
             raise http_err
         except Exception as e:
-            raise HTTPException(status_code=500, detail="Erreur serveur",error=e)
+            raise HTTPException(status_code=500, detail=f"Erreur serveur: {e}")
         finally:
             if conn:
                 conn.close()
  
-    def saveEvent(self,user_id:str,action:str,entity_type:str,description:str,old_value:str,new_value:str,ip_address:str,user_agent:str):
+    def saveEvent(self,user_id:str,action:str,entity_type:str,description:str,old_value:str,new_value:str,ip_address:str,user_agent:str,status:str = "SUCCESS"):
         conn = None
         try:
             conn = self.db.connect() 
             query_insert = text("""
-                INSERT INTO user_activity_log ( user_id,action,entity_type,description,old_value,new_value,ip_address,user_agent)
-                VALUES (:user_id,:action,:entity_type,:description,:old_value,:new_value,:ip_address,:user_agent)
+                INSERT INTO user_activity_log ( user_id,action,entity_type,description,old_value,new_value,ip_address,user_agent,status)
+                VALUES (:user_id,:action,:entity_type,:description,:old_value,:new_value,:ip_address,:user_agent,:status)
             """)
             conn.execute(query_insert, {
                 "user_id": user_id,
@@ -136,13 +180,25 @@ class UsersPaie:
                 "old_value": old_value,
                 "new_value": new_value,
                 "ip_address": ip_address,
-                "user_agent": user_agent
+                "user_agent": user_agent,
+                "status": status
             })
             conn.commit()
+            socket_manager.emit_user_activity_update_sync({
+                "app": "paie",
+                "user_id": user_id,
+                "action": action,
+                "entity_type": entity_type,
+                "description": description,
+                "old_value": old_value,
+                "new_value": new_value,
+                "ip_address": ip_address,
+                "status": status,
+            })
         except HTTPException as http_err:
             raise http_err
         except Exception as e:
-            raise HTTPException(status_code=500, detail="Erreur serveur",error=e)
+            raise HTTPException(status_code=500, detail=f"Erreur serveur: {e}")
         finally:
             if conn:
                 conn.close()
@@ -204,6 +260,50 @@ class UsersPaie:
         response.delete_cookie("access_token")
         self.saveEvent(user_id=matricule, action="logout", entity_type="user", description=f"Utilisateur déconnecté {matricule}", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
         return {"message": "Déconnexion réussie"}
+
+    def change_own_password(self, request: Request, current_password: str, new_password: str, ip_address: str = None):
+        conn = None
+        try:
+            current_user = self.get_current_user(request)
+            immatricule = current_user.get("username")
+
+            conn = self.db.connect()
+            query = text("SELECT * FROM usersPaie WHERE immatricule = :immatricule")
+            result = conn.execute(query, {"immatricule": immatricule})
+            user = result.mappings().first()
+
+            if not user:
+                raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+            if not bcrypt.checkpw(current_password.encode("utf-8"), user["password"].encode("utf-8")):
+                raise HTTPException(status_code=401, detail="Ancien mot de passe incorrect")
+
+            hashed_pw = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+            conn.execute(
+                text("UPDATE usersPaie SET password = :password WHERE immatricule = :immatricule"),
+                {"password": hashed_pw, "immatricule": immatricule}
+            )
+            conn.commit()
+
+            self.saveEvent(
+                user_id=immatricule,
+                action="change_own_password",
+                entity_type="user",
+                description=f"Mot de passe modifié par l'utilisateur {immatricule}",
+                old_value=None,
+                new_value=None,
+                ip_address=ip_address,
+                user_agent=request.headers.get("user-agent"),
+            )
+
+            return {"message": "Mot de passe mis à jour avec succès"}
+        except HTTPException as http_err:
+            raise http_err
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            if conn:
+                conn.close()
     
     # --- LOGOUT ---
     def downloadpaie(self, response: Response, ip_address: str = None,matricule:str = None, file_id:str = None):
@@ -616,6 +716,9 @@ class UsersPaie:
             if result.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
+            pending_count = self.get_pending_validation_count().get("count", 0)
+            socket_manager.emit_pending_validation_update_sync(pending_count)
+
             return {"message": f"Utilisateur {username} validé avec succès par {admin_name}"}
 
         except HTTPException as e:
@@ -747,6 +850,9 @@ class UsersPaie:
             if result.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
+            pending_count = self.get_pending_validation_count().get("count", 0)
+            socket_manager.emit_pending_validation_update_sync(pending_count)
+
             return {"message": f"Utilisateur {username} Bloqué avec succès par {admin_name}"}
 
         except HTTPException as e:
@@ -809,6 +915,7 @@ class UsersPaie:
 
             conn.commit()
             print(f"[INFO] Mise à jour réussie de history_insert_paie, actif: {label_value}")
+            socket_manager.emit_payroll_date_update_sync(label_value, stat_of, used)
 
         except Exception as e:
             print(f"[ERREUR] Erreur lors de la mise à jour de history_insert_paie : {e}")
@@ -1234,7 +1341,7 @@ class UsersPaie:
             conn = self.db.connect()
 
           
-            query = text(f"SELECT * FROM {table_name}")
+            query = text(f"SELECT * FROM {table_name} ORDER BY created_at DESC, id DESC")
             result = conn.execute(query)
 
             columns = result.keys()
@@ -1264,5 +1371,30 @@ class UsersPaie:
                     conn.close()
                 except Exception as close_err:
                     print(f"[ERREUR] Fermeture de connexion échouée : {close_err}")
+
+    def insert_user_activity_log(self, request: Request, current_user: dict, action: str, entity_type: str, entity_id: str = None, description: str = None, status: str = "SUCCESS"):
+        try:
+            user_identifier = current_user.get("username") or current_user.get("sub") or "inconnu"
+            payload = {
+                "entity_id": entity_id,
+                "app": current_user.get("app"),
+                "path": str(request.url.path),
+            }
+
+            self.saveEvent(
+                user_id=user_identifier,
+                action=action,
+                entity_type=entity_type,
+                description=description or f"Action {action} sur {entity_type}",
+                old_value=None,
+                new_value=json.dumps(payload, ensure_ascii=False),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                status=status,
+            )
+
+            return {"message": "Activité enregistrée avec succès"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erreur lors de l'enregistrement de l'activité : {e}")
 
                                         

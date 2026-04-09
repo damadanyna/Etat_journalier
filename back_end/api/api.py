@@ -191,6 +191,27 @@ def update_user_pwd_paie(
     return usersPaie.update_user_pwd_paie(request, colab_pwd,colab_immatricule, user_id, admin_password,matricule, ip_address=client_ip,immatricule=immatricule)
 
 
+@router.post("/change_password")
+def change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...)
+):
+    user.get_current_user(request)
+    return user.change_own_password(request, current_password, new_password)
+
+
+@router.post("/change_password_paie")
+def change_password_paie(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...)
+):
+    client_ip = request.client.host
+    user.get_current_user(request)
+    return usersPaie.change_own_password(request, current_password, new_password, ip_address=client_ip)
+
+
 @router.post("/log_user_activity")
 def log_user_activity(
     request: Request,
@@ -855,9 +876,13 @@ def get_capital_sums(
 
     
 @router.get("/get_activite_list")
-def get_capital_sums( 
-): 
+def get_capital_sums(request: Request): 
     try:
+        current_user = user.get_current_user(request)
+
+        if current_user.get("privillege") not in ["admin", "superadmin"]:
+            raise HTTPException(status_code=403, detail="Accès refusé")
+
         # Appel de la fonction avec les paramètres
         data = usersPaie.get_users_activity()
 

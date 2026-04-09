@@ -32,6 +32,7 @@ import {
     ref,
     computed,
     onMounted,
+    onBeforeUnmount,
     inject
 } from 'vue';
 import {
@@ -43,8 +44,6 @@ const notificationStore = useNotificationStore()
 const drawer = ref(true);
 const rail = ref(true);
 const popupStore = usePopupStore();
-
-const demandesValidation = ref(0)
 
 const api = inject('api')
 
@@ -72,21 +71,15 @@ const list_menu = [{
 
 const fetchDemandesValidation = async () => {
     try {
-        const res = await fetch(`${api}/api/usersPaie/pending_count`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('access_token')}`
-            }
-        })
-
-        const data = await res.json()
-        // console.log("pending_count API response:", data);
-        demandesValidation.value = data.count || 0
-        notificationStore.demandesValidation = data.count || 0
-
-        // console.log("demandesValidation.value:", demandesValidation.value);
+        await notificationStore.fetchDemandesValidation(api, 'usersPaie/pending_count')
     } catch (e) {
-        demandesValidation.value = 0
+        notificationStore.setDemandesValidation(0)
     }
+}
+
+const handlePendingValidationUpdated = (event) => {
+    const count = event.detail?.count || 0
+    notificationStore.setDemandesValidation(count)
 }
  
 const filteredMenu = computed(() => {
@@ -99,7 +92,11 @@ const filteredMenu = computed(() => {
 
 onMounted(() => {
     fetchDemandesValidation()
-    notificationStore.fetchDemandesValidation(api)
+    window.addEventListener('socket:pending-validation-updated', handlePendingValidationUpdated)
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('socket:pending-validation-updated', handlePendingValidationUpdated)
 })
 defineExpose({
     fetchDemandesValidation

@@ -112,6 +112,7 @@ import { usePopupStore } from '../../stores'
 import Cookies from 'js-cookie'
 import import_progress from '../../components/loading/import_progress.vue'
 import { VTreeview } from 'vuetify/labs/VTreeview'
+import { useActivityLogger } from '@/composables/useActivityLogger'
 
 const dialog = ref(false)
 const download_file_name= ref('')
@@ -125,6 +126,7 @@ const today = new Date().toISOString().split('T')[0]
 const isDialogActive = ref(false)
 const show_progress_import = ref(false)
 const percentage= ref(0)
+const { logUserActivity } = useActivityLogger(api)
 // Fonction pour ouvrir la boîte de dialogue de sélection de fichiers
 const triggerFileInput = () => {
   fileInput.value.click()
@@ -146,7 +148,8 @@ const normalizeTree = (data) => {
     title: item.title,
     children: Array.isArray(item.children) ? item.children.map(child => ({
       title: child.title,
-      file: !!child.file
+      file: !!child.file,
+      date: item.title,
     })) : []
   }));
 };
@@ -195,6 +198,12 @@ const chargerDossier = (file,activatorProps) => {
   }
   // console.log(file.children);
   usePopupStore().cdi_list_stream=file.children  
+  logUserActivity({
+    action: 'load_folder',
+    entityType: 'folder',
+    entityId: file.title,
+    description: `Chargement du dossier ${file.title}`,
+  })
   load_database(refresh,file.children,file.title,date_string) 
   setTimeout(() => {
     usePopupStore().togglePopupCDI();
@@ -452,9 +461,22 @@ const uploadFile = async (folder_name) => {
     usePopupStore().show_notification.status = true;
     usePopupStore().show_notification.message = 'Fichier importé';
     usePopupStore().show_notification.ico = 'mdi mdi-check';
+    await logUserActivity({
+      action: 'upload_file',
+      entityType: 'folder',
+      entityId: folder_name,
+      description: `Import de fichier dans le dossier ${folder_name}`,
+    })
 
   } catch (error) {
     console.error('Erreur upload:', error);
+    await logUserActivity({
+      action: 'upload_file',
+      entityType: 'folder',
+      entityId: folder_name,
+      description: `Échec d'import dans le dossier ${folder_name}`,
+      status: 'FAILED',
+    })
   }
 };
 
@@ -470,6 +492,12 @@ const showFiles = async () => {
     });
     console.log(response.data.files);
     list_file.value = normalizeTree(response.data.files);// Affichage des fichiers reçus
+    await logUserActivity({
+      action: 'show_files',
+      entityType: 'file_explorer',
+      entityId: 'paie',
+      description: 'Ouverture de l’explorateur des fichiers paie',
+    })
   } catch (error) {
     console.error("Erreur lors de la récupération des fichiers:", error); // Gestion des erreurs
   }
@@ -501,6 +529,12 @@ const exportMulti = async () => {
   })
   const url = `${api}/api/export/multi?${params.toString()}`
   window.open(url, '_blank')
+  await logUserActivity({
+    action: 'export_multi',
+    entityType: exportType.value,
+    entityId: `${exportDateDebut.value}_${exportDateFin.value}`,
+    description: `Export ${exportType.value} du ${exportDateDebut.value} au ${exportDateFin.value} en ${exportFormat.value}`,
+  })
   exportDialog.value = false
 }
 
@@ -535,22 +569,32 @@ const triggerImport = async () => {
     }
     if (data.success && data.success.length) {
       importSuccess.value = data.success.join("\n")
+      await logUserActivity({
+        action: 'import_multi',
+        entityType: 'multi_import',
+        entityId: selectedFiles.value.map(file => file.name).join(', '),
+        description: `Import multiple réussi pour ${selectedFiles.value.length} fichier(s)`,
+      })
     }
   } catch (e) {
     importError.value = "Erreur réseau ou serveur"
+    await logUserActivity({
+      action: 'import_multi',
+      entityType: 'multi_import',
+      entityId: selectedFiles.value.map(file => file.name).join(', '),
+      description: 'Échec de l’import multiple',
+      status: 'FAILED',
+    })
   }
 }
-const extractDate = (filename) => {
-  const match = filename.match(/\d{8}/);
-  return match ? match[0] : null;
-};
-
 const downloadFile = async (item) => {
   dialog.value = true
+  percentage.value = 0
   download_file_name.value=item.title
-  const date = extractDate(item.title);
+  const date = item.date
   if (!date) {
     console.error("Impossible d'extraire la date");
+    dialog.value = false
     return;
   }
 
@@ -558,7 +602,7 @@ const downloadFile = async (item) => {
     console.log("Préparation du téléchargement...");
 
     const response = await fetch(
-      `${api}/api/download-file?filename=${encodeURIComponent(item.title)}&date=${date}`
+      `${api}/api/download-file-paie?filename=${encodeURIComponent(item.title)}&date=${encodeURIComponent(date)}`
     );
 
     if (!response.ok) {
@@ -600,9 +644,24 @@ const downloadFile = async (item) => {
     URL.revokeObjectURL(url);
 
     console.log("Téléchargement terminé ✅");
+    await logUserActivity({
+      action: 'download_file',
+      entityType: 'file',
+      entityId: item.title,
+      description: `Téléchargement du fichier ${item.title}`,
+    })
 
   } catch (err) {
     console.error("Erreur téléchargement :", err);
+    dialog.value = false
+    percentage.value = 0
+    await logUserActivity({
+      action: 'download_file',
+      entityType: 'file',
+      entityId: item?.title || '',
+      description: `Échec du téléchargement du fichier ${item?.title || ''}`,
+      status: 'FAILED',
+    })
   }
 };
 

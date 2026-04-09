@@ -50,7 +50,7 @@ const handleSelectUser = (id) => {
 }
 
 const handleUserValidated = async () => {
-    await notificationStore.fetchDemandesValidation(api)
+    await notificationStore.fetchDemandesValidation(api, 'usersPaie/pending_count')
     await fetchUsers()
 }
 
