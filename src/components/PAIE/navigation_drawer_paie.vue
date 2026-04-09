@@ -81,9 +81,11 @@ const handlePendingValidationUpdated = (event) => {
     const count = event.detail?.count || 0
     notificationStore.setDemandesValidation(count)
 }
+
+const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
  
 const filteredMenu = computed(() => {
-    const privilege = popupStore.user_access.access || '';
+    const privilege = normalizePrivilege(popupStore.user_access.access)
     if (['admin', 'superadmin'].includes(privilege)) {
         return list_menu;
     }

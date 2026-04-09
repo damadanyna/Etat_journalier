@@ -58,6 +58,7 @@ const isAutoLoggingOut = ref(false)
 const lastActivityResetAt = ref(0)
 
 const getHomeRoute = () => '/paie/accueil'
+const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
 
 const shouldRedirectToHome = () => route.path === '/' || route.path === '/login'
 
@@ -155,7 +156,7 @@ const handlePendingValidationSocket = (payload = {}) => {
 
   const nextCount = Number(payload.count || 0)
   const previousCount = Number(pendingValidationCount.value || 0)
-  const canNotify = popupStore.user_access.app === 'paie' && ['admin', 'superadmin'].includes(popupStore.user_access.access || '')
+  const canNotify = popupStore.user_access.app === 'paie' && ['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access))
 
   if (canNotify && nextCount > previousCount) {
     const demandes = nextCount - previousCount
@@ -238,7 +239,7 @@ const get_stat = async () => {
     if (protectedResp.ok) {
       const data = await safeReadJson(protectedResp)
       popupStore.user_access.name = data.username || data.sub || ''
-      popupStore.user_access.access = data.privillege || ''
+      popupStore.user_access.access = normalizePrivilege(data.privillege || data.privilege)
       popupStore.user_access.app = 'paie'
       pendingValidationCount.value = Number(notificationStore.demandesValidation || 0)
       syncSocketConnection()

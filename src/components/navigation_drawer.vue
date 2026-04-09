@@ -84,7 +84,7 @@ const fetchDemandesValidation = async () => {
 }
 
 const filteredMenu = computed(() => {
-  const privilege = popupStore.user_access.access|| '';
+  const privilege = String(popupStore.user_access.access || '').trim().toLowerCase()
   if (['admin', 'superadmin'].includes(privilege)) {
     return list_menu; 
   }

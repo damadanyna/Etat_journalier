@@ -89,7 +89,8 @@ const showRow = (event, row) => {
   // console.log("Ligne cliquée :", row.item);
 };
 
-const canViewHistory = computed(() => ['admin', 'superadmin'].includes(popupStore.user_access.access || ''))
+const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
+const canViewHistory = computed(() => ['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access)))
 
 const handleUserActivityUpdated = async () => {
   if (!canViewHistory.value) {

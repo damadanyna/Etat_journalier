@@ -112,7 +112,8 @@ const passwordForm = ref({
 import { useTheme } from 'vuetify'
 const { global } = useTheme() 
 
-const canChangeOwnPassword = computed(() => !['admin', 'superadmin'].includes(popupStore.user_access.access || ''))
+const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
+const canChangeOwnPassword = computed(() => !['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access)))
  
   
 // Définit le thème en clair

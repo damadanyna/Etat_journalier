@@ -113,6 +113,7 @@ const noteTitle = ref('')
 const isSubmitting = ref(false)
 
 const getHomeRoute = () => '/paie/accueil'
+const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
 
 const resetSignupForm = () => {
   username.value = ''
@@ -250,9 +251,9 @@ const handleSubmitPaie = async () => {
       }
 
       localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("privilege", data.privilege);
+      localStorage.setItem("privilege", normalizePrivilege(data.privilege || data.privillege));
       popupStore.user_access.name = data.user?.immatricule || immatricule.value
-      popupStore.user_access.access = data.privilege || ''
+      popupStore.user_access.access = normalizePrivilege(data.privilege || data.privillege)
       popupStore.user_access.app = 'paie'
 
       await router.replace(getHomeRoute())

@@ -135,8 +135,10 @@ const showRow = (event, row) => {
   // console.log("Ligne cliquée :", row.item);
 };
 
+const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
+
 const filteredMenu = computed(() => {
-    const privilege = popupStore.user_access.access || '';
+    const privilege = normalizePrivilege(popupStore.user_access.access)
     if (!['admin', 'superadmin'].includes(privilege)) {
        return 'non Admin'
        

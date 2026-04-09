@@ -149,7 +149,9 @@ const initializeTable = async () => {
 const popupStore = usePopupStore()
 
 const isAllowed = computed(() => {
-  const privilege = popupStore.user_access?.access || localStorage.getItem('privillege') || ''
+  const privilege = String(
+    popupStore.user_access?.access || localStorage.getItem('privilege') || localStorage.getItem('privillege') || ''
+  ).trim().toLowerCase()
   return ['admin', 'superadmin'].includes(privilege)
 })
 
