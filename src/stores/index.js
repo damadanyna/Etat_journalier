@@ -10,7 +10,7 @@ export const usePopupStore = defineStore('popup', () => {
   const precentage=ref(0)
   const loadFile=ref("Préparation ...");
   const list_a_traiter=ref([])
-  const selected_date=null
+  const selected_date=ref(null)
   const selected_date_stat_compte=ref(null)
   const selected_date_stat_of=ref(null)
   const encours_actual_data=ref([])
