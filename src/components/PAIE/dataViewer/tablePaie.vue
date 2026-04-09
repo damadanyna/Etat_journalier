@@ -1,5 +1,5 @@
 <template> 
-  <v-card v-if="popupStore.user_access.access=='admin'" flat style="background: transparent;" >
+  <v-card v-if="isAdmin" flat style="background: transparent;" >
     <template #text>
       <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" variant="outlined" hide-details single-line/>
     </template>
@@ -9,7 +9,7 @@
     </v-data-table>
   </v-card> 
   <FormeViewPaie :data="selectedRow"  @close="selectedRow = null"  />
-  <FolderViewerPaie :data="date_liste" v-if="popupStore.user_access.access!='admin'" />
+  <FolderViewerPaie :data="date_liste" v-if="!isAdmin" />
 </template>
 
 <script setup>
@@ -17,6 +17,7 @@ import { usePopupStore } from '../../../stores';
 import { watch, ref,inject,computed, onMounted} from 'vue'; 
 import FormeViewPaie from './formeViewPaie.vue'; 
 import FolderViewerPaie from './folderViewerPaie.vue';
+import { safeReadJson } from '@/utils/http'
 
 const selectedRow = ref(null);
 const showForme = ref(false);
@@ -136,6 +137,7 @@ const showRow = (event, row) => {
 };
 
 const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
+const isAdmin = computed(() => ['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access)))
 
 const filteredMenu = computed(() => {
     const privilege = normalizePrivilege(popupStore.user_access.access)
@@ -161,9 +163,10 @@ const fetch_all_paie = async (matricule = null, dateStr = null) => {
     }
 
     const response = await fetch(url);
-    const json = await response.json();
+    const json = await safeReadJson(response)
 
     if (!response.ok) throw new Error(json.detail || "Erreur inconnue");
+    if (!Array.isArray(json.data?.users)) throw new Error("Réponse API invalide")
 
     // Nouvelle structure : data.users
     const capitalData = json.data?.users || [];
@@ -189,8 +192,8 @@ async function fetchData(baseUrl, date = null) {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`)
 
-    const data = await response.json()
-    return data.response.data
+    const data = await safeReadJson(response)
+    return data.response?.data || []
   } catch (error) {
     console.error('❌ Erreur de chargement :', error)
     return []
@@ -209,8 +212,7 @@ onMounted(async () => {
 watch(
   () => popupStore.selected_date,
   () => {  
-    const access=popupStore.user_access.access
-    if(access=='admin')
+    if(isAdmin.value)
        console.log(popupStore.selected_date);
        
       fetch_all_paie(null, popupStore.selected_date) 

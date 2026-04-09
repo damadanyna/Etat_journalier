@@ -1,6 +1,6 @@
 <template>
 <v-toolbar color=" " class="bg-transparent" title="Pay By">
-    <div v-if="popupStore.user_access.access=='admin'" class=" flex flex-row">
+    <div v-if="isAdmin" class=" flex flex-row">
         <h3 class="mr-5 text-xl">Date de paie</h3> 
 
             <v-menu   v-model="menu" close-on-content-click offset-y max-width="200" min-width="200">
@@ -48,6 +48,7 @@ import {
     useRouter
 } from 'vue-router'
 import { useActivityLogger } from '@/composables/useActivityLogger'
+import { safeReadJson } from '@/utils/http'
 
 const route = useRoute()
 const api = inject('api')
@@ -59,6 +60,8 @@ const router = useRouter()
 const { logUserActivity } = useActivityLogger(api)
 
 const historyDates = ref([])
+const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
+const isAdmin = computed(() => ['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access)))
 
 const refreshHistoryDates = async () => {
     historyDates.value = await fetchData(`${api}/api/history_insert_paie`)
@@ -107,8 +110,8 @@ async function fetchData(baseUrl, date = null) {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`)
 
-    const data = await response.json()
-    return data.response.data
+        const data = await safeReadJson(response)
+        return data.response?.data || []
   } catch (error) {
     console.error('❌ Erreur de chargement :', error)
     return []

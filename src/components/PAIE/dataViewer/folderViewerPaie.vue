@@ -27,6 +27,7 @@
 import FactureViewerPaie from './factureViewerPaie.vue';
 import { ref,inject} from 'vue';  
 import { usePopupStore } from '../../../stores';
+import { safeReadJson } from '@/utils/http'
 
 const dataPaie=ref([])
 const api = inject('api') 
@@ -49,9 +50,10 @@ const fetch_all_paie = async (matricule = null, dateStr = null) => {
     }
 
     const response = await fetch(url);
-    const json = await response.json();
+    const json = await safeReadJson(response)
 
     if (!response.ok) throw new Error(json.detail || "Erreur inconnue");
+    if (!Array.isArray(json.data?.users)) throw new Error("Réponse API invalide")
   
     
     
