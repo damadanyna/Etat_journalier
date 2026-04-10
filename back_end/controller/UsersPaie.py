@@ -985,11 +985,18 @@ class UsersPaie:
     def insert_into_history_table(self, label_value: str, used: int = 1, stat_of=None):
         try:
             conn = self.db.connect()
+            raw_label = str(label_value or '').strip()
             normalized_label = self.format_payroll_period_label(label_value)
 
             # Étape 1 : mettre tous les used = 0
             reset_query = "UPDATE `history_insert_paie` SET `used` = 0"
             conn.execute(text(reset_query))
+
+            if raw_label and raw_label != normalized_label:
+                conn.execute(
+                    text("DELETE FROM `history_insert_paie` WHERE `label` = :legacy_label"),
+                    {"legacy_label": raw_label}
+                )
 
             # Étape 2 : insérer ou mettre à jour la ligne ciblée
             upsert_query = """
@@ -1364,6 +1371,9 @@ class UsersPaie:
             result = conn.execute(query )
             columns = result.keys()
             data = [dict(zip(columns, row)) for row in result.fetchall()]
+
+            for item in data:
+                item["label"] = self.format_payroll_period_label(item.get("label"))
 
             return {"data": data}
 
