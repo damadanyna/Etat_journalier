@@ -24,56 +24,64 @@ from config import load_project_env
 
 load_project_env()
 
-# --- Chemins absolus pour les fichiers statiques et les certificats ---
-BASE_DIR = Path(__file__).resolve().parent           # back_end/
-PROJECT_DIR = BASE_DIR.parent                        # racine du projet
+# --- Chemins absolus ---
+BASE_DIR    = Path(__file__).resolve().parent   # back_end/
+PROJECT_DIR = BASE_DIR.parent                   # racine du projet
+DIST_DIR    = PROJECT_DIR / "dist"
+CERT_DIR    = PROJECT_DIR / "mkcer"
 
-DIST_DIR = PROJECT_DIR / "dist"
-CERT_DIR = PROJECT_DIR / "mkcer"
+def _resolve(env_var: str, default: Path) -> Path:
+    """Résout un chemin depuis .env : absolu tel quel, relatif → depuis BASE_DIR."""
+    raw = os.getenv(env_var)
+    if raw:
+        p = Path(raw)
+        return p if p.is_absolute() else (BASE_DIR / p).resolve()
+    return default
 
-# Certificats (configurable via .env)
-SSL_CERT = os.getenv("SSL_CERT_FILE", str(CERT_DIR / "aboaly.sipembanque.local+2.pem"))
-SSL_KEY  = os.getenv("SSL_KEY_FILE",  str(CERT_DIR / "aboaly.sipembanque.local+2-key.pem"))
+SSL_CERT = _resolve("SSL_CERT_FILE", CERT_DIR / "aboaly.sipembanque.local+2.pem")
+SSL_KEY  = _resolve("SSL_KEY_FILE",  CERT_DIR / "aboaly.sipembanque.local+2-key.pem")
 
 HOST = os.getenv("PROD_HOST", "0.0.0.0")
 PORT = int(os.getenv("PROD_PORT", "443"))
 
-# --- Monter le frontend buildé sur "/" (catch-all après les routes /api) ---
+# --- Monter le frontend (SPA) sur "/" --- 
+# Les routes /api sont déjà enregistrées sur fastapi_app et ont la priorité.
 if DIST_DIR.exists():
-    # html=True → renvoie index.html pour les routes Vue inconnues (SPA)
     fastapi_app.mount("/", StaticFiles(directory=str(DIST_DIR), html=True), name="static")
 else:
     print(f"[WARN] Dossier dist/ introuvable ({DIST_DIR}). Lance d'abord : npm run build")
 
 # --- Vérification des certificats ---
-if not Path(SSL_CERT).exists():
+if not SSL_CERT.exists():
     print(f"""
 [ERREUR] Certificat SSL introuvable : {SSL_CERT}
 
-Pour générer les certificats, exécute :
-    cd {CERT_DIR}
+Génère-le avec (depuis le dossier mkcer/) :
     mkcert aboaly.sipembanque.local 10.192.1.15 localhost
 
 Ou configure SSL_CERT_FILE / SSL_KEY_FILE dans le fichier .env
 """)
     sys.exit(1)
 
-if not Path(SSL_KEY).exists():
+if not SSL_KEY.exists():
     print(f"[ERREUR] Clé SSL introuvable : {SSL_KEY}")
     sys.exit(1)
 
 if __name__ == "__main__":
     print(f"""
 [INFO] Démarrage serveur HTTPS
-  URL     : https://aboaly.sipembanque.local (ou https://10.192.1.15)
+  URL     : https://aboaly.sipembanque.local  (ou https://10.192.1.15)
+  Port    : {PORT}
   Dist    : {DIST_DIR}
   Cert    : {SSL_CERT}
 """)
+    # On passe l'objet asgi_app (déjà configuré avec StaticFiles)
+    # et NON la chaîne "app:app" qui réimporterait app.py et perdrait le mount.
     uvicorn.run(
-        "app:app",            # utilise l'app ASGI (FastAPI + Socket.IO)
+        asgi_app,
         host=HOST,
         port=PORT,
-        ssl_certfile=SSL_CERT,
-        ssl_keyfile=SSL_KEY,
+        ssl_certfile=str(SSL_CERT),
+        ssl_keyfile=str(SSL_KEY),
         reload=False,
     )
