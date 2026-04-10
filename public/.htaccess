@@ -2,12 +2,13 @@
   RewriteEngine On
   RewriteBase /
 
-  # --- Proxy /api/* → FastAPI sur le port 8000 ---
+  # --- Proxy WebSocket Socket.IO ---
   RewriteCond %{HTTP:Upgrade} websocket [NC]
-  RewriteCond %{HTTP:Connection} upgrade  [NC]
-  RewriteRule ^socket\.io/(.*)$ http://127.0.0.1:8000/socket.io/$1 [P,L]
+  RewriteCond %{HTTP:Connection} upgrade [NC]
+  RewriteRule ^socket\.io/(.*)$ ws://127.0.0.1:8000/socket.io/$1 [P,L]
 
-  RewriteRule ^api/(.*)$ http://127.0.0.1:8000/api/$1 [P,L]
+  # --- Proxy HTTP → FastAPI (port 8000) ---
+  RewriteRule ^api/(.*)$       http://127.0.0.1:8000/api/$1       [P,L]
   RewriteRule ^socket\.io/(.*)$ http://127.0.0.1:8000/socket.io/$1 [P,L]
 
   # --- SPA fallback : toutes les autres routes → index.html ---

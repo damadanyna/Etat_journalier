@@ -92,12 +92,34 @@ const showRow = (event, row) => {
 const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
 const canViewHistory = computed(() => ['admin', 'superadmin'].includes(normalizePrivilege(popupStore.user_access.access)))
 
-const handleUserActivityUpdated = async () => {
+const handleUserActivityUpdated = (event) => {
   if (!canViewHistory.value) {
     return
   }
 
-  await fetch_all_activites()
+  const payload = event?.detail || {}
+
+  // Insérer directement la nouvelle ligne en tête sans re-fetch
+  if (payload.user_id) {
+    dataPaie.value = [
+      {
+        id: null,
+        user_id: payload.user_id,
+        action: payload.action,
+        entity_type: payload.entity_type,
+        description: payload.description,
+        old_value: payload.old_value ?? null,
+        new_value: payload.new_value ?? null,
+        ip_address: payload.ip_address ?? null,
+        status: payload.status ?? 'SUCCESS',
+        created_at: payload.created_at || new Date().toISOString(),
+      },
+      ...dataPaie.value,
+    ]
+  } else {
+    // fallback : re-fetch si payload incomplet
+    fetch_all_activites()
+  }
 }
 
 const fetch_all_activites = async () => {

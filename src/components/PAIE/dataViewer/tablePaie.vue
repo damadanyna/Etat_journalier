@@ -8,7 +8,7 @@
       <template #item.index="{ index }"> {{ index + 1 }}</template>
     </v-data-table>
   </v-card> 
-  <FormeViewPaie :data="selectedRow"  @close="selectedRow = null"  />
+  <FormeViewPaie :data="selectedRow"  @close="closeRowDetails"  />
   <FolderViewerPaie :data="date_liste" v-if="!isAdmin" />
 </template>
 
@@ -17,6 +17,7 @@ import { usePopupStore } from '../../../stores';
 import { watch, ref,inject,computed, onMounted} from 'vue'; 
 import FormeViewPaie from './formeViewPaie.vue'; 
 import FolderViewerPaie from './folderViewerPaie.vue';
+import { useActivityLogger } from '@/composables/useActivityLogger'
 import { safeReadJson } from '@/utils/http'
 
 const selectedRow = ref(null);
@@ -26,6 +27,7 @@ const loading=ref(true)
 const popupStore = usePopupStore()
 const dataPaie=ref([])
 const search=ref('')
+const { logUserActivity } = useActivityLogger(api)
 const headersBase = [
   { align: 'start', sortable: false },
   { title: '#', value: 'index', sortable: false },
@@ -130,11 +132,31 @@ const
 const date_liste= ref([])
 
 const showRow = (event, row) => {
+  const currentUser = popupStore.user_access.name || 'Utilisateur inconnu'
+  const targetMatricule = row.item?.matricule || 'inconnu'
   // selectedRow.value = ;
   selectedRow.value = [row.item ,  { "upload_date":  popupStore.selected_date }]   // données de la ligne cliquée
   showForme.value = true;         // ouvrir le formulaire
+  void logUserActivity({
+    action: 'view_paie_row',
+    entityType: 'bulletin_paie',
+    entityId: targetMatricule,
+    description: `${currentUser} a consulté la fiche de paie de ${targetMatricule}${popupStore.selected_date ? ` (${popupStore.selected_date})` : ''}`,
+  })
   // console.log("Ligne cliquée :", row.item);
 };
+
+const closeRowDetails = () => {
+  const matricule = selectedRow.value?.[0]?.matricule || ''
+  selectedRow.value = null
+  showForme.value = false
+  void logUserActivity({
+    action: 'close_paie_row',
+    entityType: 'bulletin_paie',
+    entityId: matricule,
+    description: `Fermeture du détail de paie pour ${matricule || 'inconnu'}`,
+  })
+}
 
 const normalizePrivilege = (value) => String(value || '').trim().toLowerCase()
 const normalizePayrollDate = (value) => String(value || '').replace(/-/g, '').trim()
@@ -229,6 +251,25 @@ watch(
     fetch_all_paie(null, popupStore.selected_date)
   },
   { immediate: true }
+)
+
+watch(
+  () => search.value,
+  (value, previousValue) => {
+    const normalizedValue = String(value || '').trim()
+    if (!isAdmin.value || normalizedValue === String(previousValue || '').trim()) {
+      return
+    }
+
+    void logUserActivity({
+      action: 'search_paie_table',
+      entityType: 'table_filter',
+      entityId: normalizedValue || 'reset',
+      description: normalizedValue
+        ? `Recherche dans le tableau paie avec le mot-clé "${normalizedValue}"`
+        : 'Réinitialisation de la recherche dans le tableau paie',
+    })
+  }
 )
  
 </script>

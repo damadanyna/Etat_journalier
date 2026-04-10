@@ -25,13 +25,15 @@
 
 <script setup >
 import FactureViewerPaie from './factureViewerPaie.vue';
-import { ref,inject} from 'vue';  
+import { ref, inject } from 'vue';  
 import { usePopupStore } from '../../../stores';
+import { useActivityLogger } from '@/composables/useActivityLogger'
 import { safeReadJson } from '@/utils/http'
 
 const dataPaie=ref([])
 const api = inject('api') 
 const popupStore = usePopupStore() 
+const { logUserActivity } = useActivityLogger(api)
 const normalizePayrollDate = (value) => String(value || '').replace(/-/g, '').trim()
 
 
@@ -82,10 +84,15 @@ const props = defineProps({
   data: { type: Object, default: null }
 });
 
-const selectDate=(date)=>{
-    const matricule= popupStore.user_access.name 
+const selectDate = (date) => {
+    const matricule = popupStore.user_access.name 
+    logUserActivity({
+      action: 'view_bulletin_paie',
+      entityType: 'bulletin_paie',
+      entityId: matricule,
+      description: `Consultation du bulletin de paie de ${matricule} pour la période ${date}`,
+    })
     fetch_all_paie(matricule, date) 
-
 }
 </script>
 

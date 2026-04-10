@@ -31,21 +31,27 @@ import {
 import {
     ref,
     computed,
+    watch,
     onMounted,
     onBeforeUnmount,
     inject
 } from 'vue';
 import {
+    useRoute
+} from 'vue-router';
+import {
     useNotificationStore
 } from '../../stores/notification'
+import { useActivityLogger } from '@/composables/useActivityLogger'
 
+const api = inject('api')
 const notificationStore = useNotificationStore()
+const route = useRoute()
+const { logUserActivity } = useActivityLogger(api)
 
 const drawer = ref(true);
 const rail = ref(true);
 const popupStore = usePopupStore();
-
-const api = inject('api')
 
 const list_menu = [{
         icon: 'mdi-home-city',
@@ -76,6 +82,20 @@ const fetchDemandesValidation = async () => {
         notificationStore.setDemandesValidation(0)
     }
 }
+
+watch(() => route.path, (newPath, oldPath) => {
+    if (!newPath.startsWith('/paie') || newPath === oldPath) {
+        return
+    }
+    const menuItem = list_menu.find(item => item.to === newPath)
+    const label = menuItem?.title || newPath
+    logUserActivity({
+        action: 'navigate',
+        entityType: 'menu',
+        entityId: newPath,
+        description: `Navigation vers ${label} (${newPath})`,
+    })
+})
 
 const handlePendingValidationUpdated = (event) => {
     const count = event.detail?.count || 0

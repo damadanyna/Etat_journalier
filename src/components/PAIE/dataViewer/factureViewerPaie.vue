@@ -128,6 +128,7 @@ import { ref,computed,watch,inject } from 'vue';
 import html2pdf from 'html2pdf.js';
 import { usePopupStore } from '../../../stores'  
 const popupStore = usePopupStore()
+import { useActivityLogger } from '@/composables/useActivityLogger'
 
 import domtoimage from 'dom-to-image'
 import jsPDF from 'jspdf'
@@ -196,9 +197,7 @@ const salaireNet=ref('')
 const netAPayer=ref('')
 const soldeConge=ref('')
 const api = inject('api') 
-
-
-// Mapping entre les labels des rubriques et les clés de l'objet de données
+const { logUserActivity } = useActivityLogger(api)
 const mappingRubriquesVersData = {
   'Salaire de base': 'salaire_de_base',
   'Rappel sur salaire de base': 'rpl_salbase',
@@ -404,6 +403,13 @@ async function telechargerPDF() {
     
     pdf.save(`bulletin-paie-${formaterMoisAnnee(props.data[1].upload_date)}.pdf`)
     
+    await logUserActivity({
+      action: 'download_pdf',
+      entityType: 'bulletin_paie',
+      entityId: matricule.value,
+      description: `Téléchargement du bulletin de paie PDF de ${matricule.value} (${formaterMoisAnnee(props.data[1].upload_date)})`,
+    })
+
     download(matricule.value)
   } catch (error) {
     console.error('Erreur:', error)

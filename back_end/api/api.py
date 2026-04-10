@@ -414,9 +414,12 @@ async def upload_multiple_files(
 
 
 @router.post("/upload_multiple_files_paie")
-async def upload_multiple_files_paie(files: List[UploadFile] = File(...),app: str = Form(...),folder_name: str = Form(...)):
+async def upload_multiple_files_paie(request: Request, files: List[UploadFile] = File(...),app: str = Form(...),folder_name: str = Form(...)):
     import io, json
     from fastapi.responses import StreamingResponse
+
+    current_user = usersPaie.get_current_user(request)
+    file_names = [file.filename for file in files]
 
     class NamedBytesIO(io.BytesIO):
         def __init__(self, content, filename):
@@ -476,6 +479,17 @@ async def upload_multiple_files_paie(files: List[UploadFile] = File(...),app: st
             "message": "Tous les fichiers ont été importés avec succès.",
             "percentage": 100
         }) + '\n'
+
+    usersPaie.saveEvent(
+        user_id=current_user.get("username"),
+        action="upload_multiple_files_paie",
+        entity_type="folder",
+        description=f"Appel API upload_multiple_files_paie sur le dossier {folder_name} avec {len(file_names)} fichier(s)",
+        old_value=None,
+        new_value=json.dumps({"folder_name": folder_name, "files": file_names}, ensure_ascii=False),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
 
     return StreamingResponse(main_process(), media_type="application/json")
 
@@ -570,6 +584,7 @@ async def create_multiple_table(request: Request):
     filenames: List[str] = data['files']
     folder: str = data['folder']
     str_date: str = data['str_date']
+    current_user = usersPaie.get_current_user(request)
 
     # Validation des données
     if not isinstance(filenames, list) or len(filenames) == 0:
@@ -577,6 +592,17 @@ async def create_multiple_table(request: Request):
             status_code=400,
             content={"error": "Le paramètre 'files' doit être une liste non vide"}
         )
+
+    usersPaie.saveEvent(
+        user_id=current_user.get("username"),
+        action="create_multiple_table_paie",
+        entity_type="folder",
+        description=f"Chargement du dossier {folder} dans la base pour la date {str_date}",
+        old_value=None,
+        new_value=json.dumps({"folder": folder, "str_date": str_date, "files": filenames}, ensure_ascii=False),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
 
     def generate_all():
         """Générateur pour le streaming des messages de progression"""
@@ -724,8 +750,19 @@ async def show_files(app: Optional[str] = Query(None)):
     return JSONResponse(content={"files": files})
 
 @router.get("/show_files_paie")
-async def show_files_paie(app: Optional[str] = Query(None)):
+async def show_files_paie(request: Request, app: Optional[str] = Query(None)):
+    current_user = usersPaie.get_current_user(request)
     files = usersPaie.show_files(app=app)
+    usersPaie.saveEvent(
+        user_id=current_user.get("username"),
+        action="show_files_paie",
+        entity_type="file_explorer",
+        description="Consultation de l'explorateur des fichiers paie via API",
+        old_value=None,
+        new_value=json.dumps({"app": app}, ensure_ascii=False),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
     return JSONResponse(content={"files": files})
 
 
@@ -1059,12 +1096,24 @@ def download_file(filename: str, date: str):
 
 
 @router.get("/download-file-paie")
-def download_file(filename: str, date: str):
+def download_file(request: Request, filename: str, date: str):
+    current_user = usersPaie.get_current_user(request)
     path = os.path.join(BASE_DIR, "load_file_paie", date, filename)
     print(">>> Chemin construit :", path)
 
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Fichier introuvable")
+
+    usersPaie.saveEvent(
+        user_id=current_user.get("username"),
+        action="download_file_paie",
+        entity_type="file",
+        description=f"Téléchargement du fichier {filename} pour la date {date} via API",
+        old_value=None,
+        new_value=json.dumps({"filename": filename, "date": date}, ensure_ascii=False),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
 
     file_size = os.path.getsize(path)
 

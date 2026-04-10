@@ -153,7 +153,7 @@ class UsersPaie:
             })
             conn.commit()
             
-            self.saveEvent(user_id= immatricule, action="signup", entity_type="user", description=f"Nouvel utilisateur inscrit: {username}", old_value=None, new_value=json.dumps({"username": username, "email": email, "immatricule": immatricule}), ip_address=ip_address, user_agent=None)
+            self.saveEvent(user_id= immatricule, action="signup", entity_type="user", description=f"Inscription de l'utilisateur {username} (immatricule : {immatricule})", old_value=None, new_value=json.dumps({"username": username, "email": email, "immatricule": immatricule}), ip_address=ip_address, user_agent=None)
             pending_count = self.get_pending_validation_count().get("count", 0)
             socket_manager.emit_pending_validation_update_sync(pending_count)
         
@@ -198,6 +198,7 @@ class UsersPaie:
                 "new_value": new_value,
                 "ip_address": ip_address,
                 "status": status,
+                "created_at": datetime.utcnow().isoformat(),
             })
         except HTTPException as http_err:
             raise http_err
@@ -238,7 +239,7 @@ class UsersPaie:
             }
             token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
             
-            self.saveEvent(user_id= immatricule, action="signin", entity_type="user", description=f"Utilisateur connecté: {immatricule}", old_value=None, new_value=json.dumps({"username": user["username"], "email": user["email"], "immatricule": immatricule}), ip_address=ip_address, user_agent=None)
+            self.saveEvent(user_id= immatricule, action="signin", entity_type="user", description=f"Connexion de l'utilisateur {immatricule}", old_value=None, new_value=json.dumps({"username": user["username"], "email": user["email"], "immatricule": immatricule}), ip_address=ip_address, user_agent=None)
 
             return {
                 "message": "Connexion réussie",
@@ -262,7 +263,7 @@ class UsersPaie:
     # --- LOGOUT ---
     def logout(self, response: Response, ip_address: str = None,matricule:str = None):
         response.delete_cookie("access_token")
-        self.saveEvent(user_id=matricule, action="logout", entity_type="user", description=f"Utilisateur déconnecté {matricule}", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
+        self.saveEvent(user_id=matricule, action="logout", entity_type="user", description=f"Déconnexion de l'utilisateur {matricule}", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
         return {"message": "Déconnexion réussie"}
 
     def change_own_password(self, request: Request, current_password: str, new_password: str, ip_address: str = None):
@@ -312,7 +313,7 @@ class UsersPaie:
     # --- LOGOUT ---
     def downloadpaie(self, response: Response, ip_address: str = None,matricule:str = None, file_id:str = None):
         response.delete_cookie("access_token")
-        self.saveEvent(user_id=matricule, action="download_paie", entity_type=file_id, description=f"Utilisateur téléchargé paie {matricule} avec file_id {file_id}", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
+        self.saveEvent(user_id=matricule, action="download_paie", entity_type="fichier_paie", description=f"Téléchargement de la fiche de paie de {matricule} (fichier : {file_id})", old_value=None, new_value=None, ip_address=ip_address, user_agent=None)
         return {"message": "Téléchargement réussie"}
     
                 
@@ -723,6 +724,17 @@ class UsersPaie:
             pending_count = self.get_pending_validation_count().get("count", 0)
             socket_manager.emit_pending_validation_update_sync(pending_count)
 
+            self.saveEvent(
+                user_id=admin_name,
+                action="validate_user",
+                entity_type="user",
+                description=f"Validation de l'utilisateur {username} avec le rôle '{role}' par {admin_name}",
+                old_value=None,
+                new_value=json.dumps({"username": username, "role": role}),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+            )
+
             return {"message": f"Utilisateur {username} validé avec succès par {admin_name}"}
 
         except HTTPException as e:
@@ -765,6 +777,17 @@ class UsersPaie:
             if result.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
+            self.saveEvent(
+                user_id=admin_name,
+                action="update_user_role",
+                entity_type="user",
+                description=f"Modification du rôle de {colab_lastname} (immatricule : {colab_immatricule}) en '{role}' par {admin_name}",
+                old_value=None,
+                new_value=json.dumps({"user_id": user_id, "colab_immatricule": colab_immatricule, "role": role}),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+            )
+
             return {"message": f"Rôle de {user_id} modifié avec succès par {admin_name}"}
 
         except HTTPException as e:
@@ -774,7 +797,7 @@ class UsersPaie:
         finally:
             if conn:
                 conn.close()
-                              
+
     def update_user_pwd_paie(self, request: Request, colab_pwd:str, colab_immatricule:str, user_id: str,   admin_password: str,matricule: str, ip_address: str,immatricule:str):
         conn = None
         try:
@@ -856,6 +879,17 @@ class UsersPaie:
 
             pending_count = self.get_pending_validation_count().get("count", 0)
             socket_manager.emit_pending_validation_update_sync(pending_count)
+
+            self.saveEvent(
+                user_id=admin_name,
+                action="block_user",
+                entity_type="user",
+                description=f"Blocage de l'utilisateur {username} par {admin_name}",
+                old_value=None,
+                new_value=json.dumps({"username": username}),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+            )
 
             return {"message": f"Utilisateur {username} Bloqué avec succès par {admin_name}"}
 
@@ -1385,11 +1419,26 @@ class UsersPaie:
                 "path": str(request.url.path),
             }
 
+            action_labels = {
+                "page_view": "Consultation de la page",
+                "load_folder": "Chargement du dossier",
+                "upload_file": "Import de fichier dans le dossier",
+                "show_files": "Ouverture de l'explorateur des fichiers",
+                "auto_logout": "Déconnexion automatique de l'utilisateur",
+                "select_payroll_date": "Sélection de la date de paie",
+                "export_multi": "Export de données",
+                "import_multi": "Import multiple de fichiers",
+                "download": "Téléchargement",
+            }
+            if not description:
+                label = action_labels.get(action, f"Action : {action}")
+                description = f"{label} {entity_id or entity_type}".strip()
+
             self.saveEvent(
                 user_id=user_identifier,
                 action=action,
                 entity_type=entity_type,
-                description=description or f"Action {action} sur {entity_type}",
+                description=description,
                 old_value=None,
                 new_value=json.dumps(payload, ensure_ascii=False),
                 ip_address=request.client.host if request.client else None,

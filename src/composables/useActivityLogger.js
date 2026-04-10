@@ -7,8 +7,9 @@ export function useActivityLogger(api) {
     status = 'SUCCESS',
   }) => {
     const token = localStorage.getItem('access_token')
+    const apiBaseUrl = api === null || api === undefined ? null : api
 
-    if (!token || !api || !action || !entityType) {
+    if (!token || apiBaseUrl === null || !action || !entityType) {
       return false
     }
 
@@ -20,7 +21,7 @@ export function useActivityLogger(api) {
       formData.append('description', description)
       formData.append('status', status)
 
-      const response = await fetch(`${api}/api/log_user_activity`, {
+      const response = await fetch(`${apiBaseUrl}/api/log_user_activity`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,

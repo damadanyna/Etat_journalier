@@ -11,17 +11,20 @@ const socketOptions = {
 }
 
 export const getSocketClient = (api) => {
-  if (!api) {
+  if (api === null || api === undefined) {
     return null
   }
 
-  if (!socket || socketUrl !== api) {
+  // api='' means same-origin (Apache/Vite proxy handles /socket.io)
+  const resolvedUrl = api || window.location.origin
+
+  if (!socket || socketUrl !== resolvedUrl) {
     if (socket) {
       socket.disconnect()
     }
 
-    socketUrl = api
-    socket = io(api, socketOptions)
+    socketUrl = resolvedUrl
+    socket = io(resolvedUrl, socketOptions)
   }
 
   return socket

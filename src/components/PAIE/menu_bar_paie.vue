@@ -70,6 +70,38 @@ const refreshHistoryDates = async () => {
     historyDates.value = await fetchData(`${api}/api/history_insert_paie`)
 }
 
+const syncSelectedPayrollDate = (dates) => {
+    if (!Array.isArray(dates) || dates.length === 0) {
+        return
+    }
+
+    const sorted = [...dates].sort((a, b) => b.label.localeCompare(a.label))
+    const lastDate = sorted[0].label
+    const lastStatOf = sorted[0].stat_of
+
+    selectedDate.value = lastDate
+    popupStore.selected_date = lastDate
+    popupStore.selected_date_stat_of = lastStatOf
+    localStorage.setItem('selectedTable', lastDate)
+}
+
+const applyPayrollDateUpdate = (payload) => {
+    const nextLabel = String(payload?.label || '').trim()
+    if (!nextLabel) {
+        return
+    }
+
+    const nextEntry = {
+        label: nextLabel,
+        stat_of: payload?.stat_of ?? null,
+        used: payload?.used ?? 1,
+    }
+
+    const filteredDates = historyDates.value.filter((item) => item.label !== nextLabel)
+    historyDates.value = [nextEntry, ...filteredDates]
+    syncSelectedPayrollDate(historyDates.value)
+}
+
 const handlePayrollDateUpdated = async (event) => {
     const payload = event.detail || {}
 
@@ -77,7 +109,9 @@ const handlePayrollDateUpdated = async (event) => {
         return
     }
 
+    applyPayrollDateUpdate(payload)
     await refreshHistoryDates()
+    syncSelectedPayrollDate(historyDates.value)
 }
 
 async function selectDateStatOf(date, stat_of) {
@@ -122,21 +156,7 @@ async function fetchData(baseUrl, date = null) {
 }
 
 watch(historyDates, (val) => {
-  if (Array.isArray(val) && val.length > 0) {
-    // Trie les dates du plus récent au plus ancien
-    const sorted = [...val].sort((a, b) => b.label.localeCompare(a.label))
-    const lastDate = sorted[0].label
-    const lastStatCompte = sorted[0].stat_compte
-
-    selectedDate.value = lastDate
-    popupStore.selected_date = lastDate
-    popupStore.selected_date_stat_compte = lastStatCompte
-    localStorage.setItem("selectedTable", lastDate)
-
-    // Émet l'événement pour synchroniser la sélection
-    
-    // console.log("📅 Dernière date sélectionnée automatiquement :", lastDate)
-  }
+    syncSelectedPayrollDate(val)
 }, { immediate: true })
 
 onMounted(() => {

@@ -76,7 +76,7 @@
           </div>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn text="Fermer" @click="isActive.value = false" />
+            <v-btn text="Fermer" @click="closeExplorerDialog(isActive)" />
           </v-card-actions>
         </v-card>
       </template>
@@ -94,7 +94,7 @@
             @change="check_data_state" variant="outlined"/></div>
         <v-card-actions>
           <v-btn @click="check_file"   :disabled="!is_full" :color="is_full ? 'red' : 'gray'"  variant="flat" class="ml-2">Importer?</v-btn>
-          <v-btn text @click="isDialogActive = false">Fermer</v-btn>
+          <v-btn text @click="closeImportDateDialog">Fermer</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -127,8 +127,27 @@ const isDialogActive = ref(false)
 const show_progress_import = ref(false)
 const percentage= ref(0)
 const { logUserActivity } = useActivityLogger(api)
+
+const trackFileManagerAction = (payload) => {
+  void logUserActivity(payload)
+}
+
+const getAuthHeaders = (extraHeaders = {}) => {
+  const token = localStorage.getItem('access_token')
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extraHeaders,
+  }
+}
+
 // Fonction pour ouvrir la boîte de dialogue de sélection de fichiers
 const triggerFileInput = () => {
+  trackFileManagerAction({
+    action: 'open_file_picker',
+    entityType: 'file_input',
+    entityId: 'paie_upload',
+    description: 'Ouverture du sélecteur de fichier de la page file_manager',
+  })
   fileInput.value.click()
 }
 const list_file = ref([]);
@@ -164,6 +183,13 @@ const handleFileUpload = (event) => {
   const elt_ = document.getElementById('file_name');
 
   if (files.length >1 ) {
+    trackFileManagerAction({
+      action: 'select_upload_file',
+      entityType: 'file_input',
+      entityId: 'multiple_files',
+      description: `Échec de sélection: ${files.length} fichiers choisis au lieu d'un seul`,
+      status: 'FAILED',
+    })
     alert("Vous ne pouvez sélectionner que de 1  fichiers.");
     event.target.value = ""; // reset
     file_name.value = "Importer un fichier";
@@ -182,6 +208,12 @@ const handleFileUpload = (event) => {
     file_name.value = `${files.length} fichier(s) sélectionné(s)`;
     elt_.classList.add('file_loaded');
     is_exist_file.value = true;
+    trackFileManagerAction({
+      action: 'select_upload_file',
+      entityType: 'file',
+      entityId: file.name,
+      description: `Sélection du fichier ${file.name} pour import`,
+    })
   }
 
     event.target.value = ""; // reset
@@ -213,6 +245,7 @@ const chargerDossier = (file,activatorProps) => {
 
 
 const cancel = () => {
+  const selectedNames = file_names.value.join(', ')
   fileInput.value.value = "";
   file_name.value = "Importer un fichier";
   file_names.value = [];
@@ -220,16 +253,57 @@ const cancel = () => {
   is_exist_file.value = false;
   document.getElementById('file_name').classList.remove('file_loaded');
 
+  trackFileManagerAction({
+    action: 'cancel_upload_selection',
+    entityType: 'file',
+    entityId: selectedNames || 'none',
+    description: selectedNames
+      ? `Annulation de la sélection de fichier(s): ${selectedNames}`
+      : 'Annulation de la sélection de fichier sans fichier actif',
+  })
+
 };
 
 const check_data_state = () => {
   if (date_dossier.value) {
     is_full.value = true
+    trackFileManagerAction({
+      action: 'select_import_date',
+      entityType: 'folder',
+      entityId: date_dossier.value,
+      description: `Sélection de la date d'import ${date_dossier.value} dans file_manager`,
+    })
   }
 }
 
 const open_dialoge_date=()=> {
   isDialogActive.value = true
+  trackFileManagerAction({
+    action: 'open_import_date_dialog',
+    entityType: 'dialog',
+    entityId: 'import_date',
+    description: 'Ouverture du dialogue de date avant import de fichier',
+  })
+}
+
+const closeImportDateDialog = () => {
+  isDialogActive.value = false
+  trackFileManagerAction({
+    action: 'close_import_date_dialog',
+    entityType: 'dialog',
+    entityId: 'import_date',
+    description: 'Fermeture du dialogue de date d\'import',
+  })
+}
+
+const closeExplorerDialog = (isActive) => {
+  isActive.value = false
+  trackFileManagerAction({
+    action: 'close_file_explorer',
+    entityType: 'dialog',
+    entityId: 'file_explorer',
+    description: 'Fermeture de l\'explorateur de fichiers paie',
+  })
 }
 
 const load_database = async (refresh, files, folder, date_string) => {
@@ -238,9 +312,9 @@ const load_database = async (refresh, files, folder, date_string) => {
   try {
     const response = await fetch(`${api}/api/create_multiple_table_paie`, {
       method: 'POST',
-      headers: {
+      headers: getAuthHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify({
         files: files.map(f => f.title),
         app: null,
@@ -356,9 +430,22 @@ const load_database = async (refresh, files, folder, date_string) => {
     }
 
     console.log('[STREAMING TERMINÉ]');
+    await logUserActivity({
+      action: 'load_folder_database',
+      entityType: 'folder',
+      entityId: folder,
+      description: `Chargement en base terminé pour le dossier ${folder}`,
+    })
 
   } catch (error) {
     console.error("Erreur lors du chargement du fichier dans la base :", error);
+    await logUserActivity({
+      action: 'load_folder_database',
+      entityType: 'folder',
+      entityId: folder,
+      description: `Échec du chargement en base pour le dossier ${folder}`,
+      status: 'FAILED',
+    })
   } finally {
     refresh.classList.remove('animIt');
   }
@@ -366,6 +453,12 @@ const load_database = async (refresh, files, folder, date_string) => {
 
 const check_file = () => {
   if (date_dossier.value) {
+    trackFileManagerAction({
+      action: 'confirm_import_file',
+      entityType: 'folder',
+      entityId: date_dossier.value,
+      description: `Confirmation de l'import dans le dossier ${date_dossier.value}`,
+    })
     show_progress_import.value=true
     uploadFile(date_dossier.value)
     isDialogActive.value = false
@@ -383,6 +476,7 @@ const uploadFile = async (folder_name) => {
   try {
     const response = await fetch(`${api}/api/upload_multiple_files_paie`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       body: formData,
     });
 
@@ -486,6 +580,7 @@ const uploadFile = async (folder_name) => {
 const showFiles = async () => {
   try {
     const response = await axios.get('/show_files_paie', {
+      headers: getAuthHeaders(),
       params: {
         app:app_type.value
       }
@@ -500,6 +595,13 @@ const showFiles = async () => {
     })
   } catch (error) {
     console.error("Erreur lors de la récupération des fichiers:", error); // Gestion des erreurs
+    await logUserActivity({
+      action: 'show_files',
+      entityType: 'file_explorer',
+      entityId: 'paie',
+      description: 'Échec de l’ouverture de l’explorateur des fichiers paie',
+      status: 'FAILED',
+    })
   }
 };
 
@@ -561,6 +663,7 @@ const triggerImport = async () => {
   try {
     const res = await fetch(`${api}/api/import/multi`, {
       method: "POST",
+      headers: getAuthHeaders(),
       body: formData
     })
     const data = await res.json()
@@ -595,6 +698,13 @@ const downloadFile = async (item) => {
   if (!date) {
     console.error("Impossible d'extraire la date");
     dialog.value = false
+    await logUserActivity({
+      action: 'download_file',
+      entityType: 'file',
+      entityId: item?.title || '',
+      description: `Échec du téléchargement du fichier ${item?.title || ''} : date introuvable`,
+      status: 'FAILED',
+    })
     return;
   }
 
@@ -602,7 +712,10 @@ const downloadFile = async (item) => {
     console.log("Préparation du téléchargement...");
 
     const response = await fetch(
-      `${api}/api/download-file-paie?filename=${encodeURIComponent(item.title)}&date=${encodeURIComponent(date)}`
+      `${api}/api/download-file-paie?filename=${encodeURIComponent(item.title)}&date=${encodeURIComponent(date)}`,
+      {
+        headers: getAuthHeaders(),
+      }
     );
 
     if (!response.ok) {

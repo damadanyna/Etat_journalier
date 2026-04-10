@@ -207,8 +207,8 @@ const bindSocketListeners = () => {
 
 const syncSocketConnection = () => {
   if (isLogged_status.value === 200) {
-    bindSocketListeners()
-    connectSocketClient(api)
+    connectSocketClient(api)  // crée et connecte le socket en premier
+    bindSocketListeners()     // lie les listeners sur le socket existant
     return
   }
 
