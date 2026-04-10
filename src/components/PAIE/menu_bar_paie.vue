@@ -70,12 +70,24 @@ const refreshHistoryDates = async () => {
     historyDates.value = await fetchData(`${api}/api/history_insert_paie`)
 }
 
+const payrollPeriodSortValue = (label) => {
+    const rawValue = String(label || '').trim()
+    if (/^\d{2}-\d{4}$/.test(rawValue)) {
+        const [month, year] = rawValue.split('-')
+        return `${year}${month}`
+    }
+    if (/^\d{6}$/.test(rawValue)) {
+        return `${rawValue.slice(2)}${rawValue.slice(0, 2)}`
+    }
+    return rawValue
+}
+
 const syncSelectedPayrollDate = (dates) => {
     if (!Array.isArray(dates) || dates.length === 0) {
         return
     }
 
-    const sorted = [...dates].sort((a, b) => b.label.localeCompare(a.label))
+    const sorted = [...dates].sort((a, b) => payrollPeriodSortValue(b.label).localeCompare(payrollPeriodSortValue(a.label)))
     const lastDate = sorted[0].label
     const lastStatOf = sorted[0].stat_of
 

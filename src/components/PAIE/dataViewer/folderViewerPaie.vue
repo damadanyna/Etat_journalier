@@ -34,7 +34,24 @@ const dataPaie=ref([])
 const api = inject('api') 
 const popupStore = usePopupStore() 
 const { logUserActivity } = useActivityLogger(api)
-const normalizePayrollDate = (value) => String(value || '').replace(/-/g, '').trim()
+const normalizePayrollDate = (value) => {
+  const rawValue = String(value || '').trim()
+  if (/^\d{2}-\d{4}$/.test(rawValue)) {
+    const [month, year] = rawValue.split('-')
+    return `${month}${year}`
+  }
+  if (/^\d{6}$/.test(rawValue)) {
+    return rawValue
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
+    const [year, month] = rawValue.split('-')
+    return `${month}${year}`
+  }
+  if (/^\d{8}$/.test(rawValue)) {
+    return `${rawValue.slice(4, 6)}${rawValue.slice(0, 4)}`
+  }
+  return rawValue.replace(/-/g, '')
+}
 
 
 const fetch_all_paie = async (matricule = null, dateStr = null) => {
@@ -43,7 +60,7 @@ const fetch_all_paie = async (matricule = null, dateStr = null) => {
   // console.log(dateStr);
   
   try {
-    if (!/^\d{8}$/.test(normalizedDate)) {
+    if (!/^\d{6}$/.test(normalizedDate)) {
       dataPaie.value = []
       return
     }

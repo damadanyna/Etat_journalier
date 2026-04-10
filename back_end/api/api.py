@@ -420,6 +420,7 @@ async def upload_multiple_files_paie(request: Request, files: List[UploadFile] =
 
     current_user = usersPaie.get_current_user(request)
     file_names = [file.filename for file in files]
+    normalized_folder_name = usersPaie.prepare_upload_folder(folder_name)
 
     class NamedBytesIO(io.BytesIO):
         def __init__(self, content, filename):
@@ -445,7 +446,7 @@ async def upload_multiple_files_paie(request: Request, files: List[UploadFile] =
 
         yield json.dumps({
             "status": "info",
-            "message": f"{total_files} fichiers chargés pour l'application '{app}', dossier '{folder_name}'.",
+            "message": f"{total_files} fichiers chargés pour l'application '{app}', dossier '{normalized_folder_name}'.",
             "total_files": total_files
         }) + '\n'
 
@@ -461,7 +462,7 @@ async def upload_multiple_files_paie(request: Request, files: List[UploadFile] =
                 }) + '\n'
 
                 for progress in usersPaie.upload_file_manual_in_detail(
-                    memory_file, folder_name, i, total_files
+                    memory_file, normalized_folder_name, i, total_files
                 ):
                     print(f"[Progression] {filename}: {progress.get('percentage', '?')}% - {progress.get('message', '')}")
                     yield json.dumps(progress) + '\n'
@@ -484,9 +485,9 @@ async def upload_multiple_files_paie(request: Request, files: List[UploadFile] =
         user_id=current_user.get("username"),
         action="upload_multiple_files_paie",
         entity_type="folder",
-        description=f"Appel API upload_multiple_files_paie sur le dossier {folder_name} avec {len(file_names)} fichier(s)",
+        description=f"Appel API upload_multiple_files_paie sur le dossier {normalized_folder_name} avec {len(file_names)} fichier(s)",
         old_value=None,
-        new_value=json.dumps({"folder_name": folder_name, "files": file_names}, ensure_ascii=False),
+        new_value=json.dumps({"folder_name": normalized_folder_name, "files": file_names}, ensure_ascii=False),
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )

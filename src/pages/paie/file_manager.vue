@@ -62,7 +62,7 @@
                 <v-icon v-else icon="mdi-file-chart-outline" style=" font-size: 15px;" />
                 <button v-if="!item.file" style="position:absolute; margin-left: 400px;" @click.stop="chargerDossier(item,isActive)" >
                   <v-icon icon="mdi mdi-database " size="24" style=" position: relative; margin-left: -20px; margin-top: 7px; " />
-                  <v-icon :id="'refresh' + item.title.replaceAll(/[^a-zA-Z0-9_-]/g, '_')" icon="mdi mdi-sync " size="12" style=" position: relative; margin-top: 20px;margin-left:-7px; background-color: black;border-radius: 15px;" />
+                  <v-icon :id="'refresh' + (item.folderName || item.title).replaceAll(/[^a-zA-Z0-9_-]/g, '_')" icon="mdi mdi-sync " size="12" style=" position: relative; margin-top: 20px;margin-left:-7px; background-color: black;border-radius: 15px;" />
                 </button>
                 <button  v-if="item.file"  style="position:absolute; margin-left: 380px;"  @click.stop="downloadFile(item)" >  
                   <v-icon :id="'download' + item.title.replaceAll(/[^a-zA-Z0-9_-]/g, '_')" icon="mdi mdi-download" size="17" style="position: relative; margin-top: -7px; margin-left:-40px; background-color: transparent; border-radius: 15px;"  />
@@ -87,8 +87,8 @@
         <div style=" padding: 0px 70px;">
           <v-text-field
             v-model="date_dossier"
-            label="Date de traitement dans fichier"
-            type="date"
+            label="Période de paie"
+            type="month"
             dense
             :max="today"
             @change="check_data_state" variant="outlined"/></div>
@@ -122,7 +122,7 @@ const file_name = ref("Importer un fichier");
 const fileInput = ref(null)
 const files_data = ref(null)
 const is_exist_file = ref(false);
-const today = new Date().toISOString().split('T')[0]
+const today = new Date().toISOString().slice(0, 7)
 const isDialogActive = ref(false)
 const show_progress_import = ref(false)
 const percentage= ref(0)
@@ -160,15 +160,55 @@ const open = ref([]);
 // Créer une variable réactive pour stocker le nom du fichier
 // Fonction pour gérer l'upload (facultatif)
 
+const normalizePayrollPeriodKey = (value) => {
+  const rawValue = String(value || '').trim()
+  if (!rawValue) {
+    return ''
+  }
 
+  if (/^\d{2}-\d{4}$/.test(rawValue)) {
+    const [month, year] = rawValue.split('-')
+    return `${month}${year}`
+  }
+
+  if (/^\d{6}$/.test(rawValue)) {
+    return rawValue
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
+    const [year, month] = rawValue.split('-')
+    return `${month}${year}`
+  }
+
+  if (/^\d{4}-\d{2}$/.test(rawValue)) {
+    const [year, month] = rawValue.split('-')
+    return `${month}${year}`
+  }
+
+  if (/^\d{8}$/.test(rawValue)) {
+    return `${rawValue.slice(4, 6)}${rawValue.slice(0, 4)}`
+  }
+
+  return rawValue.replace(/-/g, '')
+}
+
+const formatPayrollPeriodLabel = (value) => {
+  const normalizedKey = normalizePayrollPeriodKey(value)
+  if (!/^\d{6}$/.test(normalizedKey)) {
+    return String(value || '')
+  }
+  return `${normalizedKey.slice(0, 2)}-${normalizedKey.slice(2)}`
+}
 
 const normalizeTree = (data) => {
   return data.map(item => ({
-    title: item.title,
+    title: formatPayrollPeriodLabel(item.title),
+    folderName: item.folder_name || item.title,
     children: Array.isArray(item.children) ? item.children.map(child => ({
       title: child.title,
       file: !!child.file,
-      date: item.title,
+      date: item.folder_name || item.title,
+      displayDate: formatPayrollPeriodLabel(item.folder_name || item.title),
     })) : []
   }));
 };
@@ -221,8 +261,10 @@ const handleFileUpload = (event) => {
 
 const chargerDossier = (file,activatorProps) => {
   activatorProps.value=false
-  let date_string= file.title.replace(/-/g, "")
-  const id = 'refresh' + file.title.replaceAll(/[^a-zA-Z0-9_-]/g, '_');
+  const folderName = file.folderName || file.title
+  let date_string = normalizePayrollPeriodKey(folderName)
+  const displayFolderName = formatPayrollPeriodLabel(folderName)
+  const id = 'refresh' + folderName.replaceAll(/[^a-zA-Z0-9_-]/g, '_');
   const refresh = document.getElementById(id);
 
   if (refresh) {
@@ -233,10 +275,10 @@ const chargerDossier = (file,activatorProps) => {
   logUserActivity({
     action: 'load_folder',
     entityType: 'folder',
-    entityId: file.title,
-    description: `Chargement du dossier ${file.title}`,
+    entityId: displayFolderName,
+    description: `Chargement du dossier ${displayFolderName}`,
   })
-  load_database(refresh,file.children,file.title,date_string) 
+  load_database(refresh,file.children,folderName,date_string) 
   setTimeout(() => {
     usePopupStore().togglePopupCDI();
   }, 300);
@@ -267,11 +309,12 @@ const cancel = () => {
 const check_data_state = () => {
   if (date_dossier.value) {
     is_full.value = true
+    const payrollLabel = formatPayrollPeriodLabel(date_dossier.value)
     trackFileManagerAction({
       action: 'select_import_date',
       entityType: 'folder',
-      entityId: date_dossier.value,
-      description: `Sélection de la date d'import ${date_dossier.value} dans file_manager`,
+      entityId: payrollLabel,
+      description: `Sélection de la date d'import ${payrollLabel} dans file_manager`,
     })
   }
 }
@@ -453,14 +496,15 @@ const load_database = async (refresh, files, folder, date_string) => {
 
 const check_file = () => {
   if (date_dossier.value) {
+    const payrollLabel = formatPayrollPeriodLabel(date_dossier.value)
     trackFileManagerAction({
       action: 'confirm_import_file',
       entityType: 'folder',
-      entityId: date_dossier.value,
-      description: `Confirmation de l'import dans le dossier ${date_dossier.value}`,
+      entityId: payrollLabel,
+      description: `Confirmation de l'import dans le dossier ${payrollLabel}`,
     })
     show_progress_import.value=true
-    uploadFile(date_dossier.value)
+    uploadFile(payrollLabel)
     isDialogActive.value = false
   }
   date_dossier.value=''

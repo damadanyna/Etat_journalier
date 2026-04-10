@@ -440,9 +440,21 @@ const download=async ()=> {
 
 
 function formaterMoisAnnee(dateStr) {
-  // Extraire l'année et le mois
-  const annee = dateStr.substring(0, 4);
-  const mois = dateStr.substring(4, 6);
+  const rawValue = String(dateStr || '').trim()
+  let annee = ''
+  let mois = ''
+
+  if (/^\d{2}-\d{4}$/.test(rawValue)) {
+    [mois, annee] = rawValue.split('-')
+  } else if (/^\d{6}$/.test(rawValue)) {
+    mois = rawValue.slice(0, 2)
+    annee = rawValue.slice(2)
+  } else if (/^\d{8}$/.test(rawValue)) {
+    annee = rawValue.slice(0, 4)
+    mois = rawValue.slice(4, 6)
+  } else {
+    return rawValue
+  }
   
   // Tableau des noms de mois
   const nomsMois = [
@@ -452,6 +464,9 @@ function formaterMoisAnnee(dateStr) {
   
   // Convertir le mois en index (01 -> 0, 02 -> 1, etc.)
   const indexMois = parseInt(mois, 10) - 1;
+  if (indexMois < 0 || indexMois >= nomsMois.length) {
+    return rawValue
+  }
   
   // Retourner le format "Mois-Année"
   return `${nomsMois[indexMois]} ${annee}`;

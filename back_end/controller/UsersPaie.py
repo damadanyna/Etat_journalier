@@ -24,8 +24,61 @@ class UsersPaie:
             self.create_table("usersPaie")
             self.create_table_log("user_activity_log")
             self.upload_folder = 'load_file_paie' 
+            self.project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            self.trash_folder = os.path.join(self.upload_folder, 'corbeil')
             if not os.path.exists(self.upload_folder):
                 os.makedirs(self.upload_folder) 
+            if not os.path.exists(self.trash_folder):
+                os.makedirs(self.trash_folder)
+
+    def normalize_payroll_period_key(self, value: str):
+        raw_value = str(value or '').strip()
+        if not raw_value:
+            return None
+
+        if re.fullmatch(r"\d{2}-\d{4}", raw_value):
+            month, year = raw_value.split('-')
+            return f"{month}{year}"
+
+        if re.fullmatch(r"\d{6}", raw_value):
+            month = raw_value[:2]
+            year = raw_value[2:]
+            return f"{month}{year}" if 1 <= int(month) <= 12 else None
+
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_value):
+            year, month, _day = raw_value.split('-')
+            return f"{month}{year}"
+
+        if re.fullmatch(r"\d{4}-\d{2}", raw_value):
+            year, month = raw_value.split('-')
+            return f"{month}{year}"
+
+        if re.fullmatch(r"\d{8}", raw_value):
+            year = raw_value[:4]
+            month = raw_value[4:6]
+            return f"{month}{year}" if 1 <= int(month) <= 12 else None
+
+        return None
+
+    def format_payroll_period_label(self, value: str):
+        normalized_key = self.normalize_payroll_period_key(value)
+        if not normalized_key:
+            return str(value or '').strip()
+        return f"{normalized_key[:2]}-{normalized_key[2:]}"
+
+    def prepare_upload_folder(self, folder_name: str):
+        normalized_folder_name = self.format_payroll_period_label(folder_name)
+        if not normalized_folder_name:
+            raise ValueError("Nom de dossier de paie invalide")
+
+        folder_path = os.path.join(self.upload_folder, normalized_folder_name)
+        if os.path.exists(folder_path):
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            trash_target = os.path.join(self.trash_folder, f"{normalized_folder_name}_{timestamp}")
+            shutil.move(folder_path, trash_target)
+
+        os.makedirs(folder_path, exist_ok=True)
+        return normalized_folder_name
 
     def create_table(self, table_name: str):
         try:
@@ -329,7 +382,8 @@ class UsersPaie:
         _, ext = os.path.splitext(original_filename)
         filename = f"etat_detaille{ext}"
 
-        folder_path = os.path.join(self.upload_folder, folder_name) if folder_name else self.upload_folder
+        normalized_folder_name = self.format_payroll_period_label(folder_name) if folder_name else None
+        folder_path = os.path.join(self.upload_folder, normalized_folder_name) if normalized_folder_name else self.upload_folder
         os.makedirs(folder_path, exist_ok=True)
 
         final_filepath = os.path.join(folder_path, filename)
@@ -365,10 +419,13 @@ class UsersPaie:
                 "message": f"Fichier lu: {total_size / (1024 * 1024):.2f} MB. Écriture en cours..."
             }
 
-            # 🧯 Backup AVANT écriture
+            # Déplacer l'ancien fichier vers la corbeille avant écriture
             if os.path.exists(final_filepath):
-                backup_filepath = final_filepath + ".backup"
-                shutil.copy2(final_filepath, backup_filepath)
+                trash_target_folder = os.path.join(self.trash_folder, normalized_folder_name or 'sans_dossier')
+                os.makedirs(trash_target_folder, exist_ok=True)
+                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                backup_filepath = os.path.join(trash_target_folder, f"{timestamp}_{filename}")
+                shutil.move(final_filepath, backup_filepath)
 
             chunk_size = 1024 * 1024  # 1 MB
             written_size = 0
@@ -410,10 +467,6 @@ class UsersPaie:
                 }
                 return
 
-            # 🧹 Suppression du backup si OK
-            if backup_filepath and os.path.exists(backup_filepath):
-                os.remove(backup_filepath)
-
             yield {
                 "status": "success",
                 "file": filename,
@@ -442,11 +495,7 @@ class UsersPaie:
             }
 
         finally:
-            if backup_filepath and os.path.exists(backup_filepath):
-                try:
-                    os.remove(backup_filepath)
-                except:
-                    pass
+            pass
 
 
     
@@ -581,6 +630,7 @@ class UsersPaie:
         tree = []
 
         for root, dirs, files in os.walk(base_folder):
+            dirs[:] = [directory for directory in dirs if directory.lower() != 'corbeil']
             # On saute la racine : on ne veut afficher que les sous-dossiers
             if root == base_folder:
                 continue
@@ -598,9 +648,13 @@ class UsersPaie:
             # Construction arborescente
             current_level = tree
             for part in path_parts:
-                folder = next((item for item in current_level if item["title"] == part and not item.get("file")), None)
+                folder = next((item for item in current_level if item.get("folder_name") == part and not item.get("file")), None)
                 if not folder:
-                    folder = {"title": part, "children": []}
+                    folder = {
+                        "title": self.format_payroll_period_label(part),
+                        "folder_name": part,
+                        "children": []
+                    }
                     current_level.append(folder)
                 current_level = folder["children"]
 
@@ -931,6 +985,7 @@ class UsersPaie:
     def insert_into_history_table(self, label_value: str, used: int = 1, stat_of=None):
         try:
             conn = self.db.connect()
+            normalized_label = self.format_payroll_period_label(label_value)
 
             # Étape 1 : mettre tous les used = 0
             reset_query = "UPDATE `history_insert_paie` SET `used` = 0"
@@ -946,14 +1001,14 @@ class UsersPaie:
                     created_at = CURRENT_TIMESTAMP
             """
             conn.execute(text(upsert_query), {
-                "label": label_value,
+                "label": normalized_label,
                 "stat_of": stat_of,
                 "used": used
             })
 
             conn.commit()
-            print(f"[INFO] Mise à jour réussie de history_insert_paie, actif: {label_value}")
-            socket_manager.emit_payroll_date_update_sync(label_value, stat_of, used)
+            print(f"[INFO] Mise à jour réussie de history_insert_paie, actif: {normalized_label}")
+            socket_manager.emit_payroll_date_update_sync(normalized_label, stat_of, used)
 
         except Exception as e:
             print(f"[ERREUR] Erreur lors de la mise à jour de history_insert_paie : {e}")
@@ -1021,8 +1076,16 @@ class UsersPaie:
                 return "ETAT_DETAILLE" 
 
             # Nom de table
-            filename_clean = os.path.splitext(filename)[0]
-            table_name = f"{filename_clean}_{str_date}"
+            normalized_period_key = self.normalize_payroll_period_key(str_date)
+            if not normalized_period_key:
+                yield json.dumps({
+                    "status": "error",
+                    "message": f"Période invalide : {str_date}",
+                    "filename": filename
+                })
+                return
+
+            table_name = f"etat_detaille_{normalized_period_key}"
             # table_name = nettoyer_nom_fichier(table_name)
             header_table=[]
             
@@ -1296,7 +1359,7 @@ class UsersPaie:
     def get_history_insert(self):
         conn = None 
         try:  
-            query = text("""  SELECT * FROM `history_insert_paie` ORDER BY `label` DESC """) 
+            query = text("""  SELECT * FROM `history_insert_paie` ORDER BY `created_at` DESC, `label` DESC """) 
             conn = self.db.connect()
             result = conn.execute(query )
             columns = result.keys()
@@ -1323,11 +1386,11 @@ class UsersPaie:
         if not dateStr:
             raise ValueError("Le paramètre dateStr est requis pour déterminer la table.")
 
-        # Construire le nom de table en vérifiant que c'est bien des chiffres
-        if not dateStr.isdigit() or len(dateStr) != 8:
-            raise ValueError("dateStr doit être au format YYYYMMDD")
+        normalized_period_key = self.normalize_payroll_period_key(dateStr)
+        if not normalized_period_key:
+            raise ValueError("dateStr doit être un format de période valide (MM-AAAA, MMAAAA, YYYY-MM-DD ou YYYYMMDD)")
 
-        table_name = f"etat_detaille_{dateStr}"
+        table_name = f"etat_detaille_{normalized_period_key}"
 
         conn = None
         try:
