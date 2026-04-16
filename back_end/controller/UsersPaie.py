@@ -1406,6 +1406,24 @@ class UsersPaie:
         try:
             conn = self.db.connect()
 
+            table_exists = conn.execute(
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM information_schema.TABLES
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = :table_name
+                    """
+                ),
+                {"table_name": table_name}
+            ).scalar()
+
+            if not table_exists:
+                return {
+                    "count": 0,
+                    "users": []
+                }
+
             # Construire la requête dynamiquement
             if matricule:
                 query = text(f"SELECT * FROM {table_name} WHERE matricule = :mat")
