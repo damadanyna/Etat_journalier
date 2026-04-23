@@ -114,7 +114,7 @@
                     <span>L'Employeur ou son</span>
                     <span>Représentant</span>
                 </div>
-                <img src="/img/signature.png" class=" w-[150px]" alt="">
+                <img src="/img/signature.png" class=" w-[250px]" alt="">
         
             </div>
         </div>
